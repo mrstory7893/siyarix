@@ -5,8 +5,8 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from siyarix_agent.offline_store import OfflineStore
-from siyarix_agent.plugins import PluginManager
+from siyarix.offline_store import OfflineStore
+from siyarix.plugins import PluginManager
 
 def test_plugin_scaffold_and_list(tmp_path: Path) -> None:
     manager = PluginManager(root=tmp_path / "plugins")

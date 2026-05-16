@@ -25,7 +25,7 @@ siyarix-agent-install
 
 - Detects Python 3.11+.
 - Installs `siyarix-agent` via `pipx` (preferred) or `pip --user`.
-- Runs `python -m siyarix_agent.main` with your CLI arguments.
+- Runs `python -m siyarix.main` with your CLI arguments.
 
 ## Requirements
 

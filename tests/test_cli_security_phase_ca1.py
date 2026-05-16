@@ -3,10 +3,10 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from siyarix_agent.audit_log import AuditLogger
-from siyarix_agent.auth import AuthManager
-from siyarix_agent.credential_store import CredentialStore
-from siyarix_agent.profiles import ProfileStore
+from siyarix.audit_log import AuditLogger
+from siyarix.auth import AuthManager
+from siyarix.credential_store import CredentialStore
+from siyarix.profiles import ProfileStore
 
 class _Resp:
     def __init__(self, status_code: int, payload: dict | None = None) -> None:

@@ -4,19 +4,19 @@ from __future__ import annotations
 
 import asyncio
 
-from siyarix_agent.ai_planner import (
+from siyarix.ai_planner import (
     AITaskPlanner,
     ExecutionPlan,
     ExecutionStep,
     StepType,
 )
-from siyarix_agent.dynamic_resolver import DynamicResolver
-from siyarix_agent.hybrid_engine import (
+from siyarix.dynamic_resolver import DynamicResolver
+from siyarix.hybrid_engine import (
     EngineResult,
     ExecutionMode,
     HybridEngine,
 )
-from siyarix_agent.intent_parser import (
+from siyarix.intent_parser import (
     IntentCategory,
     LocalIntentParser,
 )
