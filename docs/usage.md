@@ -11,7 +11,7 @@ siyarix scan 192.168.1.0/24
 - **Run an autonomous-assisted threat hunt**:
 
 ```bash
-siyarix threat hunt --target example.com --assist
+siyarix security hunt --target example.com
 ```
 
 - **Create and execute an integrated plan** (planner selects optimal tools and sequence):
@@ -30,9 +30,17 @@ siyarix run "scan 10.0.0.1 with nmap then generate report"
 - **Manage incidents**:
 
 ```bash
-siyarix incident list
-siyarix incident show INC-001
-siyarix incident resolve INC-001 --comment "Resolved via patch"
+siyarix security incidents
+siyarix security incident INC-001
+siyarix security incident-create --title "SQLi on login" --description "Blind SQLi" --category intrusion --severity high
+```
+
+- **Cross-platform shell translation**:
+
+```bash
+siyarix shell list-intents
+siyarix shell translate dns_lookup --target example.com
+siyarix shell list-shells
 ```
 
 ### Output Formatting
