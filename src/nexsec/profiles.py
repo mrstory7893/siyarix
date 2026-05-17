@@ -9,9 +9,11 @@ from pathlib import Path
 
 DEFAULT_PROFILE = "default"
 
+
 def _config_dir() -> Path:
     override = os.getenv("SIYARIX_CONFIG_DIR")
     return Path(override).expanduser() if override else Path.home() / ".siyarix"
+
 
 class ProfileStore:
     def __init__(self) -> None:
