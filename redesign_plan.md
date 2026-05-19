@@ -4,13 +4,13 @@
 > **Classification**: Architecture & Design Document  
 > **Version**: 2.0.0-ULTRA  
 > **Status**: Design Phase → Ready for Execution  
-> **Based on**: Deep codebase audit of NexSec v0.3.0 (1274 nodes, 2119 edges)
+> **Based on**: Deep codebase audit of Siyarix v0.3.0 (1274 nodes, 2119 edges)
 
 ---
 
 ## EXECUTIVE OVERVIEW
 
-NexSec currently sits at **Proof-of-Concept maturity** with exceptional architectural bones — strong execution engine, 50+ tool integrations, encrypted credential vault, tamper-evident audit logging. The redesign does NOT throw away this foundation. Instead, it **elevates every layer** into an AI-native, enterprise-grade, cinematically beautiful cyber operations platform.
+Siyarix currently sits at **Proof-of-Concept maturity** with exceptional architectural bones — strong execution engine, 50+ tool integrations, encrypted credential vault, tamper-evident audit logging. The redesign does NOT throw away this foundation. Instead, it **elevates every layer** into an AI-native, enterprise-grade, cinematically beautiful cyber operations platform.
 
 **The transformation target:**
 
@@ -1459,7 +1459,7 @@ siyarix/
 | 5 | Smart autocomplete (tier 1+2) | UX transformation |
 | 6 | Integration test suite | Production safety |
 
-**Deliverable**: NexSec v0.4.0 — Operationally solid
+**Deliverable**: Siyarix v0.4.0 — Operationally solid
 
 ---
 
@@ -1476,7 +1476,7 @@ siyarix/
 | 13 | PTY support + interactive tools | Full tool coverage |
 | 14 | Plugin marketplace v2 | Ecosystem growth |
 
-**Deliverable**: NexSec v0.5.0 — AI-Native platform
+**Deliverable**: Siyarix v0.5.0 — AI-Native platform
 
 ---
 
@@ -1490,7 +1490,7 @@ siyarix/
 | 21-22 | Team collaboration mode | Real-time sharing |
 | 23-24 | Headless API + webhooks | CI/CD integration |
 
-**Deliverable**: NexSec v1.0.0 — Enterprise Production
+**Deliverable**: Siyarix v1.0.0 — Enterprise Production
 
 ---
 
@@ -1564,7 +1564,7 @@ First Launch → "SIYARIX SETUP WIZARD"
 
 Step 1/5: Welcome & Concept
   ┌─────────────────────────────────┐
-  │  ⚡ Welcome to NexSec v2.0     │
+  │  ⚡ Welcome to Siyarix v2.0     │
   │                                │
   │  The AI-Native Cyber Ops       │
   │  Platform for elite operators  │
@@ -1937,8 +1937,8 @@ Optimizations:
 
 ---
 
-> **This document is the master blueprint for NexSec v2.0.**  
+> **This document is the master blueprint for Siyarix v2.0.**  
 > All implementation work should reference this document.  
 > Update sections as features are implemented.
 
-*Generated: 2026-05-20 | Based on deep audit of NexSec v0.3.0*
+*Generated: 2026-05-20 | Based on deep audit of Siyarix v0.3.0*

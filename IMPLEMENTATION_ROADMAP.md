@@ -1,4 +1,4 @@
-# NexSec Implementation Roadmap & Action Items
+# Siyarix Implementation Roadmap & Action Items
 
 **Updated**: May 17, 2026  
 **Status**: READY FOR EXECUTION  

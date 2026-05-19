@@ -1,6 +1,6 @@
-# NexSec Codebase Architecture Analysis
+# Siyarix Codebase Architecture Analysis
 
-**Project**: NexSec Security Agent v0.3.0  
+**Project**: Siyarix Security Agent v0.3.0  
 **Developer**: CosmicSec-Lab  
 **Analysis Date**: May 17, 2026  
 **License**: MIT  
@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-NexSec is a **production-grade autonomous security orchestration agent** designed for DevOps, penetration testing, and threat hunting. It implements a sophisticated **layered architecture** combining:
+Siyarix is a **production-grade autonomous security orchestration agent** designed for DevOps, penetration testing, and threat hunting. It implements a sophisticated **layered architecture** combining:
 
 - **Task Planner** (model-driven & heuristic)
 - **Execution Engine** (registry-based or autonomous)
@@ -879,7 +879,7 @@ Instruction
 
 **Pathway 1: Horizontal (Recommended)**
 ```
-NexSec Agent Cluster
+Siyarix Agent Cluster
 ├─ Agent Instance 1 (Pod)
 ├─ Agent Instance 2 (Pod)
 └─ Agent Instance N (Pod)
@@ -897,7 +897,7 @@ S3/Blob Storage (backup findings)
 - Increase memory (large nmap scans)
 
 **Pathway 3: Hybrid (Kubernetes)**
-- NexSec as daemonset (one per node)
+- Siyarix as daemonset (one per node)
 - Central controller (API server)
 - Distributed scan jobs via operators
 
@@ -939,7 +939,7 @@ S3/Blob Storage (backup findings)
 
 ## CONCLUSION
 
-**NexSec is a well-architected, production-grade autonomous security orchestration agent** combining sophisticated task planning with deterministic tool execution. The codebase demonstrates:
+**Siyarix is a well-architected, production-grade autonomous security orchestration agent** combining sophisticated task planning with deterministic tool execution. The codebase demonstrates:
 
 - **Expert-level architecture** (clean layering, patterns, async design)
 - **Security-conscious implementation** (validation, encryption, audit trails)
