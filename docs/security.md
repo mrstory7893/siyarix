@@ -11,7 +11,8 @@ The `CredentialStore` (accessible via `siyarix auth`) is a secure vault for API 
 - **Environment Scoping**: Credentials can be scoped to specific environments (e.g., `dev`, `staging`, `prod`) to prevent accidental usage across contexts.
 - **Key Management**:
     - The local master key is stored in `~/.siyarix/.vault_key` with `600` permissions.
-    - Use `siyarix auth set-key <provider>` to safely store keys without them appearing in your shell history.
+    - Use `siyarix auth set-key <provider>` or chat `/key set <provider> <api_key>` to safely store keys without them appearing in your shell history.
+    - Stored keys are mirrored to the repo-root `.env` file for local development convenience.
 
 ## High-Integrity Audit Trail
 
@@ -33,3 +34,4 @@ NexSec maintains a local enterprise audit trail (`~/.siyarix/audit.json`) that r
 2. **Use Environments**: Configure different `SIYARIX_PROFILE` values for development and production to keep credentials isolated.
 3. **Audit Monitoring**: Periodically verify your audit chain with `siyarix audit verify`.
 4. **KMS in Production**: For production deployments, always configure a managed KMS provider (AWS KMS) to protect the credential vault.
+5. **Prefer the UI controls**: Use `/theme mode ...`, `/theme appearance`, and `/model ...` in chat to review the current agent posture before running risky work.
