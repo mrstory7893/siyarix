@@ -102,9 +102,9 @@ class CredentialStore:
     """Enterprise credential vault"""
 
     _DEFAULT_CONFIG_DIR = Path.home() / ".siyarix"
-
     def __init__(self, master_password: str | None = None) -> None:
         self._config_dir = Path(os.getenv("SIYARIX_CONFIG_DIR", str(self._DEFAULT_CONFIG_DIR)))
+        self._config_dir.mkdir(parents=True, exist_ok=True)
         self._creds_file = self._config_dir / "credentials.enc"
         self._key_file = self._config_dir / ".vault_key"
         self._credentials: dict[str, Credential] = {}
