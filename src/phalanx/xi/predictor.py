@@ -1,4 +1,4 @@
-"""XI Predictor — Predictive action engine for NexSec.
+"""XI Predictor — Predictive action engine for Siyarix.
 
 Analyzes user behaviour patterns and current context to suggest:
   • Next likely command
@@ -90,7 +90,7 @@ _TOOL_FOLLOWUPS: dict[str, list[tuple[str, str]]] = {
 
 
 class Predictor:
-    """Predictive action engine for NexSec XI."""
+    """Predictive action engine for Siyarix XI."""
 
     def __init__(self) -> None:
         self._command_patterns: Counter[str] = Counter()
