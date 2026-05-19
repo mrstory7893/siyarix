@@ -1,6 +1,6 @@
-"""NexSec Chat — Interactive REPL / Conversation Mode.
+"""Siyarix Chat — Interactive REPL / Conversation Mode.
 
-A full-featured interactive shell for NexSec, similar to Claude CLI and
+A full-featured interactive shell for Siyarix, similar to Claude CLI and
 Gemini CLI, specialized for cybersecurity workflows.
 
 Features:
@@ -122,7 +122,7 @@ class ChatSession:
         recent = self.last_n(8)
         parts = []
         for msg in recent:
-            prefix = "User" if msg.role == "user" else "NexSec"
+            prefix = "User" if msg.role == "user" else "Siyarix"
             parts.append(f"{prefix}: {msg.content[:200]}")
         return "\n".join(parts)
 
@@ -215,7 +215,7 @@ _SLASH_HELP = {
     "/run <command>": "Run a tool or shell command",
     "/model <provider>": "Show/switch AI model provider",
     "/context": "Show current session context",
-    "/version": "Show NexSec version",
+    "/version": "Show Siyarix version",
 }
 
 # Mode number → (name, engine_mode, description)
@@ -233,12 +233,12 @@ _MODE_MAP: dict[str, tuple[str, str, str]] = {
 
 
 # ---------------------------------------------------------------------------
-# The NexSec Chat REPL
+# The Siyarix Chat REPL
 # ---------------------------------------------------------------------------
 
 
-class NexSecChat:
-    """Interactive REPL for NexSec — the cybersecurity AI assistant."""
+class SiyarixChat:
+    """Interactive REPL for Siyarix — the cybersecurity AI assistant."""
 
     _SESSIONS_DIR = Path(os.getenv("SIYARIX_CONFIG_DIR", str(Path.home() / ".siyarix"))) / "sessions"
 
@@ -448,7 +448,7 @@ class NexSecChat:
             console.print(f"[red]Unknown command: {command}[/red] — type [cyan]/help[/cyan]{hint}")
 
     def _cmd_help(self, _: str) -> None:
-        table = Table(title="NexSec Chat Commands", show_header=True, header_style="bold cyan")
+        table = Table(title="Siyarix Chat Commands", show_header=True, header_style="bold cyan")
         table.add_column("Command", style="cyan", no_wrap=True)
         table.add_column("Description", style="white")
         for cmd, desc in _SLASH_HELP.items():
@@ -537,7 +537,7 @@ class NexSecChat:
             # Build a nice scroll of recent conversation/messages
             left_text = Text()
             if not self._session.messages:
-                left_text.append("Welcome to NexSec Cyber Command.\n", style="bold cyan")
+                left_text.append("Welcome to Siyarix Cyber Command.\n", style="bold cyan")
                 left_text.append("Mode: ")
                 left_text.append(f"{self._mode}\n", style="bold green")
                 left_text.append("\nReady for input. Type your instruction below.\n\n")
@@ -547,7 +547,7 @@ class NexSecChat:
             else:
                 for msg in self._session.last_n(6):
                     role_color = "cyan" if msg.role == "user" else "green"
-                    label = "You" if msg.role == "user" else "NexSec"
+                    label = "You" if msg.role == "user" else "Siyarix"
                     left_text.append(f"[{label}]\n", style=f"bold {role_color}")
                     left_text.append(f"{msg.content}\n\n", style="white")
             left_content = left_text
@@ -774,7 +774,7 @@ class NexSecChat:
         for msg in msgs:
             role_color = "cyan" if msg.role == "user" else "green"
             ts = msg.timestamp.strftime("%H:%M:%S")
-            label = "You" if msg.role == "user" else "NexSec"
+            label = "You" if msg.role == "user" else "Siyarix"
             console.print(
                 f"[dim]{ts}[/dim] [{role_color}]{label}:[/{role_color}] {msg.content[:120]}"
             )
@@ -838,7 +838,7 @@ class NexSecChat:
             ("Flags", "ssh", str(ctx.get("is_terminal_ssh", False))),
             ("Flags", "cloud", str(ctx.get("is_terminal_cloud", False))),
             ("Flags", "wsl_available", str(ctx.get("has_wsl", False))),
-            ("NexSec", "available_intents", str(ctx.get("available_tools_count", 0))),
+            ("Siyarix", "available_intents", str(ctx.get("available_tools_count", 0))),
         ]
         for category, key, value in rows:
             table.add_row(category, key, str(value))
@@ -959,7 +959,7 @@ class NexSecChat:
         for msg in results[-15:]:
             ts = msg.timestamp.strftime("%H:%M:%S")
             role_color = "cyan" if msg.role == "user" else "green"
-            label = "You" if msg.role == "user" else "NexSec"
+            label = "You" if msg.role == "user" else "Siyarix"
             console.print(
                 f"[dim]{ts}[/dim] [{role_color}]{label}:[/{role_color}] {msg.content[:160]}"
             )
@@ -1117,7 +1117,7 @@ class NexSecChat:
         except Exception as exc:
             logger.debug("Failed to resolve package version: %s", exc)
             ver = "1.2.0"
-        console.print(f"[bold cyan]NexSec[/bold cyan] [green]v{ver}[/green]")
+        console.print(f"[bold cyan]Siyarix[/bold cyan] [green]v{ver}[/green]")
 
     # ──────────────────────────────────────────────────────────────────────
     # Natural language processing
@@ -1241,7 +1241,7 @@ class NexSecChat:
 
         # Generic response
         responses = {
-            "hello": "Hello! I'm NexSec, your cybersecurity AI agent. What would you like to do?\n\n"
+            "hello": "Hello! I'm Siyarix, your cybersecurity AI agent. What would you like to do?\n\n"
             "Try: `scan 192.168.1.1`, `enumerate subdomains of example.com`, or `/tools` to see available tools.",
             "help": "I can help you with:\n- **Scanning** hosts and networks\n- **Enumerating** subdomains and services\n- **Vulnerability scanning** with nuclei, nikto\n- **Password attacks** with hydra, hashcat\n- **OSINT** with theHarvester, amass\n\nType a natural language command or use `/help` for slash commands.",
         }
@@ -1281,9 +1281,9 @@ class NexSecChat:
 
         console.print(
             Panel(
-                f"[bold cyan]NexSec[/bold cyan] [green]v{ver}[/green] — [bold]AI Cybersecurity Agent[/bold]\n\n"
+                f"[bold cyan]Siyarix[/bold cyan] [green]v{ver}[/green] — [bold]AI Cybersecurity Agent[/bold]\n\n"
                 f"[dim]A polished terminal copilot for security work — plan, inspect, and execute from one shell.[/dim]",
-                title="[bold]⚡ NexSec Command Center[/bold]",
+                title="[bold]⚡ Siyarix Command Center[/bold]",
                 border_style="cyan",
                 padding=(1, 2),
             )
@@ -1403,7 +1403,7 @@ class NexSecChat:
         console.print(
             Panel(
                 Markdown(message),
-                title="[bold green]◆ NexSec[/bold green]",
+                title="[bold green]◆ Siyarix[/bold green]",
                 border_style="green",
                 padding=(0, 2),
             )
@@ -1485,7 +1485,7 @@ class NexSecChat:
                 f"[dim]Session saved: {self._session.session_id[:8]}[/dim]\n"
                 f"[dim]Resume with: siyarix chat --session {self._session.session_id}[/dim]\n"
                 f"[dim]Your theme and key settings remain in config/.env.[/dim]",
-                title="[bold]Goodbye from NexSec[/bold]",
+                title="[bold]Goodbye from Siyarix[/bold]",
                 border_style="dim",
             )
         )
@@ -1502,6 +1502,6 @@ def start_chat(
     session_id: str | None = None,
     resume: bool = False,
 ) -> None:
-    """Launch the NexSec interactive chat REPL."""
-    chat = NexSecChat(mode=mode, target=target, session_id=session_id, resume=resume)
+    """Launch the Siyarix interactive chat REPL."""
+    chat = SiyarixChat(mode=mode, target=target, session_id=session_id, resume=resume)
     chat.run()

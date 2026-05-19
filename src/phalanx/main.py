@@ -1,4 +1,4 @@
-"""NexSec CLI — Premium Enterprise Entry Point.
+"""Siyarix CLI — Premium Enterprise Entry Point.
 
 Features:
   • Multi-level command routing with nested Typer apps
@@ -120,7 +120,7 @@ def _get_engine(mode: str = "integrated") -> ExecutionEngine:
 app = typer.Typer(
     name="siyarix",
     help=f"""
-[bold cyan]NexSec CLI — Enterprise Cybersecurity Command Center[/bold cyan]
+[bold cyan]Siyarix CLI — Enterprise Cybersecurity Command Center[/bold cyan]
 
 [dim]Version: {__version__} | Platform: {platform.system()} | Python: {platform.python_version()}[/dim]
 
@@ -407,7 +407,7 @@ def chat(
 ) -> None:
     """Start an interactive AI cybersecurity REPL (chat mode).
 
-    NexSec chat gives you a conversational interface to run security tools,
+    Siyarix chat gives you a conversational interface to run security tools,
     get cross-platform command help, and manage sessions with history.
 
     Examples:
@@ -485,7 +485,7 @@ def shell_platform(
         ("Flags", "ssh", str(ctx.get("is_terminal_ssh", False))),
         ("Flags", "cloud", str(ctx.get("is_terminal_cloud", False))),
         ("Flags", "wsl_available", str(ctx.get("has_wsl", False))),
-        ("NexSec", "available_intents", str(ctx.get("available_tools_count", 0))),
+        ("Siyarix", "available_intents", str(ctx.get("available_tools_count", 0))),
     ]
 
     for category, key, value in rows:
@@ -1090,7 +1090,7 @@ def health_check(
         console.print(json.dumps(status.to_dict(), indent=2))
         return
 
-    table = Table(title="NexSec Health", header_style="bold cyan")
+    table = Table(title="Siyarix Health", header_style="bold cyan")
     table.add_column("Component", style="cyan", no_wrap=True)
     table.add_column("State", style="magenta", no_wrap=True)
     table.add_column("Latency (ms)", style="green", no_wrap=True)
@@ -1131,7 +1131,7 @@ def metrics_show(
         return
 
     # Table output
-    table = Table(title="NexSec Metrics", header_style="bold cyan")
+    table = Table(title="Siyarix Metrics", header_style="bold cyan")
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green", justify="right")
 
@@ -1508,7 +1508,7 @@ def report_generate(
         tool_counts[f.get("tool", "unknown")] = tool_counts.get(f.get("tool", "unknown"), 0) + 1
 
     lines = [
-        "# NexSec Findings Report",
+        "# Siyarix Findings Report",
         "",
         f"Generated: {datetime.now().isoformat()}",
         "",
@@ -1668,7 +1668,7 @@ def report(
     events = audit.get_events(limit=100)
 
     lines = [
-        f"# NexSec Compliance Report ({framework.upper()})",
+        f"# Siyarix Compliance Report ({framework.upper()})",
         "",
         f"Generated: {datetime.now().isoformat()}",
         f"Retention days: {stats.get('retention_days')}",
@@ -1910,7 +1910,7 @@ def auth_show() -> None:
 def completions_install(
     shell: str = typer.Argument(default="", help="Shell: bash | zsh | fish | powershell"),
 ) -> None:
-    """Install shell completions for NexSec.
+    """Install shell completions for Siyarix.
 
     Examples:
       siyarix completions install bash
@@ -1964,7 +1964,7 @@ def completions_install(
 def config_list() -> None:
     """List all configuration settings."""
     rows = config.list_all()
-    table = Table(title="NexSec Configuration", show_header=True, header_style="bold cyan")
+    table = Table(title="Siyarix Configuration", show_header=True, header_style="bold cyan")
     table.add_column("Key", style="cyan", no_wrap=True)
     table.add_column("Value", style="green")
     table.add_column("Default", style="dim")
@@ -2078,11 +2078,11 @@ def wizard() -> None:
 # ---------------------------------------------------------------------------
 @app.command()
 def version() -> None:
-    """Show NexSec version information."""
+    """Show Siyarix version information."""
     tools = registry.discover()
     console.print(
         Panel.fit(
-            f"[bold cyan]NexSec[/bold cyan] [green]v{__version__}[/green]\n"
+            f"[bold cyan]Siyarix[/bold cyan] [green]v{__version__}[/green]\n"
             f"[dim]Platform:[/dim] {platform.system()} {platform.release()}\n"
             f"[dim]Python:[/dim]   {platform.python_version()}\n"
             f"[dim]Tools found:[/dim] {len(tools)}",
