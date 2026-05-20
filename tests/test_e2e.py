@@ -9,21 +9,15 @@ This test suite validates full execution pipelines under mock environments:
 
 from __future__ import annotations
 
-import sys
-import shutil
 import pytest
-import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from click.testing import CliRunner
 from typer.main import get_command
 
 from siyarix.main import app
-from siyarix.engine import ExecutionEngine, StepResult, StepStatus, ExecutionStep, EngineResult, ExecutionMode
-from siyarix.planner import TaskPlanner, StepType, ExecutionPlan
-from siyarix.interpreter import RuleInterpreter, TaskCategory
-from siyarix.knowledge_graph import KnowledgeGraph, NodeType
-from siyarix.output import output
-from siyarix.audit_log import audit, AuditEventType
+from siyarix.engine import ExecutionEngine, StepResult, StepStatus, ExecutionStep, ExecutionMode
+from siyarix.planner import StepType
+from siyarix.knowledge_graph import KnowledgeGraph
 
 
 def test_cli_scan_dry_run() -> None:
@@ -80,7 +74,8 @@ async def test_interactive_installation_confirm() -> None:
         return None
 
     # Test Scenario A: User confirms the auto-installation prompt
-    with patch("shutil.which", side_effect=mock_which_installer), \
+    with patch("platform.system", return_value="Windows"), \
+         patch("shutil.which", side_effect=mock_which_installer), \
          patch("siyarix.output.output.prompt_confirm", return_value=True) as mock_confirm, \
          patch("siyarix.engine.run_tool_complete", new_callable=AsyncMock) as mock_run:
 
@@ -95,7 +90,8 @@ async def test_interactive_installation_confirm() -> None:
         mock_run.assert_called()
 
     # Test Scenario B: User declines the auto-installation prompt
-    with patch("shutil.which", side_effect=mock_which_installer), \
+    with patch("platform.system", return_value="Windows"), \
+         patch("shutil.which", side_effect=mock_which_installer), \
          patch("siyarix.output.output.prompt_confirm", return_value=False) as mock_confirm, \
          patch("siyarix.engine.run_tool_complete", new_callable=AsyncMock) as mock_run:
 
