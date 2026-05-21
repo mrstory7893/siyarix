@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import json
 from datetime import datetime
 from pathlib import Path
-from typing import Any
 
 from siyarix.knowledge_graph import KnowledgeGraph, NodeType
 from siyarix.security.attack_path import AttackPathAnalyzer

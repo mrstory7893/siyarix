@@ -5,7 +5,6 @@ Defines permissions, roles, and enforcement mechanisms for Siyarix operations.
 
 import os
 from enum import StrEnum
-from typing import Any
 
 
 class OperationPermission(StrEnum):
