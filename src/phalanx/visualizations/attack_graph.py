@@ -3,11 +3,12 @@
 Renders the in-memory knowledge graph into a visual hierarchy in the terminal using Rich.
 """
 
+from typing import Any
 
 from rich.console import Console
 from rich.tree import Tree
 
-from siyarix.knowledge_graph import KnowledgeGraph, NodeType
+from siyarix.knowledge_graph import KnowledgeGraph, NodeType, EdgeType
 
 
 class AttackGraphVisualizer:
