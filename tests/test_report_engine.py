@@ -6,8 +6,8 @@ import json
 from pathlib import Path
 
 import pytest
-pytestmark = pytest.mark.report
 from siyarix.report_engine import ReportEngine, Report, ReportConfig, ReportFormat
+pytestmark = pytest.mark.report
 
 
 class TestReportEngine:
