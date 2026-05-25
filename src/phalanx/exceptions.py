@@ -24,6 +24,7 @@ __all__ = [
 
 class ErrorSeverity(StrEnum):
     """Error severity levels."""
+
     CRITICAL = "critical"
     ERROR = "error"
     WARNING = "warning"
@@ -33,6 +34,7 @@ class ErrorSeverity(StrEnum):
 @dataclass
 class ErrorContext:
     """Rich error context for better diagnostics."""
+
     severity: ErrorSeverity = ErrorSeverity.ERROR
     user_message: str = ""
     technical_details: dict[str, Any] | None = None
@@ -70,54 +72,65 @@ class SiyarixException(Exception):
 
 class ValidationError(SiyarixException):
     """Input validation failed."""
+
     pass
 
 
 class ExecutionError(SiyarixException):
     """Tool execution failed."""
+
     pass
 
 
 class PlanningError(SiyarixException):
     """Task planning failed."""
+
     pass
 
 
 class SafetyError(SiyarixException):
     """Safety validation blocked operation."""
+
     pass
 
 
 class ToolNotFoundError(SiyarixException):
     """Tool not found in registry or PATH."""
+
     pass
 
 
 class CredentialError(SiyarixException):
     """Credential management error."""
+
     pass
 
 
 class ConfigurationError(SiyarixException):
     """Configuration error."""
+
     pass
 
 
 class NetworkError(SiyarixException):
     """Network operation failed."""
+
     pass
 
 
 class TimeoutError(SiyarixException):
     """Operation timed out."""
+
     pass
 
 
 class CircuitBreakerOpen(SiyarixException):
     """Circuit breaker is open; service temporarily unavailable."""
+
     pass
 
 
 class MaxRetriesExceeded(SiyarixException):
     """Maximum retry attempts exceeded."""
+
     pass
