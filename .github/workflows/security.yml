@@ -15,7 +15,7 @@ on:
       - 'pyproject.toml'
       - 'requirements*.txt'
   schedule:
-    - cron: '0 0 * * 0'  # Weekly scan
+    - cron: '0 0 * * 0'
   workflow_dispatch:
 
 concurrency:
@@ -35,8 +35,7 @@ jobs:
       matrix:
         language: ['python']
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -67,8 +66,7 @@ jobs:
       contents: read
       pull-requests: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Dependency Review
         uses: actions/dependency-review-action@v4
@@ -87,34 +85,33 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Create requirements files for scanning
+      - name: Run pip-audit
         run: |
-          python -m pip install --upgrade pip
-          pip install -e .
-          pip install pip-audit
-
-      - name: Run dependency vulnerability scan
-        run: |
-          pip freeze > requirements.txt
-          pip-audit -r requirements.txt --format=json -o audit.json || true
+          uv pip install --system -e .
+          uv pip install --system pip-audit
+          pip freeze > requirements-audit.txt
+          pip-audit -r requirements-audit.txt --format=json -o audit.json || true
           python -c "
           import json, sys
-          vulns = 0
           with open('audit.json') as f:
               data = json.load(f)
-              for dep in data:
-                  vulns += len(dep.get('vulns', []))
+          vulns = sum(len(dep.get('vulns', [])) for dep in data)
           if vulns > 0:
               print(f'::error::{vulns} vulnerabilities found')
               sys.exit(1)
+          print('No vulnerabilities found')
           "
 
       - name: Upload dependency scan results
@@ -122,25 +119,24 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dependency-scan-report
-          path: osv-sarif-results.json
+          path: audit.json
 
   secrets-scanning:
     name: Secrets Detection
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run TruffleHog
+      - name: TruffleHog
         uses: trufflesecurity/trufflehog@main
         continue-on-error: true
         with:
           path: './'
           extra_args: '--regex --entropy=False --no-verification'
 
-      - name: Run GitLeaks
+      - name: Gitleaks
         uses: gitleaks/gitleaks-action@v2
         continue-on-error: true
         env:
@@ -153,25 +149,36 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install Bandit
-        run: pip install bandit
-
       - name: Run Bandit
-        run: bandit -r src/ -f json -o bandit-report.json -ll || true
+        run: |
+          uv pip install --system bandit
+          bandit -r src/ -f sarif -o bandit-report.sarif -ll || true
 
-      - name: Upload Bandit results
+      - name: Upload Bandit SARIF
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: bandit-report
-          path: bandit-report.json
+          path: bandit-report.sarif
+
+      - name: Upload SARIF to GitHub Code Scanning
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: bandit-report.sarif
+          category: bandit
 
   pip-audit:
     name: pip-audit Scan
@@ -180,20 +187,23 @@ jobs:
       contents: read
       security-events: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: 'pip'
 
-      - name: Install dependencies
-        run: pip install -e .
-
-      - name: Run pip-audit
-        run: pip-audit --format=json --output=pip-audit.json || true
+      - name: Install and audit
+        run: |
+          uv pip install --system -e .
+          uv pip install --system pip-audit
+          pip-audit --format=json --output=pip-audit.json || true
 
       - name: Upload pip-audit results
         if: always()
@@ -213,41 +223,51 @@ jobs:
       security-events: write
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           persist-credentials: false
 
       - name: Run Scorecard analysis
         uses: ossf/scorecard-action@v2.4.3
         with:
-          results_file: scorecard-results.json
-          results_format: json
-          publish_results: false
+          results_file: scorecard-results.sarif
+          results_format: sarif
+          publish_results: true
 
-      - name: Upload scorecard results
+      - name: Upload Scorecard SARIF to GitHub
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: scorecard-results.sarif
+          category: scorecard
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: scorecard-results
-          path: scorecard-results.json
+          path: scorecard-results.sarif
+          retention-days: 5
 
   dependency-updates-check:
     name: Check for Dependency Updates
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Check for updates
+      - name: Check outdated packages
         run: |
-          python -m pip install --upgrade pip
-          pip list --outdated --format=columns || true
+          uv pip install --system -e ".[dev]"
+          uv pip list --outdated || true
 
   security-summary:
     name: Security Summary
@@ -266,4 +286,3 @@ jobs:
           echo "| Dependency Scanning | ${{ needs.dependency-scanning.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Bandit Scan | ${{ needs.bandit-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| pip-audit | ${{ needs.pip-audit.result }} |" >> $GITHUB_STEP_SUMMARY
-          cat $GITHUB_STEP_SUMMARY

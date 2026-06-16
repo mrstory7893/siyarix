@@ -4,27 +4,27 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version number (e.g., 3.0.0)'
+        description: Version number (e.g., 3.0.0)
         required: true
         type: string
       publish_pypi:
-        description: 'Publish to PyPI'
+        description: Publish to PyPI
         type: boolean
         default: true
       publish_npm:
-        description: 'Publish to npm'
+        description: Publish to npm
         type: boolean
         default: true
       publish_apt:
-        description: 'Build APT repository'
+        description: Build APT repository
         type: boolean
         default: true
       publish_docker:
-        description: 'Build & push Docker image'
+        description: Build & push Docker image
         type: boolean
         default: true
       publish_winget:
-        description: 'Submit to winget'
+        description: Submit to winget
         type: boolean
         default: true
 
@@ -34,6 +34,7 @@ permissions:
   pull-requests: write
   packages: write
   id-token: write
+  attestations: write
 
 env:
   PKG_VERSION: ${{ github.event.inputs.version }}
@@ -41,22 +42,23 @@ env:
 
 jobs:
   validate-tag:
-    name: Validate Tag
+    name: Validate Version
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
       semver: ${{ steps.semver.outputs.semver }}
+      prerelease: ${{ steps.semver.outputs.prerelease }}
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Extract version
+      - name: Strip leading v
         id: version
         run: |
           VER="${{ env.PKG_VERSION }}"
           VER="${VER#v}"
-          echo "version=${VER}" >> $GITHUB_OUTPUT
+          echo "version=${VER}" >> "$GITHUB_OUTPUT"
 
       - name: Validate semver
         id: semver
@@ -66,7 +68,12 @@ jobs:
             echo "::error::Invalid semver: $VER"
             exit 1
           fi
-          echo "semver=${VER}" >> $GITHUB_OUTPUT
+          echo "semver=${VER}" >> "$GITHUB_OUTPUT"
+          PRERELEASE="false"
+          if [[ "$VER" =~ alpha|beta|rc ]]; then
+            PRERELEASE="true"
+          fi
+          echo "prerelease=${PRERELEASE}" >> "$GITHUB_OUTPUT"
 
   generate-changelog:
     name: Generate Changelog
@@ -91,9 +98,6 @@ jobs:
           git commit -m "chore(release): update changelog for v${{ needs.validate-tag.outputs.semver }}" || true
           git push origin HEAD || true
 
-  # ==============================
-  # PYTHON PACKAGE (PyPI)
-  # ==============================
   build-python:
     name: Build Python Packages
     runs-on: ubuntu-latest
@@ -103,30 +107,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
-
-      - name: Install build tools
-        run: |
-          pip install --upgrade pip build twine check-wheel-contents
 
       - name: Build sdist & wheel
-        run: python -m build
-
-      - name: Check wheel
-        run: check-wheel-contents dist/
-
-      - name: Twine check
-        run: twine check dist/*
+        run: |
+          uv pip install --system build twine check-wheel-contents
+          python -m build
+          check-wheel-contents dist/
+          twine check dist/*
 
       - name: Get wheel name
         id: wheel-name
         run: |
           WHL=$(ls dist/*.whl | head -1)
-          echo "wheel=$(basename ${WHL})" >> $GITHUB_OUTPUT
+          echo "wheel=$(basename ${WHL})" >> "$GITHUB_OUTPUT"
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -149,7 +151,7 @@ jobs:
           name: dist-python
           path: dist/
 
-      - name: Publish to PyPI (Trusted Publishing)
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           skip-existing: true
@@ -168,7 +170,7 @@ jobs:
           name: dist-python
           path: dist/
 
-      - name: Publish to TestPyPI (Trusted Publishing)
+      - name: Publish to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
@@ -181,34 +183,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
 
       - uses: actions/download-artifact@v4
         with:
           name: dist-python
           path: dist/
 
-      - name: Install from wheel
+      - name: Install from wheel & test
         run: |
-          pip install dist/*.whl
-          pip install pytest pytest-asyncio pytest-cov
-
-      - name: Verify import
-        run: |
+          uv pip install --system dist/*.whl
+          uv pip install --system pytest pytest-asyncio pytest-cov
           siyarix --version
           python -c "import siyarix; print('Package OK:', siyarix.__version__)"
-
-      - name: Run tests from installed package
-        run: |
           python -m pytest --pyargs siyarix -v --tb=short -x -m "not integration" --timeout=60 || true
 
-  # ==============================
-  # NPM PACKAGE
-  # ==============================
   build-npm:
     name: Build NPM Package
     runs-on: ubuntu-latest
@@ -230,7 +227,7 @@ jobs:
           VER="${{ needs.validate-tag.outputs.version }}"
           node -e "const p=require('./package.json'); p.version='${VER}'; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2)+'\n')"
 
-      - name: Lint & check
+      - name: Validate & lint
         run: |
           for file in bin/siyarix.js bin/siyarix-install.js lib/installer.js; do
             if [[ -f "$file" ]]; then
@@ -239,6 +236,7 @@ jobs:
               echo "::warning::Skipping missing file: $file"
             fi
           done
+          npm audit --audit-level=high || true
           npm pack --dry-run
 
       - name: Pack
@@ -284,21 +282,18 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Publish to npm
+      - name: Publish with provenance
         if: env.NODE_AUTH_TOKEN != '' && steps.npm-version.outputs.exists != 'true'
-        run: npm publish --access public
+        run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: Skip when npm token is unavailable
+      - name: Skip notice
         if: env.NODE_AUTH_TOKEN == ''
         run: echo "::warning::NPM_TOKEN is not configured; skipping publish."
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-  # ==============================
-  # DEB / APT PACKAGE
-  # ==============================
   build-deb:
     name: Build DEB Package
     runs-on: ubuntu-latest
@@ -306,23 +301,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
 
       - name: Install deb build tools
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y -qq dpkg-dev fakeroot
 
-      - name: Build .deb
+      - name: Build .deb and APT repo
         run: |
           bash packages/deb/build-deb.sh "${{ needs.validate-tag.outputs.version }}"
-
-      - name: Build APT repository
-        run: |
           bash packages/deb/build-apt-repo.sh "${{ needs.validate-tag.outputs.version }}"
 
       - name: Upload .deb
@@ -377,7 +373,7 @@ jobs:
           cp install.sh dist-installers/
           cp install.ps1 dist-installers/siyarix-install.ps1
           cp packages/harmonyos/install-harmonyos.sh dist-installers/
-          cp packages/homebrew/siyarix.rb dist-installers/
+          cp packages/homebrew/siyarix.rb dist-installers/ 2>/dev/null || true
           cp packages/chocolatey/tools/chocolateyinstall.ps1 dist-installers/
           cp packages/winget/Mufthakherul.Siyarix.yaml dist-installers/
           cp packages/winget/Mufthakherul.Siyarix.installer.yaml dist-installers/
@@ -390,9 +386,6 @@ jobs:
           path: dist-installers/
           retention-days: 30
 
-  # ==============================
-  # DOCKER IMAGE
-  # ==============================
   build-docker:
     name: Build Docker Image
     runs-on: ubuntu-latest
@@ -400,6 +393,9 @@ jobs:
     if: ${{ github.event.inputs.publish_docker != 'false' }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -411,20 +407,30 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}},value=v${{ needs.validate-tag.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=v${{ needs.validate-tag.outputs.version }}
+            type=semver,pattern={{major}},value=v${{ needs.validate-tag.outputs.version }}
+            type=raw,value=latest
+
+      - name: Build and push (multi-platform)
         uses: docker/build-push-action@v5
         with:
           context: .
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ needs.validate-tag.outputs.version }}
-            ghcr.io/${{ github.repository }}:latest
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
 
-  # ==============================
-  # WINGET SUBMISSION (auto-PR)
-  # ==============================
   submit-winget:
     name: Submit to Winget
     runs-on: ubuntu-latest
@@ -441,9 +447,6 @@ jobs:
           installers-regex: 'siyarix-install\.ps1'
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  # ==============================
-  # GITHUB RELEASE
-  # ==============================
   create-github-release:
     name: Create GitHub Release
     runs-on: ubuntu-latest
@@ -465,7 +468,7 @@ jobs:
         id: release-notes
         run: |
           echo "## What's Changed" > release_notes.md
-          git log --pretty=format:"- %s (%h)" ${{ needs.validate-tag.outputs.semver }}^..HEAD >> release_notes.md || true
+          git log --pretty=format:"- %s (%h)" $(git describe --tags --abbrev=0 2>/dev/null || git rev-list --max-parents=0 HEAD)..HEAD >> release_notes.md || true
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -474,7 +477,7 @@ jobs:
           name: Release v${{ needs.validate-tag.outputs.version }}
           body_path: release_notes.md
           draft: false
-          prerelease: ${{ contains(needs.validate-tag.outputs.version, 'alpha') || contains(needs.validate-tag.outputs.version, 'beta') || contains(needs.validate-tag.outputs.version, 'rc') }}
+          prerelease: ${{ needs.validate-tag.outputs.prerelease }}
           generate_release_notes: true
           files: |
             artifacts/dist-python/*.whl
@@ -485,13 +488,30 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # ==============================
-  # SUMMARY
-  # ==============================
+  generate-attestations:
+    name: Generate Attestations
+    runs-on: ubuntu-latest
+    needs: [create-github-release, build-python]
+    if: ${{ needs.build-python.result == 'success' }}
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-python
+          path: dist/
+
+      - name: Attest Build Provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: 'dist/*'
+
   summary:
     name: Release Summary
     runs-on: ubuntu-latest
-    needs: [validate-tag, create-github-release, publish-pypi, publish-npm, publish-apt, submit-winget]
+    needs: [validate-tag, create-github-release, publish-pypi, publish-npm, publish-apt, submit-winget, generate-attestations]
     if: always()
     steps:
       - name: Generate summary
@@ -506,6 +526,7 @@ jobs:
           echo "| Winget | ${{ needs.submit-winget.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Docker (ghcr.io) | ${{ needs.build-docker.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| GitHub Release | ${{ needs.create-github-release.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Attestations | ${{ needs.generate-attestations.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Install Commands" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY

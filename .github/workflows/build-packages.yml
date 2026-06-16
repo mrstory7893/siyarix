@@ -26,32 +26,70 @@ permissions:
   packages: read
 
 jobs:
+  resolve-version:
+    name: Resolve Package Version
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract version from pyproject.toml
+        id: version
+        run: |
+          VER=$(python -c "import re; print(re.search(r'^version = \"([^\"]+)\"', open('pyproject.toml').read(), re.M).group(1))")
+          echo "version=${VER}" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: ${VER}"
+
   build-python:
     name: Python Package
     runs-on: ubuntu-latest
+    needs: resolve-version
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
-      - run: pip install build twine check-wheel-contents
-      - run: python -m build
-      - run: twine check dist/*
-      - run: check-wheel-contents dist/
+
+      - name: Build & check
+        run: |
+          uv pip install --system build twine check-wheel-contents
+          python -m build
+          twine check dist/*
+          check-wheel-contents dist/
+
+      - name: Upload wheel
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: dist/
+          retention-days: 14
 
   build-npm:
     name: NPM Package
     runs-on: ubuntu-latest
+    needs: resolve-version
     defaults:
       run:
         working-directory: packages/npm
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Validate JavaScript entrypoints when present
+
+      - name: Set version
+        run: |
+          VER="${{ needs.resolve-version.outputs.version }}"
+          node -e "const p=require('./package.json'); p.version='${VER}'; require('fs').writeFileSync('package.json', JSON.stringify(p, null, 2)+'\n')"
+
+      - name: Validate JS entrypoints
         run: |
           for file in bin/siyarix.js bin/siyarix-install.js lib/installer.js; do
             if [[ -f "$file" ]]; then
@@ -60,32 +98,68 @@ jobs:
               echo "::warning::Skipping missing file: $file"
             fi
           done
-      - run: npm pack --dry-run
+
+      - name: npm audit
+        run: npm audit --audit-level=high || true
+
+      - name: Pack
+        run: npm pack --dry-run
+
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-package
+          path: packages/npm/*.tgz
+          retention-days: 14
 
   build-deb:
     name: DEB Package
     runs-on: ubuntu-latest
+    needs: resolve-version
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
-      - run: sudo apt-get update -qq && sudo apt-get install -y -qq dpkg-dev fakeroot
-      - run: bash packages/deb/build-deb.sh "3.0.0"
+
+      - name: Install deb build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq dpkg-dev fakeroot
+
+      - name: Build .deb
+        run: bash packages/deb/build-deb.sh "${{ needs.resolve-version.outputs.version }}"
+
+      - name: Upload .deb
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: "*.deb"
+          retention-days: 14
 
   build-installers:
     name: Cross-Platform Installers
     runs-on: ubuntu-latest
+    needs: resolve-version
     steps:
       - uses: actions/checkout@v4
+
       - name: Shellcheck install.sh
-        run: |
-          if command -v shellcheck &>/dev/null; then
-            shellcheck -S error -e SC1091 install.sh
-          else
-            echo "shellcheck not available, skipping"
-          fi
+        uses: ludeeus/action-shellcheck@master
+        with:
+          scandir: "."
+          severity: error
+          ignore: ".venv packages/npm packages/deb"
+
+      - name: Shellcheck harmonyos installer
+        run: bash -n packages/harmonyos/install-harmonyos.sh
+
       - name: Validate install.ps1
         run: |
           if command -v pwsh &>/dev/null; then
@@ -93,8 +167,6 @@ jobs:
           else
             echo "PowerShell not available, skipping"
           fi
-      - name: Verify harmonyos installer
-        run: bash -n packages/harmonyos/install-harmonyos.sh
 
   check-matrix:
     name: Package Build Matrix

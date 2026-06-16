@@ -1,13 +1,65 @@
-name: "Dependency Updates Automation"
-# (Native Dependabot usually handles this, this workflow supplements it)
+name: Dependency Updates Automation
+
 on:
   schedule:
     - cron: '0 8 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
-  deps:
+  pip-compile:
+    name: pip-compile lock refresh
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Refresh lock files
+        run: |
+          uv lock --upgrade 2>/dev/null || echo "uv lock not available, skipping"
+
+      - name: Create PR for lock updates
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "build: update dependency lock files"
+          title: "build: update dependency lock files"
+          body: |
+            Automated refresh of dependency lock files.
+
+            If all checks pass, this PR will be auto-merged.
+          branch: ci/dependency-lock-update
+          base: main
+          labels: dependencies
+          delete-branch: true
+
+  report-outdated:
+    name: Report Outdated Dependencies
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Run pip-compile (if needed)
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: List outdated packages
         run: |
-          echo "Placeholder for auto-compiling dependencies if using pip-tools"
+          pip install -e .
+          echo "## Outdated Dependencies" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          pip list --outdated --format=columns >> $GITHUB_STEP_SUMMARY || echo "No outdated packages found."

@@ -1,0 +1,53 @@
+name: Update License Year
+
+on:
+  schedule:
+    - cron: '0 0 1 1 *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-year:
+    name: Bump Copyright Year
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get current year
+        id: year
+        run: echo "year=$(date +'%Y')" >> "$GITHUB_OUTPUT"
+
+      - name: Update LICENSE file year
+        run: |
+          YEAR=${{ steps.year.outputs.year }}
+          sed -i "s/Copyright ([0-9]{4})/Copyright ${YEAR}/g; s/Copyright [0-9]{4}-[0-9]{4}/Copyright ${YEAR}/g" LICENSE 2>/dev/null || true
+
+      - name: Update NOTICE file year
+        run: |
+          YEAR=${{ steps.year.outputs.year }}
+          sed -i "s/Copyright ([0-9]{4})/Copyright ${YEAR}/g; s/Copyright [0-9]{4}-[0-9]{4}/Copyright ${YEAR}/g" NOTICE 2>/dev/null || true
+
+      - name: Update source headers year
+        run: |
+          YEAR=${{ steps.year.outputs.year }}
+          find src/ -name '*.py' -exec sed -i "s/SPDX-FileCopyrightText: [0-9]\{4\}/SPDX-FileCopyrightText: ${YEAR}/g" {} \;
+          find src/ -name '*.py' -exec sed -i "s/Copyright ([0-9]\{4\})/Copyright ${YEAR}/g" {} \;
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: update copyright year to ${{ steps.year.outputs.year }}"
+          title: "chore: update copyright year to ${{ steps.year.outputs.year }}"
+          body: |
+            Automated yearly update to bump copyright year across:
+            - LICENSE / NOTICE
+            - Source file SPDX headers
+
+            *Triggered by update-license-year workflow on schedule.*
+          branch: ci/copyright-year-${{ steps.year.outputs.year }}
+          base: main
+          labels: chore

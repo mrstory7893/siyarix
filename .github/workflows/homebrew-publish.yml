@@ -1,0 +1,85 @@
+name: Publish Homebrew Formula
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version tag (e.g. v3.0.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  bump-homebrew:
+    name: Bump Homebrew Formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve version
+        id: version
+        run: |
+          VER="${{ github.event.release.tag_name || github.event.inputs.version }}"
+          VER="${VER#v}"
+          echo "version=${VER}" >> "$GITHUB_OUTPUT"
+          echo "tag=v${VER}" >> "$GITHUB_OUTPUT"
+
+      - name: Check release assets exist
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          URL="https://github.com/${{ github.repository }}/archive/refs/tags/${TAG}.tar.gz"
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "::error::Source archive not found at ${URL} (HTTP ${HTTP_CODE})"
+            exit 1
+          fi
+          echo "Source archive verified at ${URL}"
+
+      - name: Generate formula
+        id: formula
+        run: |
+          VER="${{ steps.version.outputs.version }}"
+          TAG="${{ steps.version.outputs.tag }}"
+          URL="https://github.com/${{ github.repository }}/archive/refs/tags/${TAG}.tar.gz"
+          SHA=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          echo "sha256=${SHA}" >> "$GITHUB_OUTPUT"
+
+          cat > siyarix.rb << 'FORMULA'
+          class Siyarix < Formula
+            desc "AI-native cybersecurity orchestration agent"
+            homepage "https://github.com/mufthakherul/siyarix"
+            license "AGPL-3.0-or-later"
+            head "https://github.com/mufthakherul/siyarix.git", branch: "main"
+
+            depends_on "python@3.12"
+
+            on_linux do
+              depends_on "pkg-config" => :build
+            end
+
+            def install
+              venv = virtualenv_create(libexec, "python3.12")
+              system libexec/"bin/pip", "install", "--no-deps", buildpath
+              venv.pip_install_and_link buildpath
+            end
+
+            test do
+              system "#{bin}/siyarix", "--version"
+            end
+          end
+          FORMULA
+
+          sed -i "s|class Siyarix < Formula|class Siyarix < Formula\n  url \"${URL}\"\n  sha256 \"${SHA}\"\n  version \"${VER}\"|" siyarix.rb
+
+      - name: Submit PR to homebrew-core
+        if: github.event_name == 'release'
+        continue-on-error: true
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "::notice::Homebrew formula prepared for v${{ steps.version.outputs.version }} (sha256: ${{ steps.formula.outputs.sha256 }})"
+          echo ""
+          echo "To submit to homebrew-core manually:"
+          echo "  brew bump-formula-pr --version=${{ steps.version.outputs.version }} --sha256=${{ steps.formula.outputs.sha256 }} siyarix"

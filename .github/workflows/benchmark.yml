@@ -1,17 +1,54 @@
-name: "Performance Benchmark"
+name: Performance Benchmark
+
 on:
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  pull-requests: write
+
 jobs:
   benchmark:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
-      - name: Install
-        run: pip install -e .[dev] pytest-benchmark
+
+      - name: Install with benchmark deps
+        run: |
+          uv pip install --system -e ".[dev]"
+          uv pip install --system pytest-benchmark
+
       - name: Run Benchmarks
-        run: pytest tests/ --benchmark-only || true
+        continue-on-error: true
+        run: pytest tests/ --benchmark-only -v --benchmark-json benchmark.json || true
+
+      - name: Compare with main
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            try {
+              const data = JSON.parse(fs.readFileSync('benchmark.json', 'utf8'));
+              let comment = '**Performance Benchmark Results**\n\n| Test | Mean (s) | Std Dev |\n|------|----------|--------|\n';
+              for (const b of data.benchmarks || []) {
+                comment += `| ${b.name} | ${b.stats.mean.toFixed(4)} | ${b.stats.stddev.toFixed(4)} |\n`;
+              }
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: comment
+              });
+            } catch (e) {
+              console.log('Could not generate benchmark report:', e.message);
+            }

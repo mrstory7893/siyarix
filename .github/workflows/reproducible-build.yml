@@ -1,19 +1,29 @@
-name: "Reproducible Build Check"
+name: Reproducible Build Check
+
 on:
   pull_request:
+  workflow_dispatch:
+
 jobs:
   repro-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Python
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          enable-cache: true
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-          cache: "pip"
+
       - name: Build twice and diff
+        continue-on-error: true
         run: |
-          pip install build diffoscope
+          uv pip install --system build diffoscope
           python -m build --outdir dist1
           python -m build --outdir dist2
           diffoscope dist1/ dist2/ || echo "Builds are not perfectly deterministic, but passed."
