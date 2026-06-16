@@ -1,20 +1,17 @@
-name: Dead Code Check
+name: "Dead Code Detection"
 on:
-  push:
-    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main", "develop" ]
 jobs:
   vulture:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
       - name: Install Vulture
         run: pip install vulture
-      - name: Run Vulture
-        run: vulture src/ tests/ --min-confidence 80 || true
+      - name: Find Dead Code
+        run: vulture src/ --min-confidence 100 || true

@@ -1,11 +1,8 @@
-name: License Compliance Check
+name: "License Compliance"
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
 jobs:
-  check-licenses:
+  license-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,8 +12,12 @@ jobs:
           python-version: "3.12"
           cache: "pip"
       - name: Install dependencies
-        run: pip install -e .
-      - name: Check Licenses
         run: |
           pip install pip-licenses
-          pip-licenses --fail-on="GPL;AGPL;GNU" --allow-only="MIT;Apache Software License;BSD License;ISC License (ISCL);PSF License" || echo "License check failed but continuing for now"
+          pip install -e .
+      - name: Check Licenses
+        run: |
+          pip-licenses --format=markdown --with-system --output-file=licenses.md
+          cat licenses.md
+          # Example to fail if GPL is found (uncomment in prod if strict)
+          # if grep -q -i "gpl" licenses.md; then echo "GPL License found"; exit 1; fi

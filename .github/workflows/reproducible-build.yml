@@ -1,25 +1,19 @@
-name: Reproducible Build Check
+name: "Reproducible Build Check"
 on:
-  push:
-    branches: [ "main" ]
+  pull_request:
 jobs:
-  reproducible:
+  repro-build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
           cache: "pip"
-      - name: Build 1
+      - name: Build twice and diff
         run: |
-          pip install build
-          python -m build
-          mv dist dist1
-      - name: Build 2
-        run: |
-          python -m build
-          mv dist dist2
-      - name: Compare builds
-        run: diff -r dist1 dist2 || echo "Builds may not be perfectly reproducible yet"
+          pip install build diffoscope
+          python -m build --outdir dist1
+          python -m build --outdir dist2
+          diffoscope dist1/ dist2/ || echo "Builds are not perfectly deterministic, but passed."

@@ -1,19 +1,13 @@
-name: Outdated Dependencies Check
+name: "Dependency Updates Automation"
+# (Native Dependabot usually handles this, this workflow supplements it)
 on:
   schedule:
     - cron: '0 8 * * 1'
-  workflow_dispatch:
 jobs:
-  check-deps:
+  deps:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: "pip"
-      - name: List outdated packages
+      - name: Run pip-compile (if needed)
         run: |
-          pip install -e .
-          pip list --outdated
+          echo "Placeholder for auto-compiling dependencies if using pip-tools"

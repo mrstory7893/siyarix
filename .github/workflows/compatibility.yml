@@ -1,19 +1,19 @@
-name: Nightly Compatibility
+name: "Future Compatibility"
 on:
   schedule:
-    - cron: '0 4 * * *'
-  workflow_dispatch:
+    - cron: '0 4 * * 1' # Every Monday at 4 AM
 jobs:
   nightly:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Python
+      - name: Set up Python 3.14-dev
         uses: actions/setup-python@v5
         with:
           python-version: "3.14-dev"
           cache: "pip"
-      - name: Install and test
+      - name: Install and Test
         run: |
           pip install -e .[dev]
-          pytest tests/ || echo "Nightly tests failed, monitoring required"
+          pytest tests/ || true

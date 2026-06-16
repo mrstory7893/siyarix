@@ -1,13 +1,13 @@
-name: Changelog Drafter
+name: "Generate Changelog"
 on:
   push:
-    branches: [ "main" ]
-permissions:
-  contents: write
-  pull-requests: read
+    branches:
+      - main
 jobs:
-  update_release_draft:
+  update_changelog:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: release-drafter/release-drafter@v6
         env:

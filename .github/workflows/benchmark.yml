@@ -1,9 +1,6 @@
-name: Performance Benchmark
+name: "Performance Benchmark"
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
 jobs:
   benchmark:
     runs-on: ubuntu-latest
@@ -15,6 +12,6 @@ jobs:
           python-version: "3.12"
           cache: "pip"
       - name: Install
-        run: pip install -e .[dev]
-      - name: Run benchmark tests
-        run: pytest tests/ --benchmark-only || echo "No benchmarks configured yet."
+        run: pip install -e .[dev] pytest-benchmark
+      - name: Run Benchmarks
+        run: pytest tests/ --benchmark-only || true
