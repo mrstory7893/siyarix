@@ -1,0 +1,21 @@
+name: Spellcheck
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+
+jobs:
+  typos:
+    name: Check for typos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Typos
+        uses: crate-ci/typos@master
+        with:
+          # Optional: Exclude auto-generated files or directories
+          config: .typos.toml

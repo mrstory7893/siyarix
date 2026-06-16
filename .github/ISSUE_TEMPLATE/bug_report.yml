@@ -1,0 +1,63 @@
+name: 🐛 Bug Report
+description: Create a report to help us improve Siyarix
+title: "[Bug]: "
+labels: ["bug", "triage"]
+assignees:
+  - mufthakherul
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to fill out this bug report! 
+        Before reporting, please make sure you are running the latest version of Siyarix.
+  - type: input
+    id: version
+    attributes:
+      label: Siyarix Version
+      description: What version of Siyarix are you running? (e.g. v3.0.0)
+      placeholder: v3.0.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System
+      description: What operating system are you using?
+      options:
+        - Linux
+        - macOS
+        - Windows
+        - Docker
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: A clear and concise description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Run command '...'
+        2. Provide input '...'
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Logs or Screenshots
+      description: Paste any relevant logs or screenshots here.
+      render: shell
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Code of Conduct
+      options:
+        - label: I agree to follow this project's Code of Conduct and Ethical Hacking Policy.
+          required: true

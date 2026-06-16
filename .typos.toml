@@ -1,0 +1,19 @@
+[default.extend-words]
+# Add Siyarix specific words that are not typos here
+siyarix = "siyarix"
+mufthakherul = "mufthakherul"
+siyarix = "siyarix"
+siyarix = "siyarix"
+siyarix = "siyarix"
+pylint = "pylint"
+isort = "isort"
+
+[files]
+extend-exclude = [
+    "*.lock",
+    "tests/fixtures/**",
+    "dist/**",
+    "build/**",
+    ".mypy_cache/**",
+    ".ruff_cache/**"
+]

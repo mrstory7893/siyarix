@@ -24,6 +24,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
       - name: Validate version consistency
         run: |
           python - <<'PY'
@@ -70,6 +71,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: "pip"
       - run: pip install --upgrade pip build twine check-wheel-contents
       - run: python -m build
       - run: twine check dist/*
