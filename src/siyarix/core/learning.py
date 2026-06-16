@@ -36,21 +36,50 @@ class ContinuousLearning:
         self._embedding_cache: dict[str, list[float]] = {}
 
     async def _get_embedding(self, text: str) -> list[float]:
-        """Get vector embedding for text. Falls back to a simulated embedding if no provider."""
+        """Get vector embedding for text. Uses OpenAI/Ollama via ProviderManager if available, else simulated."""
         if text in self._embedding_cache:
             return self._embedding_cache[text]
 
         try:
-            # Try to get real embedding from providers if supported
-            # Currently simulating a lightweight embedding for portability
-            embedding = [float(ord(c) % 10) / 10.0 for c in text[:100]]
-            if len(embedding) < 100:
-                embedding += [0.0] * (100 - len(embedding))
+            # First try OpenAI via ProviderManager
+            api_key = self.providers.get_api_key("openai")
+            if api_key:
+                from openai import AsyncOpenAI
+                client = AsyncOpenAI(api_key=api_key)
+                response = await client.embeddings.create(
+                    input=[text],
+                    model="text-embedding-3-small"
+                )
+                embedding = response.data[0].embedding
+                self._embedding_cache[text] = embedding
+                return embedding
+
+            # Try local Ollama if configured
+            ollama_base = self.providers.get_base_url("ollama")
+            if ollama_base:
+                import httpx
+                async with httpx.AsyncClient() as client:
+                    resp = await client.post(f"{ollama_base.rstrip('/')}/api/embeddings", json={"model": "nomic-embed-text", "prompt": text})
+                    if resp.status_code == 200:
+                        embedding = resp.json().get("embedding")
+                        if embedding:
+                            self._embedding_cache[text] = embedding
+                            return embedding
+
+        except Exception as e:
+            logger.debug("Real embedding failed or not configured, using simulated: %s", e)
+            
+        try:
+            # Better simulated embedding using hashing for local usage
+            import hashlib
+            h = hashlib.sha256(text.encode('utf-8')).digest()
+            # Convert hash bytes to a 32-dimensional float vector between -1 and 1
+            embedding = [(b / 127.5) - 1.0 for b in h]
             self._embedding_cache[text] = embedding
             return embedding
         except Exception as e:
-            logger.warning("Embedding failed: %s", e)
-            return [0.0] * 100
+            logger.warning("Embedding simulation failed: %s", e)
+            return [0.0] * 32
 
     def _cosine_similarity(self, v1: list[float], v2: list[float]) -> float:
         if not v1 or not v2 or len(v1) != len(v2):

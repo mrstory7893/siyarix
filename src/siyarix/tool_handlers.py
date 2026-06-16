@@ -18,8 +18,22 @@ def _empty_target_result(tool: str) -> dict:
 
 
 def _run(tool_name: str, cmd: list[str], timeout: int = 120) -> Any:
-    """Lazy import and run a command asynchronously."""
+    """Lazy import and run a command asynchronously, with sanitization."""
     from .subprocess_utils import safe_run_async as _run_async
+    try:
+        from .security_hardening import InputValidator
+        validator = InputValidator()
+        is_injected, pattern = validator.check_args_injection(cmd)
+        if is_injected:
+            # Re-create a mock result class to return an error instead of executing
+            class MockResult:
+                exit_code = 1
+                stdout = ""
+                stderr = f"Security error: Command injection detected ({pattern})"
+            return MockResult()
+        cmd = validator.sanitize_args(cmd)
+    except Exception:
+        pass
 
     return _run_async(cmd, timeout=timeout)
 
@@ -59,6 +73,26 @@ def make_web_handler(tool_name: str) -> ToolHandler:
 
     async def handler(**kwargs: Any) -> dict[str, Any]:
         target = kwargs.get("target", "")
+        
+        try:
+            import os
+            if target and os.getenv("SIYARIX_STEALTH") == "1":
+                from .stealth import StealthEngine
+                import urllib.request
+                engine = StealthEngine()
+                # Apply stealth configs from kwargs if available
+                if "stealth" in kwargs:
+                    engine.set_config(**kwargs["stealth"])
+                reqs = engine.get_decoy_requests(target)
+                for req in reqs:
+                    try:
+                        r = urllib.request.Request(req["url"], method=req["method"], headers={"User-Agent": req["user_agent"]})
+                        urllib.request.urlopen(r, timeout=1)
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
         extra_args = kwargs.get("args", [])
         if isinstance(extra_args, str):
             extra_args = extra_args.split()

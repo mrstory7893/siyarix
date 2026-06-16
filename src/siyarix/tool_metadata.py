@@ -74,6 +74,8 @@ def categorize_tool(name: str) -> ToolCategory:
         "curl": ToolCategory.UTILITY,
         "whatweb": ToolCategory.WEB,
         "wget": ToolCategory.UTILITY,
+        "graph_analyzer": ToolCategory.REPORTING,
+        "threat_intel": ToolCategory.REPORTING,
     }
     return mapping.get(name, ToolCategory.UTILITY)
 
@@ -123,6 +125,8 @@ def describe_tool(name: str) -> str:
         "curl": "HTTP client for headers and response analysis",
         "whatweb": "Web technology stack fingerprinting",
         "wget": "HTTP/HTTPS file download and mirroring",
+        "graph_analyzer": "Analyze attack paths and blast radius from the knowledge graph",
+        "threat_intel": "Query CVE and MITRE ATT&CK intelligence databases locally",
     }
     return descriptions.get(name, name)
 
@@ -148,15 +152,18 @@ def tags_for_tool(name: str) -> list[str]:
         "ettercap": ["mitm", "arp", "poisoning"],
         "aircrack-ng": ["wifi", "wpa", "capture"],
         "hashcat": ["password", "hash", "gpu"],
-        "john": ["password", "hash", "crack"],
-        "burpsuite": ["proxy", "web", "scan"],
-        "zaproxy": ["proxy", "web", "scan"],
-        "dig": ["dns", "recon", "enumeration"],
-        "whois": ["osint", "recon", "registration"],
-        "curl": ["http", "client", "headers"],
-        "whatweb": ["web", "fingerprint", "technology"],
+        "john": ["password", "cracker", "cpu"],
+        "burpsuite": ["web", "proxy", "scanner"],
+        "zaproxy": ["web", "scanner", "dast"],
+        "dig": ["dns", "recon", "network"],
+        "whois": ["domain", "recon", "osint"],
+        "curl": ["http", "client", "request"],
+        "whatweb": ["fingerprint", "web", "recon"],
         "wget": ["http", "download", "client"],
+        "graph_analyzer": ["graph", "analysis", "pathfinding", "offline"],
+        "threat_intel": ["cve", "mitre", "intelligence", "offline"],
     }
+
     return tag_map.get(name, [name])
 
 

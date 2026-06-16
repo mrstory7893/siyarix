@@ -53,6 +53,11 @@ from .tool_handlers import (
     make_generic_handler,
 )
 
+from .internal_tools import (
+    make_graph_analyzer_handler,
+    make_threat_intel_handler,
+)
+
 logger = logging.getLogger(__name__)
 
 # Class-level handler map for curated security tools
@@ -81,6 +86,8 @@ _HANDLER_MAP: dict[str, Any] = {
     "wget": make_curl_handler,
     "dig": make_dns_handler,
     "whois": make_whois_handler,
+    "graph_analyzer": make_graph_analyzer_handler,
+    "threat_intel": make_threat_intel_handler,
 }
 
 _CURATED_TOOL_NAMES: tuple[str, ...] = (
@@ -108,6 +115,8 @@ _CURATED_TOOL_NAMES: tuple[str, ...] = (
     "wget",
     "dig",
     "whois",
+    "graph_analyzer",
+    "threat_intel",
 )
 
 _INTERPRETER_NAMES: tuple[str, ...] = (

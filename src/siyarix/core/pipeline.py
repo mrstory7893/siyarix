@@ -28,10 +28,10 @@ class CommandPipeline:
         steps: list[PipelineStep] = []
         if "|" in instruction:
             parts = [p.strip() for p in instruction.split("|") if p.strip()]
-        elif " then " in instruction.lower():
-            parts = [p.strip() for p in instruction.lower().split(" then ") if p.strip()]
         elif " and then " in instruction.lower():
             parts = [p.strip() for p in instruction.lower().split(" and then ") if p.strip()]
+        elif " then " in instruction.lower():
+            parts = [p.strip() for p in instruction.lower().split(" then ") if p.strip()]
         elif " followed by " in instruction.lower():
             parts = [p.strip() for p in instruction.lower().split(" followed by ") if p.strip()]
         else:

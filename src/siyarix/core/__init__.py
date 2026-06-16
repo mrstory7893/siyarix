@@ -29,6 +29,8 @@ from ..stealth import StealthEngine
 from ..config import get_config_dir
 from .swarm import SwarmRouter, SwarmTask
 from .learning import ContinuousLearning, Experience
+from ..offline_store import OfflineStore
+from ..metrics import get_metrics
 
 logger = logging.getLogger(__name__)
 
@@ -112,6 +114,9 @@ class AgentCore:
         self._providers = ProviderManager.get_instance()
         self._workflow_engine = WorkflowEngine()
         self._event_bus = get_event_bus()
+        self._learning = ContinuousLearning(self._memory)
+        self._store = OfflineStore()
+        self._metrics = get_metrics()
 
         try:
             from siyarix.plugins.loader import PluginLoader
@@ -280,18 +285,43 @@ class AgentCore:
         return AgentResult(goal=goal.description, findings=all_findings, success=True)
 
     async def execute_goal(self, goal: AgentGoal, plan: ExecutionPlan | None = None) -> AgentResult:
+        try:
+            from ..performance import PerformanceMonitor
+            PerformanceMonitor().refresh_resources()
+        except Exception:
+            pass
+
+        try:
+            from ..session_branching import SessionBranchManager
+            SessionBranchManager().add_compaction(f"start_goal_{int(time.time())}")
+        except Exception:
+            pass
+
         self._status = AgentStatus.PLANNING
         start = time.time()
         result = AgentResult(goal=goal.description)
+        self._workflow_engine.register_step("execute_goal_start", {"goal": goal.description})
 
         if self._mode == AgentMode.REGISTRY:
-            return await self._execute_registry(goal, plan, start, result)
+            result = await self._execute_registry(goal, plan, start, result)
         elif self._mode == AgentMode.AUTONOMOUS:
-            return await self._execute_autonomous(goal, plan, start, result)
+            result = await self._execute_autonomous(goal, plan, start, result)
         elif self._mode == AgentMode.HYBRID:
-            return await self._execute_hybrid(goal, plan, start, result)
+            result = await self._execute_hybrid(goal, plan, start, result)
         else:
-            return await self._execute_interactive(goal, plan, start, result)
+            result = await self._execute_interactive(goal, plan, start, result)
+
+        self._workflow_engine.register_step("execute_goal_end", {"success": result.success})
+
+        try:
+            from ..output import OutputEngine
+            import dataclasses
+            out = OutputEngine()
+            out.export_to_file(dataclasses.asdict(result), f"siyarix_scan_{int(time.time())}.json")
+        except Exception as e:
+            logger.debug(f"Failed to export result: {e}")
+
+        return result
 
     async def _execute_registry(
         self, goal: AgentGoal, plan: ExecutionPlan | None, start: float, result: AgentResult
@@ -324,6 +354,7 @@ class AgentCore:
 
             self._executor_registry.set_progress_callback(on_step)
             await self._validator.validate_plan(plan.steps)
+            self._metrics.record_plan_generation(successful=True, used_model=False)
 
             if hasattr(plan, "plan_type") and getattr(plan.plan_type, "value", None) == "dag":
                 plan = await self._executor_registry.execute_workflow(plan)
@@ -340,6 +371,12 @@ class AgentCore:
         result.duration_ms = (time.time() - start) * 1000
         self._status = AgentStatus.COMPLETED if result.success else AgentStatus.FAILED
         self._history.append(result)
+        
+        # Record metrics, learning, and offline store
+        self._metrics.record_scan(duration=result.duration_ms / 1000.0, successful=result.success, findings_count=len(result.findings))
+        await self._store.save_scan_async(target=goal.target or goal.description, findings=result.findings, mode=self._mode.value, plan_id=plan.id if plan else "")
+        await self._learning.record_experience(Experience(target=goal.target or goal.description, action="registry_plan", result=result.summary, success=result.success))
+        
         return result
 
     async def _execute_autonomous(
@@ -371,17 +408,26 @@ class AgentCore:
                     }
                     for t in self._registry.list_tools()
                 ]
+                
+                # Fetch past experiences to guide planning
+                past_experiences = await self._learning.query_similar_experiences("generate_plan", goal.target or goal.description, limit=3)
+                context_history = self._context.get_history()
+                if past_experiences:
+                    exp_summary = "Past Experiences:\n" + "\n".join(f"- Action: {e.action}, Success: {e.success}, Result: {e.result}" for e in past_experiences)
+                    context_history.append({"role": "system", "content": exp_summary})
+                
                 plan = await self._planner_autonomous.plan(
                     goal.description,
                     llm_call=llm_call,
                     tool_schemas=tool_schemas,
                     available_tools=[t.name for t in self._registry.list_tools()],
-                    history=self._context.get_history(),
+                    history=context_history,
                     is_first_call=True,
                 )
             result.plan = plan
             self._context.add_history(f"Goal: {goal.description}", "user")
             await self._validator.validate_plan(plan.steps)
+            self._metrics.record_plan_generation(successful=True, used_model=True)
             plan = await self._executor_autonomous.execute_plan(plan, live_display=False)
 
             if plan.has_failures:
@@ -407,6 +453,12 @@ class AgentCore:
         result.duration_ms = (time.time() - start) * 1000
         self._status = AgentStatus.COMPLETED if result.success else AgentStatus.FAILED
         self._history.append(result)
+
+        # Record metrics, learning, and offline store
+        self._metrics.record_scan(duration=result.duration_ms / 1000.0, successful=result.success, findings_count=len(result.findings))
+        await self._store.save_scan_async(target=goal.target or goal.description, findings=result.findings, mode=self._mode.value, plan_id=plan.id if plan else "")
+        await self._learning.record_experience(Experience(target=goal.target or goal.description, action="autonomous_plan", result=result.summary, success=result.success))
+
         return result
 
     async def _execute_hybrid(
@@ -483,6 +535,12 @@ class AgentCore:
         result.duration_ms = (time.time() - start) * 1000
         self._status = AgentStatus.COMPLETED if result.success else AgentStatus.FAILED
         self._history.append(result)
+
+        # Record metrics, learning, and offline store
+        self._metrics.record_scan(duration=result.duration_ms / 1000.0, successful=result.success, findings_count=len(result.findings))
+        await self._store.save_scan_async(target=goal.target or goal.description, findings=result.findings, mode=self._mode.value, plan_id=plan.id if plan else "")
+        await self._learning.record_experience(Experience(target=goal.target or goal.description, action="interactive_plan", result=result.summary, success=result.success))
+
         return result
 
     def _generate_summary(self, plan: ExecutionPlan) -> str:
