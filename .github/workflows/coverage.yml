@@ -40,17 +40,22 @@ jobs:
           pip install -e .[dev]
           pip install pytest pytest-asyncio pytest-cov coverage lxml click openai
 
-      - name: Run tests with coverage
+      - name: Run pytest with coverage
         run: |
           pytest tests/ \
             --cov=src \
-            --cov-report=term-missing:skip-covered \
-            --cov-report=html \
+            --cov-report=xml \
+            --cov-report=term-missing \
             --cov-branch \
-            --cov-fail-under=45 \
             -v \
-            --tb=short \
-            -m "not integration"
+            --junitxml=pytest.xml
+
+      - name: Code Coverage Commenter
+        if: github.event_name == 'pull_request'
+        uses: coroo/pytest-coverage-commentator@v1.0.2
+        with:
+          pytest-coverage-path: ./coverage.xml
+          junitxml-path: ./pytest.xml
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4

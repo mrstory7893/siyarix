@@ -1,0 +1,17 @@
+name: "Delete Stale Branches"
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete stale branches
+        uses: phntxx/delete-stale-branches@v7
+        with:
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          daysBeforeStale: 30
+          daysBeforeDelete: 45
+          ignoreBranches: "main,develop,production"
