@@ -329,6 +329,22 @@ class BootstrapEngine:
         missing_tools = [k for k, v in tools.items() if not v]
         if missing_tools:
             self._result.warnings.append(f"Missing recommended tools: {', '.join(missing_tools)}")
+            if interactive:
+                approved_tools = self.prompt_install_missing(missing_tools, interactive)
+                if approved_tools:
+                    from .tool_installer import ToolInstaller
+                    try:
+                        from rich.console import Console
+                        c = Console()
+                    except ImportError:
+                        c = None
+                    installer = ToolInstaller(console=c)
+                    installer.auto_install_missing(approved_tools)
+                    
+                    # Re-check tools after installation
+                    tools = self.check_runtime_tools()
+                    self._result.tools_found = sum(1 for v in tools.values() if v)
+                    self._result.runtime_ok = self._result.tools_found >= 2
 
         # T9-T10: Interactive install prompt for missing deps
         if missing_deps and interactive:

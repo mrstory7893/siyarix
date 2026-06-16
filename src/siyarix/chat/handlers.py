@@ -117,6 +117,7 @@ class CommandHandlersMixin:
             "/scan": self._cmd_scan,
             "/opsec": self._cmd_opsec,
             "/siem": self._cmd_siem,
+            "/intel": self._cmd_intel,
             "/performance": self._cmd_performance,
             "/cache": self._cmd_cache,
             "/campaign": self._cmd_campaign,
@@ -1435,6 +1436,32 @@ class CommandHandlersMixin:
         elif tokens[0] == "status":
             summary = platform_integration.summary()
             console.print(f"SIEM connections: {summary.get('siem_connections', 0)}")
+
+    async def _cmd_intel(self, args: str) -> None:
+        """Handle /intel command for Threat Intelligence integration."""
+        from ..threat_intel import intel_manager
+        
+        tokens = args.split() if args else []
+        if not tokens or tokens[0] not in ("lookup", "status"):
+            console.print("[yellow]Usage: /intel lookup|status [indicator][/yellow]")
+            return
+            
+        if tokens[0] == "lookup":
+            if len(tokens) < 2:
+                console.print("[red]Missing indicator to lookup. Example: /intel lookup CVE-2023-1234 or /intel lookup 8.8.8.8[/red]")
+                return
+            indicator = tokens[1]
+            console.print(f"Looking up {indicator}...")
+            result = await intel_manager.analyze_target(indicator)
+            if "error" in result:
+                console.print(f"[red]Error:[/red] {result['error']}")
+            else:
+                console.print(f"[green]Intel Result for {indicator}:[/green]")
+                for k, v in result.items():
+                    console.print(f"  {k}: {v}")
+        elif tokens[0] == "status":
+            console.print("[green]Threat Intel module active.[/green]")
+            console.print(f"AlienVault OTX API Key Configured: {'Yes' if intel_manager.alienvault.api_key else 'No'}")
 
     async def _cmd_performance(self, args: str) -> None:
         """Handle /performance command for resource optimization."""
