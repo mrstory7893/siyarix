@@ -11,10 +11,13 @@ from __future__ import annotations
 
 import json
 import logging
+import asyncio
 from dataclasses import dataclass, field
 from typing import Any
 
 from siyarix.config import get_config_dir
+from siyarix.siem import ElasticAdapter, SplunkHECAdapter, QRadarAdapter, SIEMAdapter
+from siyarix.audit_log import AuditEvent
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +62,7 @@ class PlatformIntegrationService:
         self._dir.mkdir(parents=True, exist_ok=True)
         self._bounty_connections: dict[str, PlatformConnection] = {}
         self._siem_connections: dict[str, PlatformConnection] = {}
+        self._active_siem_adapters: dict[str, SIEMAdapter] = {}
         self._notification_channels: list[NotificationChannel] = []
         self._load()
 
@@ -152,6 +156,19 @@ class PlatformIntegrationService:
         platform = platform.lower()
         if platform not in SIEM_PLATFORMS:
             return PlatformConnection(platform=platform, error=f"Unsupported SIEM: {platform}")
+        
+        # Instantiate the correct SIEM adapter
+        adapter: SIEMAdapter | None = None
+        if platform == "elastic":
+            adapter = ElasticAdapter(url, token)
+        elif platform == "splunk":
+            adapter = SplunkHECAdapter(url, token)
+        elif platform == "qradar":
+            adapter = QRadarAdapter(url, token)
+            
+        if adapter:
+            self._active_siem_adapters[platform] = adapter
+            
         conn = PlatformConnection(platform=platform, connected=True, username=url)
         self._siem_connections[platform] = conn
         self._save()
@@ -167,6 +184,12 @@ class PlatformIntegrationService:
                     finding.get("description", ""),
                 )
         return bool(self._siem_connections)
+
+    def ship_event(self, event: AuditEvent) -> None:
+        """Asynchronously ship an audit event to all connected SIEMs."""
+        for platform, adapter in self._active_siem_adapters.items():
+            if self._siem_connections.get(platform, PlatformConnection()).connected:
+                asyncio.create_task(adapter.ship(event))
 
     # ── Communication Platforms ──
 
