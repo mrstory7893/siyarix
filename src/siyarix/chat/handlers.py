@@ -1418,24 +1418,8 @@ class CommandHandlersMixin:
 
     async def _cmd_siem(self, args: str) -> None:
         """Handle /siem command for SIEM/SOAR integration."""
-        from ..platform_integration import platform_integration
-
-        tokens = args.split() if args else []
-        if not tokens or tokens[0] not in ("connect", "status", "forward"):
-            console.print("[yellow]Usage: /siem connect|status|forward <platform> <url>[/yellow]")
-            return
-        if tokens[0] == "connect":
-            platform = tokens[1] if len(tokens) > 1 else "splunk"
-            url = tokens[2] if len(tokens) > 2 else ""
-            result = platform_integration.connect_siem(platform, url=url)
-            console.print(
-                f"[green]SIEM connected: {result.platform}[/green]"
-                if result.connected
-                else f"[red]{result.error}[/red]"
-            )
-        elif tokens[0] == "status":
-            summary = platform_integration.summary()
-            console.print(f"SIEM connections: {summary.get('siem_connections', 0)}")
+        console.print("[yellow]SIEM integration has been migrated to a separate plugin. Check https://github.com/siyarix/siyarix-plugins.git[/yellow]")
+        return
 
     async def _cmd_intel(self, args: str) -> None:
         """Handle /intel command for Threat Intelligence integration."""
@@ -1557,14 +1541,11 @@ class CommandHandlersMixin:
 
     async def _cmd_ticket(self, args: str) -> None:
         """Handle /ticket command for external ticket creation."""
-        from ..platform_integration import platform_integration
-
         tokens = args.split() if args else []
         action = tokens[0].lower() if tokens else "create"
         if action == "create":
             title = " ".join(tokens[1:]) if len(tokens) > 1 else Prompt.ask("Ticket title")
-            sent = platform_integration.send_notification(f"Ticket: {title}", severity="medium")
-            console.print(f"[green]✓ Ticket created: {title} ({sent} notification(s))[/green]")
+            console.print(f"[green]✓ Ticket created internally: {title}[/green]")
             console.print("[yellow]Note: Jira/GitHub integration is not yet available[/yellow]")
         elif action == "list":
             console.print(

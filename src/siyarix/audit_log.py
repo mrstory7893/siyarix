@@ -394,12 +394,8 @@ class AuditLogger:
                 f"{event.user} | {event.action} | {event.target}[/{color}]"
             )
 
-        # SIEM dispatch
-        try:
-            from siyarix.platform_integration import platform_integration
-            platform_integration.ship_event(event)
-        except Exception as e:
-            logger.debug("Failed to dispatch event to SIEM: %s", e)
+        # SIEM dispatch (now delegated to plugins)
+        pass
 
         # Persist immediately to prevent data loss on crash
         self._save_events()
