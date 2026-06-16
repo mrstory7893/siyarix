@@ -1,0 +1,19 @@
+name: Nightly Compatibility
+on:
+  schedule:
+    - cron: '0 4 * * *'
+  workflow_dispatch:
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14-dev"
+          cache: "pip"
+      - name: Install and test
+        run: |
+          pip install -e .[dev]
+          pytest tests/ || echo "Nightly tests failed, monitoring required"

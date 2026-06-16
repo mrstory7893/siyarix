@@ -1,0 +1,22 @@
+name: Smoke Tests
+on:
+  push:
+    branches: [ "main", "develop" ]
+  pull_request:
+    branches: [ "main", "develop" ]
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Build wheel
+        run: pip install build && python -m build
+      - name: Install wheel
+        run: pip install dist/*.whl
+      - name: Run CLI check
+        run: siyarix --help

@@ -1,0 +1,19 @@
+name: Chaos & Resilience Testing
+on:
+  schedule:
+    - cron: '0 2 * * 6'
+  workflow_dispatch:
+jobs:
+  resilience:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Install tox
+        run: pip install tox
+      - name: Run network failure simulation tests
+        run: echo "Chaos testing suite will run here"

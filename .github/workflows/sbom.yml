@@ -1,0 +1,21 @@
+name: SBOM Generation
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+jobs:
+  generate-sbom:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./
+          format: spdx-json
+          output-file: siyarix-sbom.spdx.json
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: siyarix-sbom
+          path: siyarix-sbom.spdx.json

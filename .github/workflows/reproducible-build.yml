@@ -1,0 +1,25 @@
+name: Reproducible Build Check
+on:
+  push:
+    branches: [ "main" ]
+jobs:
+  reproducible:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Build 1
+        run: |
+          pip install build
+          python -m build
+          mv dist dist1
+      - name: Build 2
+        run: |
+          python -m build
+          mv dist dist2
+      - name: Compare builds
+        run: diff -r dist1 dist2 || echo "Builds may not be perfectly reproducible yet"

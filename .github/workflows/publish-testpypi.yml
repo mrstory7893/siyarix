@@ -1,0 +1,23 @@
+name: Publish to TestPyPI
+on:
+  push:
+    branches: [ "develop" ]
+jobs:
+  publish-test:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+      - name: Build artifact
+        run: pip install build && python -m build
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true
