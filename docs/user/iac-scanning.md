@@ -1,8 +1,10 @@
 # Infrastructure as Code Scanning
 
-Siyarix includes a built-in IaC scanner that checks Terraform, CloudFormation, Helm charts, and Dockerfiles for security misconfigurations.
+Siyarix includes pattern-based IaC scanning that checks Terraform, CloudFormation, Helm charts, and Dockerfiles for security misconfigurations and embedded secrets. An enhanced `IaCScanner` with full AST parsing and deeper semantic analysis is planned for a future release.
 
-## Supported formats
+---
+
+## Supported Formats
 
 | Format | Checks | Files |
 |--------|--------|-------|
@@ -12,17 +14,24 @@ Siyarix includes a built-in IaC scanner that checks Terraform, CloudFormation, H
 | Dockerfile | 2 | `Dockerfile` |
 | Generic secrets | 9 | All files |
 
+---
+
 ## Usage
 
 ```bash
-# Scan current directory
+# Scan current directory for IaC issues
 siyarix run "scan IaC templates for security issues"
 
 # Scan a specific directory
 siyarix run "scan infrastructure/terraform for misconfigurations"
+
+# CI/CD pipeline gate
+siyarix ci-gate
 ```
 
-## Terraform checks
+---
+
+## Terraform Checks
 
 | Pattern | Issue | Severity |
 |---------|-------|----------|
@@ -35,7 +44,7 @@ siyarix run "scan infrastructure/terraform for misconfigurations"
 | `aws_db_instance.*storage_encrypted.*false` | Unencrypted RDS | HIGH |
 | `kms_key.*rotation_enabled.*false` | KMS key rotation disabled | LOW |
 
-## Helm checks
+## Helm Checks
 
 | Pattern | Issue | Severity |
 |---------|-------|----------|
@@ -44,11 +53,13 @@ siyarix run "scan infrastructure/terraform for misconfigurations"
 | `latest` tag | Container uses `latest` tag (no pin) | MEDIUM |
 | `imagePullPolicy: Always` | Unnecessary pull policy | LOW |
 
-## Secret detection
+---
+
+## Secret Detection
 
 Generic secret patterns checked across all files:
 
-| Pattern | What it detects |
+| Pattern | What It Detects |
 |---------|-----------------|
 | `password\s*[:=]` | Plain-text passwords |
 | `-----BEGIN.*KEY-----` | Embedded private keys |
@@ -56,7 +67,9 @@ Generic secret patterns checked across all files:
 | `sk-[a-zA-Z0-9]{20,}` | OpenAI API keys |
 | `AKIA[0-9A-Z]{16}` | AWS access keys |
 
-## Output format
+---
+
+## Output Format
 
 ```json
 {
@@ -75,11 +88,25 @@ Generic secret patterns checked across all files:
 }
 ```
 
-## Integration
+---
 
-IaC scanning can be integrated into CI/CD pipelines:
+## CI/CD Integration
 
 ```bash
 # Fail pipeline on high-severity findings
 siyarix run "scan IaC templates" --exit-on-findings high
+
+# Dedicated CI gate
+siyarix ci-gate
 ```
+
+---
+
+## Planned Enhancements
+
+A comprehensive `IaCScanner` is planned with:
+
+- Full HCL/JSON/YAML AST parsing
+- Cross-resource dependency analysis
+- Custom rule authoring
+- IaC-specific CVEs and misconfiguration database

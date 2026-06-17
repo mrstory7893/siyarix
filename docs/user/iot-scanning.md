@@ -1,17 +1,22 @@
 # IoT Security Scanning
 
-Siyarix includes a built-in IoT security scanner for firmware analysis, serial port enumeration, and device identification.
+Siyarix includes IoT security analysis covering firmware inspection, serial port enumeration, and device type identification. An enhanced `IoTScanner` with broader protocol support and hardware analysis is planned for a future release.
 
-## Firmware analysis
+---
+
+## Firmware Analysis
 
 ```bash
-# Scan IoT firmware for security issues
+# Analyze firmware for security issues
 siyarix run "scan IoT device firmware backup.bin"
+
+# Natural language
+siyarix run "analyze firmware file firmware.bin for vulnerabilities"
 ```
 
-### Indicators checked (16 total)
+### Indicators Checked (16 Total)
 
-| Indicator | What it detects | Severity |
+| Indicator | What It Detects | Severity |
 |-----------|----------------|----------|
 | Hardcoded credentials | Plain-text passwords in firmware | CRITICAL |
 | Debug mode enabled | Debug interfaces left active | HIGH |
@@ -22,20 +27,24 @@ siyarix run "scan IoT device firmware backup.bin"
 | Hardcoded API keys | Embedded cloud service keys | CRITICAL |
 | Default SSH keys | Known default SSH host keys | CRITICAL |
 
-## Serial port scanning
+---
+
+## Serial Port Scanning
 
 ```bash
 # Scan IoT device serial interfaces
 siyarix run "scan serial ports on IoT device"
 ```
 
-Automatically detects baud rates (12 standard rates from 300 to 921600 baud).
+Automatically detects baud rates across 12 standard rates (300 to 921600 baud).
 
-## Device type detection
+---
 
-The scanner identifies device types based on characteristics:
+## Device Type Detection
 
-| Device type | Indicators |
+The scanner identifies device types from firmware characteristics:
+
+| Device Type | Indicators |
 |-------------|------------|
 | ESP32 | ESP32-specific strings, WiFi libraries |
 | Arduino | Arduino bootloader, avr-gcc strings |
@@ -43,7 +52,9 @@ The scanner identifies device types based on characteristics:
 | Raspberry Pi | BCM2835, Raspberry Pi kernel strings |
 | Nordic nRF5x | SoftDevice, nRF5 SDK strings |
 
-## Binary analysis
+---
+
+## Binary Analysis
 
 Detects firmware image types:
 
@@ -51,6 +62,8 @@ Detects firmware image types:
 - GZip compressed images
 - UBIFS filesystem images
 - Raw binary images
+
+---
 
 ## Usage
 
@@ -65,9 +78,23 @@ siyarix run "analyze firmware file firmware.bin for vulnerabilities"
 siyarix run "enumerate serial ports on target device"
 ```
 
+---
+
 ## Reporting
 
 ```bash
 # Generate IoT security report
 siyarix report generate --format html --include iot
 ```
+
+---
+
+## Planned Enhancements
+
+A comprehensive `IoTScanner` is planned with:
+
+- MQTT/CoAP protocol analysis
+- Zigbee/Z-Wave radio analysis
+- Real-time firmware emulation
+- Hardware attack surface mapping
+- OWASP IoT Top 10 coverage

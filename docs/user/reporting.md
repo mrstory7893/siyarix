@@ -1,8 +1,10 @@
-# Reporting & Output
+# Reporting and Output
 
-Siyarix provides multiple output formats and report generation capabilities.
+Siyarix provides structured output in multiple formats, comprehensive report generation from the KnowledgeGraph, audit logging with tamper-evident SHA-256 chaining, and system health/metrics monitoring.
 
-## Output formats
+---
+
+## Output Formats
 
 Set the default output format:
 
@@ -10,35 +12,35 @@ Set the default output format:
 siyarix config set default_output_format json
 ```
 
-Supported formats:
-
 | Format | Description |
 |--------|-------------|
-| `table` | Rich formatted table (default) |
-| `json` | JSON output |
-| `yaml` | YAML output |
-| `csv` | CSV output |
+| `TABLE` | Rich formatted table (default) |
+| `JSON` | Machine-readable JSON |
+| `YAML` | YAML structured output |
+| `CSV` | Comma-separated values |
+| `HTML` | HTML report |
+| `XML` | XML structured output |
+| `RAW` | Raw unformatted output |
+| `QUIET` | Minimal output |
 
-## Report generation
+---
+
+## Report Generation
 
 ```bash
 siyarix report generate --format html --output report.html
 ```
 
-The report engine collects all findings from the current session and generates structured reports.
+### Report Formats
 
-### Report formats
-
-| Format | Use case |
+| Format | Use Case |
 |--------|----------|
 | HTML | Client-ready reports with formatting |
 | JSON | Machine-readable, pipeline integration |
 | Markdown | Quick documentation, issue tracking |
-| PDF | Formal documentation (if wkhtmltopdf is available) |
+| PDF | Formal documentation (requires `wkhtmltopdf`) |
 
-### Report sections
-
-Reports include:
+### Report Sections
 
 - **Executive Summary**: High-level findings overview
 - **Scope**: Targets scanned and tools used
@@ -47,22 +49,26 @@ Reports include:
 - **Remediation**: Suggested fixes for each finding
 - **Timeline**: Session chronology
 
-## Audit logging
+---
+
+## Audit Logging
 
 All actions are logged to an enterprise-grade audit trail:
 
 ```bash
-siyarix audit-log
+siyarix audit report
+siyarix audit logs
+siyarix audit verify
 ```
 
-The audit system features:
+### Audit System Features
 
 - **Tamper evidence**: SHA-256 hash chain linking entries
 - **SIEM forwarding**: Send logs to Splunk, ELK, or Azure Sentinel
 - **Session tracking**: Every command tied to a session ID
-- **Export**: Export logs in JSON or CSV
+- **Export**: Logs in JSON or CSV
 
-### Audit record fields
+### Audit Record Fields
 
 | Field | Description |
 |-------|-------------|
@@ -75,13 +81,12 @@ The audit system features:
 | `provider` | AI provider used (if applicable) |
 | `hash` | SHA-256 of previous entry |
 
-## Session logs
+---
 
-Structured session logs are maintained per Chapter 11 specification:
+## Session Logs
 
 ```bash
 siyarix session-log
-# Shows: command, result, safety events, duration
 ```
 
 Each session log entry includes:
@@ -92,13 +97,15 @@ Each session log entry includes:
 - Safety events triggered (if any)
 - AI provider used for planning
 
+---
+
 ## Metrics
 
 ```bash
 siyarix metrics
 ```
 
-Shows performance statistics:
+Performance statistics:
 
 - Total scans performed
 - Average scan duration
@@ -107,15 +114,20 @@ Shows performance statistics:
 - AI provider usage distribution
 - Cache hit/miss rates
 
-## Health check
+---
+
+## Health Check
 
 ```bash
 siyarix health
 ```
 
-Reports:
+Comprehensive system health report:
 
 - Component status (Python, core modules, AI providers)
 - Platform information (OS, Python version, shell)
 - System state (initialized, configured)
 - Storage usage (database size, cache size)
+- Model provider reachability
+- Tool availability on PATH
+- Resource utilization

@@ -1,12 +1,14 @@
 # Playbook Engine
 
-The playbook engine enables creating, saving, loading, and executing reusable multi-step incident response workflows.
+The playbook engine provides reusable, multi-step incident response and assessment workflows with support for variables, branching, nesting, and error handling strategies.
 
-## Playbook step types
+---
 
-| Step type | Description |
+## Step Types
+
+| Step Type | Description |
 |-----------|-------------|
-| `command` | Execute a shell/scan command |
+| `command` | Execute a shell or scan command |
 | `playbook` | Include another playbook (nesting) |
 | `conditional` | Branch based on a condition |
 | `loop` | Iterate over a list of items |
@@ -14,11 +16,13 @@ The playbook engine enables creating, saving, loading, and executing reusable mu
 | `prompt` | Ask the user for input |
 | `export` | Export results to a file |
 
-## Built-in playbooks
+---
 
-### bugbounty-recon
+## Built-in Playbooks
 
-A reconnaissance playbook for bug bounty hunting:
+### `bugbounty-recon`
+
+Standard reconnaissance workflow for bug bounty hunting:
 
 1. Subdomain enumeration
 2. Port scanning
@@ -26,9 +30,9 @@ A reconnaissance playbook for bug bounty hunting:
 4. Directory brute-forcing
 5. Screenshot capture
 
-### incident-response
+### `incident-response`
 
-A containment playbook for security incidents:
+Security incident containment and analysis:
 
 1. Isolate affected host
 2. Capture memory/image
@@ -36,12 +40,13 @@ A containment playbook for security incidents:
 4. Collect logs
 5. Generate initial report
 
-## Creating playbooks
+---
+
+## Creating Playbooks
 
 ### Via CLI
 
 ```bash
-# Save current workflow as a playbook
 siyarix run "save this workflow as a playbook called 'my-scan'"
 ```
 
@@ -66,20 +71,27 @@ playbook = Playbook(
 )
 ```
 
-## Running playbooks
+---
+
+## Running Playbooks
 
 ```bash
 # Run a saved playbook
-siyarix security playbooks run bugbounty-recon
-siyarix security playbooks run incident-response
+siyarix playbook run bugbounty-recon
+siyarix playbook run incident-response
 
 # List available playbooks
-siyarix security playbooks list
+siyarix playbook list
+
+# Validate a playbook file
+siyarix playbook validate my-playbook.yaml
 ```
+
+---
 
 ## Variables
 
-Playbooks support variable substitution:
+Playbooks support `{{variable}}` substitution:
 
 ```yaml
 variables:
@@ -89,7 +101,11 @@ steps:
   - command: "nmap -p {{port_range}} {{target}}"
 ```
 
-## Error handling
+Variables can be provided at runtime via the CLI or set in the playbook definition.
+
+---
+
+## Error Handling
 
 | Strategy | Behavior |
 |----------|----------|
@@ -97,7 +113,9 @@ steps:
 | `skip` | Log error and continue with next step |
 | `retry` | Retry up to `max_retries` times |
 
-## Use cases
+---
+
+## Use Cases
 
 - **Standardized assessments**: Ensure every scan follows the same process
 - **Incident response**: Pre-defined containment and analysis workflows

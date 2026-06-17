@@ -1,14 +1,16 @@
 # Threat Intelligence
 
-Siyarix integrates threat intelligence feeds and MITRE ATT&CK mapping to enrich scan findings with real-world threat context.
+Siyarix integrates threat intelligence feeds, MITRE ATT&CK mapping, and CVE correlation to enrich scan findings with real-world threat context.
 
-## MITRE ATT&CK integration
+---
+
+## MITRE ATT&CK Integration
 
 The built-in `MITREAttackDB` maintains 13 tactics (TA0001–TA0043) and 24 techniques with CVE-to-technique mappings.
 
-### Tactics covered
+### Tactics Covered
 
-| Tactic ID | Tactic | Example techniques |
+| Tactic ID | Tactic | Example Techniques |
 |-----------|--------|-------------------|
 | TA0001 | Initial Access | T1078 (Valid Accounts), T1190 (Exploit Public-Facing App) |
 | TA0002 | Execution | T1059 (Command and Scripting Interpreter) |
@@ -24,7 +26,7 @@ The built-in `MITREAttackDB` maintains 13 tactics (TA0001–TA0043) and 24 techn
 | TA0040 | Impact | T1485 (Data Destruction), T1490 (Inhibit System Recovery) |
 | TA0043 | Reconnaissance | T1595 (Active Scanning) |
 
-### Finding enrichment
+### Finding Enrichment
 
 Scan findings are automatically enriched with MITRE ATT&CK context:
 
@@ -33,16 +35,18 @@ threat_intel.enrich_finding(finding)
 # Adds: mitre_attack_id, mitre_tactic, mitre_technique, related_threat_actors
 ```
 
-### Viewing MITRE coverage
+### Viewing MITRE Coverage
 
 ```bash
 siyarix security mitre --technique T1078
-# Shows: Valid Accounts - tools and commands that map to this technique
+# Shows: Valid Accounts — tools and commands that map to this technique
 ```
 
-## Threat feed ingestion
+---
 
-### MISP feeds
+## Threat Feed Ingestion
+
+### MISP Feeds
 
 Import MISP JSON events:
 
@@ -50,9 +54,9 @@ Import MISP JSON events:
 siyarix run "import threat intel from misp_feed.json"
 ```
 
-The importer processes MISP attributes (IPs, domains, hashes, URLs) and converts them to `ThreatIntel` objects.
+Processes MISP attributes (IPs, domains, hashes, URLs) and converts them to `ThreatIntel` objects.
 
-### STIX 2.x feeds
+### STIX 2.x Feeds
 
 Import STIX indicators:
 
@@ -62,7 +66,15 @@ siyarix run "import STIX indicators from stix_feed.json"
 
 Supports STIX 2.x Indicator and Observed Data objects.
 
-### Data model
+### OpenIOC
+
+```bash
+siyarix run "import IOC from indicators.ioc"
+```
+
+---
+
+## Data Model
 
 ```python
 @dataclass
@@ -79,15 +91,19 @@ class ThreatIntel:
     tags: list[str]
 ```
 
-## Knowledge graph integration
+---
 
-Threat intelligence is linked into the knowledge graph:
+## Knowledge Graph Integration
 
-- Threat indicators are added as nodes
-- Relationships are created between indicators and matched findings
-- BFS traversal can find attack paths based on threat intel
+Threat intelligence is linked into the KnowledgeGraph:
 
-## Built-in CVE mappings
+- Threat indicators added as nodes
+- Relationships created between indicators and matched findings
+- BFS traversal finds attack paths based on threat intel context
+
+---
+
+## Built-in CVE Mappings
 
 The `MITREAttackDB` includes CVE-to-technique mappings:
 
@@ -97,7 +113,9 @@ technique = mitre.map_cve("CVE-2023-44487")
 # Returns: T1498 (Network Denial of Service)
 ```
 
-## Use cases
+---
+
+## Use Cases
 
 - **Threat hunting**: Match scan findings against known attacker TTPs
 - **Risk scoring**: Elevate severity when findings match active threat campaigns

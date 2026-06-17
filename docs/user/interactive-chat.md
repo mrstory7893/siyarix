@@ -1,51 +1,67 @@
-# Interactive Chat Mode
+# Interactive Chat (REPL) Mode
 
-The chat REPL is the primary interaction mode. Launch it with:
+The Siyarix REPL is the primary interaction interface — a full-featured interactive shell with AI-assisted planning, 40+ slash commands, split-pane layout, and SmartAutocomplete via `prompt_toolkit`.
+
+---
+
+## Launching
 
 ```bash
-siyarix
-# or
-siyarix chat
+siyarix        # Opens the REPL directly (default when no subcommand given)
 ```
 
-## Overview
+---
 
-The chat provides a full interactive shell with:
+## Slash Commands
 
-- Multi-turn AI conversation
-- Slash commands for built-in actions
-- Tab completion
-- Command history (persisted to SQLite)
-- Session logging
-- Natural language → command execution
-
-## Slash commands
+All available slash commands in the REPL:
 
 | Command | Description |
 |---------|-------------|
 | `/help` | Show all slash commands |
 | `/exit` | Exit the session |
 | `/clear` | Clear conversation history |
-| `/save` | Save session to file |
-| `/load` | Load a saved session |
-| `/mode` | Switch interaction mode |
-| `/scan` | Run a scan from chat |
-| `/run` | Execute a natural language command |
-| `/config` | View or change settings |
-| `/status` | Show session status |
+| `/new` | Start a new conversation thread |
 | `/history` | Show command history |
-| `/tools` | List available tools |
-| `/persona` | Switch active persona (redteam, blueteam, dfir, etc.) |
-| `/model` | Switch AI provider (openai, gemini, anthropic, etc.) |
-| `/command` | Toggle command review on/off |
+| `/tools` | List available tools from the registry |
+| `/platform` | Show platform information |
+| `/status` | Show session status |
+| `/session` | Session management details |
+| `/uptime` | Show session uptime |
+| `/env` | Show environment variables |
+| `/intents` | Show parsed intent history |
+| `/shells` | List available shell tools |
+| `/search` | Search through findings and history |
+| `/examples` | Show usage examples |
+| `/reset` | Reset session state |
 | `/key` | Set or rotate API keys |
 | `/theme` | Change terminal color theme |
-| `/branch` | Create or switch session branches |
-| `/export` | Export session findings to file |
+| `/mode` | Switch interaction mode (integrated/registry/autonomous) |
+| `/model` | Switch AI provider model |
+| `/provider` | Switch AI provider |
+| `/report` | Generate a session report |
+| `/split` | Toggle split-pane layout |
+| `/batch` | Execute batch commands |
+| `/opsec` | Operational security checks |
+| `/siem` | SIEM integration commands |
+| `/intel` | Threat intelligence operations |
+| `/performance` | Show performance metrics |
+| `/cache` | Cache management |
+| `/campaign` | Campaign management for red team ops |
+| `/kb` | Knowledge base queries |
+| `/ticket` | Ticket/issue management |
+| `/retest` | Re-run previous tests |
+| `/stealth` | Toggle stealth mode |
+| `/audit` | Audit trail commands |
+| `/queue` | View execution queue |
+| `/diff` | Diff between scan results |
+| `/log` | View session logs |
 
-## Natural language input
+---
 
-Type any natural language command and the AI will interpret it:
+## Natural Language Input
+
+Type any natural language command and the AI interprets it via `TaskPlanner`:
 
 ```
 > scan 192.168.1.1
@@ -54,59 +70,78 @@ Type any natural language command and the AI will interpret it:
 > what tools do I have available?
 ```
 
-The input is processed by the `TaskPlanner` which converts it to structured commands using the configured AI provider.
+---
 
-## Multi-turn conversation
+## Split-Pane Layout
 
-The chat maintains conversation context across turns. The AI remembers:
+Toggle a vertical split-pane view with `/split`:
 
-- Previous commands and their results
-- Scan findings from the current session
-- The target being investigated
-- User preferences expressed during the session
+- **Left pane**: Input area with conversation
+- **Right pane**: Live output, logs, or status information
 
-## Session management
+---
 
-Sessions are automatically saved to SQLite (`~/.siyarix/sessions.db`). Each session tracks:
+## SmartAutocomplete
 
-- Commands executed
-- AI conversation history
+The REPL includes `SmartAutocomplete` with:
+
+- Tab completion for commands, targets, and file paths
+- Context-aware suggestions based on conversation history
+- Slash command discovery (type `/` to see all commands)
+
+---
+
+## Session Management
+
+Sessions are persisted to SQLite (`~/.siyarix/sessions.db`):
+
+- Commands executed with timestamps
+- AI conversation history (multi-turn context)
 - Findings and results
-- Timestamps and duration
+- Session duration and metadata
 
-## Persona switching
+### Session Branching
 
-Switch between behavior profiles during a session:
+Create divergent session branches with `/branch`:
 
 ```
-/persona offensive    # Aggressive testing approach
-/persona defensive    # Safety-first approach
-/persona pentester    # Standard penetration testing
-/persona soc_analyst  # Monitoring and detection
-/persona bug_hunter   # Focused vulnerability discovery
+> /branch investigation-v2
+> /branch list
+> /branch switch investigation-v1
 ```
 
-Each persona adjusts tool selection, aggressiveness, and safety constraints.
+Each branch maintains independent conversation history and findings.
 
-## Pipe and batch mode
+---
 
-Commands can be piped:
+## Credential Store
 
-```bash
+API keys and secrets are stored with **AES-256-GCM** encryption in the local credential store. Manage keys via `/key` or the `auth` CLI command group.
+
+---
+
+## Pipe and Batch Mode
+
+Commands can be piped via stdin:
+
+```powershell
 echo "scan 10.0.0.1" | siyarix
-echo -e "scan 10.0.0.1\nrun nmap scan on port 80" | siyarix
 ```
 
-Or loaded from a file:
+Or loaded from a batch file:
 
 ```bash
 siyarix --batch commands.txt
 ```
 
-## Tips
+---
 
-- Type `/` to see available commands
-- Use Tab for auto-completion
-- Previous commands are navigable with Up/Down arrows
-- Ctrl+C cancels the current operation
-- `/save filename` saves the session to `~/.siyarix/sessions/filename.json`
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Tab` | Auto-complete |
+| `Up` / `Down` | Navigate command history |
+| `Ctrl+C` | Cancel current operation |
+| `Ctrl+L` | Clear screen |
+| `Ctrl+D` | Exit REPL |

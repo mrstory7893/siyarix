@@ -1,8 +1,10 @@
 # Cloud Security Scanning
 
-Siyarix includes a built-in multi-cloud security scanner that checks AWS, Azure, GCP, Kubernetes, and Docker configurations.
+Siyarix includes multi-cloud security scanning for AWS, Azure, GCP, Kubernetes, and Docker configurations. Each provider SDK is queried only when the respective cloud credentials are available.
 
-## Supported providers
+---
+
+## Supported Providers
 
 | Provider | Checks | Requirements |
 |----------|--------|-------------|
@@ -12,10 +14,12 @@ Siyarix includes a built-in multi-cloud security scanner that checks AWS, Azure,
 | Kubernetes | 3 | `kubernetes` Python package, kubeconfig |
 | Docker | 3 | `docker` Python package, Docker daemon |
 
+---
+
 ## Scanning
 
 ```bash
-# Scan all cloud providers
+# Scan all configured cloud providers
 siyarix scan --cloud all
 
 # Scan a specific provider
@@ -24,9 +28,14 @@ siyarix scan --cloud azure
 siyarix scan --cloud gcp
 siyarix scan --cloud kubernetes
 siyarix scan --cloud docker
+
+# Natural language
+siyarix run "check AWS for security misconfigurations"
 ```
 
-## AWS checks
+---
+
+## AWS Checks
 
 | Check ID | Description | Severity |
 |----------|-------------|----------|
@@ -36,7 +45,7 @@ siyarix scan --cloud docker
 | UNENCRYPTED_EBS | EBS volume does not have encryption enabled | MEDIUM |
 | CLOUDTRAIL_DISABLED | AWS CloudTrail is not enabled | HIGH |
 
-## Azure checks
+## Azure Checks
 
 | Check ID | Description | Severity |
 |----------|-------------|----------|
@@ -44,7 +53,7 @@ siyarix scan --cloud docker
 | BLOB_PUBLIC_ACCESS | Blob storage container allows anonymous access | HIGH |
 | RBAC_OVERPRIVILEGED | RBAC role assignment is overly permissive | MEDIUM |
 
-## GCP checks
+## GCP Checks
 
 | Check ID | Description | Severity |
 |----------|-------------|----------|
@@ -52,7 +61,7 @@ siyarix scan --cloud docker
 | FIREWALL_OPEN | GCP firewall rule allows 0.0.0.0/0 on management ports | HIGH |
 | IAM_PRIMITIVE_ROLE | IAM primitive role (owner/editor/viewer) assigned | MEDIUM |
 
-## Kubernetes checks
+## Kubernetes Checks
 
 | Check ID | Description | Severity |
 |----------|-------------|----------|
@@ -60,7 +69,7 @@ siyarix scan --cloud docker
 | PRIVILEGE_ESCALATION | Privilege escalation allowed | HIGH |
 | HOST_NETWORK | Pod uses host network namespace | MEDIUM |
 
-## Docker checks
+## Docker Checks
 
 | Check ID | Description | Severity |
 |----------|-------------|----------|
@@ -68,18 +77,28 @@ siyarix scan --cloud docker
 | SENSITIVE_ENV | Environment variable exposes sensitive data | MEDIUM |
 | NO_HEALTHCHECK | Container missing health check | LOW |
 
-## Configuration
+---
 
-Cloud provider credentials are read from:
+## Credential Configuration
 
-- **Environment variables**: `AWS_ACCESS_KEY_ID`, `AZURE_CLIENT_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, etc.
-- **Default credential chains**: Each SDK's standard credential resolution (instance profiles, `~/.aws/credentials`, etc.)
-- **Credential store**: `siyarix creds set <provider> <key>`
+Credentials are resolved from the following sources (in order):
+
+1. **Environment variables**: `AWS_ACCESS_KEY_ID`, `AZURE_CLIENT_ID`, `GOOGLE_APPLICATION_CREDENTIALS`, etc.
+2. **Default credential chains**: Each SDK's standard resolution (instance profiles, `~/.aws/credentials`, etc.)
+3. **Credential store**: `siyarix auth set-key <provider>`
+
+---
 
 ## Output
 
-Results include: check ID, title, severity, description, and remediation guidance.
+Results include check ID, title, severity, description, and remediation guidance. Use the `--output` flag for structured formats:
 
 ```bash
-siyarix scan --cloud aws --format json
+siyarix scan --cloud aws --output json
 ```
+
+---
+
+## Planned Enhancements
+
+The current cloud scanner performs provider-specific API checks. A comprehensive `CloudScanner` with deep multi-account support, cross-provider correlation, and automated remediation is planned for a future release.

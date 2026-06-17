@@ -1,10 +1,12 @@
 # Compliance Frameworks
 
-Siyarix can assess targets against 6 industry compliance frameworks.
+Siyarix can assess targets against six industry compliance frameworks through automated probe execution and evidence collection.
 
-## Supported frameworks
+---
 
-| Framework | Full name | Controls |
+## Supported Frameworks
+
+| Framework | Full Name | Controls |
 |-----------|-----------|----------|
 | PCI-DSS | Payment Card Industry Data Security Standard | 4 |
 | ISO 27001 | Information Security Management Standard | 4 |
@@ -13,7 +15,9 @@ Siyarix can assess targets against 6 industry compliance frameworks.
 | GDPR | General Data Protection Regulation | 4 |
 | HIPAA | Health Insurance Portability and Accountability Act | 2 |
 
-## Running compliance checks
+---
+
+## Running Compliance Checks
 
 ```bash
 # Check all frameworks
@@ -22,15 +26,18 @@ siyarix run "check compliance on the infrastructure"
 # Check a specific framework
 siyarix run "run SOC 2 compliance scan"
 
-# Via the CLI command
-siyarix security compliance --framework soc-2
+# Via command group
+siyarix compliance run --framework soc-2
+siyarix compliance run --framework all
 ```
 
-## Control examples by framework
+---
+
+## Control Examples by Framework
 
 ### PCI-DSS
 
-| Control ID | Title | What is checked |
+| Control ID | Title | What is Checked |
 |-----------|-------|-----------------|
 | PCI-6.5 | Address common coding vulnerabilities | Security tools present for SAST/DAST |
 | PCI-7.1 | Restrict access to need-to-know | IAM/logging processes verified |
@@ -39,7 +46,7 @@ siyarix security compliance --framework soc-2
 
 ### SOC 2
 
-| Control ID | Title | What is checked |
+| Control ID | Title | What is Checked |
 |-----------|-------|-----------------|
 | SOC-CC1 | Control Environment | Governance processes detected |
 | SOC-CC3 | Risk Assessment | Risk assessment tools found |
@@ -48,26 +55,41 @@ siyarix security compliance --framework soc-2
 
 ### GDPR
 
-| Control ID | Title | What is checked |
+| Control ID | Title | What is Checked |
 |-----------|-------|-----------------|
 | GDPR-5 | Lawful Processing | Consent mechanisms verified |
 | GDPR-17 | Right to Erasure | Data deletion processes exist |
 | GDPR-32 | Security of Processing | Encryption and security tools in place |
 | GDPR-33 | Breach Notification | Incident response plan confirmed |
 
+---
+
+## Automated Evidence Collection
+
+Each compliance control is assessed via automated probes:
+
+- **Tool detection**: Required security tools present on systems
+- **Process verification**: Logging, monitoring, and response processes
+- **Configuration checks**: Encryption, access controls, audit settings
+- **Documentation scan**: Policy and procedure documents present
+
+---
+
 ## Output
 
-Results include for each control:
+Each control result includes:
 
-- **Control ID**: Framework-specific identifier
-- **Title**: Human-readable name
-- **Description**: What the control requires
-- **Compliant**: PASS/FAIL
-- **Evidence**: Supporting information
-- **Remediation**: Steps to achieve compliance
-- **Applicable**: Whether the control applies to the target
+| Field | Description |
+|-------|-------------|
+| `control_id` | Framework-specific identifier |
+| `title` | Human-readable name |
+| `description` | What the control requires |
+| `compliant` | PASS / FAIL |
+| `evidence` | Supporting information |
+| `remediation` | Steps to achieve compliance |
+| `applicable` | Whether the control applies to the target |
 
-### Example output
+### Example Output
 
 ```json
 {
@@ -84,18 +106,14 @@ Results include for each control:
 }
 ```
 
-## Automated evidence collection
+---
 
-Each compliance check runs automated probes to gather evidence:
-
-- **Tool detection**: Required security tools present on systems
-- **Process verification**: Logging, monitoring, and response processes
-- **Configuration checks**: Encryption, access controls, audit settings
-- **Documentation scan**: Policy and procedure documents present
-
-## Report generation
+## Report Generation
 
 ```bash
-# Generate compliance report
+# Generate a compliance-focused report
 siyarix report generate --format html --include compliance
+
+# Export as JSON for pipeline integration
+siyarix report generate --format json
 ```

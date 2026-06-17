@@ -1,149 +1,174 @@
 # Security Workflows
 
-Siyarix isn't just a wrapper around your CLI—it's a comprehensive operations center. This guide walks you through common, real-world security workflows, demonstrating how to use Siyarix to automate reconnaissance, assess vulnerabilities, hunt for threats, and more.
+Siyarix provides end-to-end automation for common security operations workflows — reconnaissance, vulnerability assessment, incident response, threat hunting, and compliance validation.
 
 ---
 
-## 🔍 Network Reconnaissance
-
-Don't waste time remembering nmap flags. Let Siyarix handle the syntax while you focus on the results.
+## Network Reconnaissance
 
 ```bash
-# Get a quick lay of the land
+# Quick scan for live hosts and open ports
 siyarix scan quick 10.0.0.0/24
 
-# Go deep with comprehensive service detection
+# Comprehensive scan with service detection
 siyarix scan full target.example.com
 
-# Map out entire subdomains and related assets
+# Asset and service discovery
 siyarix discover example.com
+
+# Natural language equivalent
+siyarix run "enumerate all subdomains and live hosts for example.com"
 ```
 
 ---
 
-## 🛡️ Vulnerability Assessment
-
-Whether you prefer natural language or strict tool definitions, Siyarix adapts to your workflow.
+## Vulnerability Assessment
 
 ```bash
-# Just tell it what you want (Natural Language)
+# Natural language vulnerability scan
 siyarix run "scan target.example.com for common vulnerabilities"
 
-# Throw everything at the wall (Multi-tool scan)
+# Multi-tool comprehensive scan
 siyarix scan --all 10.0.0.1
 
-# Execute a highly structured, repeatable workflow pipeline
+# Structured workflow pipeline
 siyarix workflow run assessment.yml
+
+# Agent-driven assessment
+siyarix agent "find all vulnerabilities on the web server and categorize by severity"
 ```
 
 ---
 
-## ⛓️ Exploitation Chains
+## Web Application Testing
 
-For authorized red team engagements, Siyarix can map out entire operational chains.
+```bash
+# OWASP Top 10 automated scan
+siyarix run "scan web application at https://target.com for OWASP Top 10"
+
+# Specialized web scan
+siyarix scan web https://target.com
+```
+
+Siyarix chains tools (Nikto, Nuclei, WPScan, ZAP) based on target fingerprinting.
+
+---
+
+## Cloud Infrastructure Security
+
+```bash
+# Scan cloud providers
+siyarix scan --cloud aws
+siyarix scan --cloud all
+
+# Natural language
+siyarix run "check AWS for misconfigured S3 buckets and security groups"
+```
+
+Checks include: open S3 buckets, permissive security groups, unencrypted storage, disabled logging, and IAM over-privilege.
+
+---
+
+## Infrastructure as Code
+
+```bash
+# Scan IaC templates for misconfigurations
+siyarix run "scan IaC templates for security issues"
+
+# CI/CD pipeline gate
+siyarix ci-gate
+```
+
+Supports Terraform, CloudFormation, Helm, and Dockerfile analysis via pattern matching. Enhanced scanning with full AST parsing is planned for a future release.
+
+---
+
+## Incident Response
+
+```bash
+# Security dashboard overview
+siyarix security dashboard
+
+# List active incidents
+siyarix security incidents
+
+# Execute containment playbook
+siyarix security playbooks run incident-response
+
+# Investigate with AI assistance
+siyarix security hunt "find indicators of compromise in the network"
+```
+
+---
+
+## Exploitation and Red Team Campaigns
+
+For authorized engagements, Siyarix supports campaign management and exploitation chains:
 
 ```bash
 # Plan a multi-phase campaign
-siyarix exploit chain "recon -> scan -> enumerate -> exploit -> exfil"
-```
-*Note: The exploitation system dynamically resolves dependencies between phases and conditionally executes steps based on what it finds in previous stages.*
+siyarix run "plan campaign: recon -> scan -> enumerate -> exploit"
 
----
-
-## 🚨 Incident Response
-
-When the sirens go off, you need answers fast. 
-
-```bash
-# Fire up the interactive security dashboard
-siyarix security dashboard
-
-# Get a quick overview of active incidents
-siyarix security incidents
-
-# Instantly trigger an automated containment playbook
-siyarix security playbooks run containment-playbook
+# Track campaign progress
+# (via /campaign in REPL)
 ```
 
 ---
 
-## 🏹 Threat Hunting & Intelligence
-
-Go on the offensive and look for indicators of compromise (IOCs) proactively.
+## Threat Hunting and Intelligence
 
 ```bash
-# Let AI assist your hunt
+# AI-assisted threat hunting
 siyarix security hunt "find indicators of compromise in the network"
 
-# Map directly to MITRE ATT&CK
+# MITRE ATT&CK mapping
 siyarix security mitre --technique T1078
-# Siyarix will identify and execute the tools needed to investigate "Valid Accounts"
+
+# Import threat intelligence feeds
+siyarix run "import threat intel from stix_feed.json"
 ```
 
 ---
 
-## 📋 Compliance & Governance
-
-Stop dreading audits. Siyarix automates evidence collection and mapping against major frameworks.
+## Compliance and Governance
 
 ```bash
-# Run automated SOC 2 checks
+# Run SOC 2 compliance checks
 siyarix run "check SOC 2 compliance on the infrastructure"
+
+# Via command group
+siyarix compliance run --framework soc-2
+
+# Generate compliance report
+siyarix report generate --format html --include compliance
 ```
-*The compliance engine supports SOC 2, ISO 27001, NIST, GDPR, HIPAA, and PCI-DSS, offering control-by-control validation and pass/fail reporting.*
+
+Supported frameworks: SOC 2, ISO 27001, NIST 800-53, GDPR, HIPAA, PCI-DSS.
 
 ---
 
-## ☁️ Cloud & Infrastructure Security
-
-Keep your cloud footprint tight and secure.
+## Autonomous Agent Workflows
 
 ```bash
-# Scan major cloud providers
-siyarix scan --cloud aws
-siyarix scan --cloud azure
-siyarix scan --cloud gcp
-```
-*Siyarix checks for open S3 buckets, overly permissive security groups, unencrypted storage, and more.*
+# Full autonomous multi-step objective
+siyarix agent "enumerate all services, find vulnerabilities, generate a report"
 
-**Infrastructure as Code (IaC):**
-```bash
-# Catch misconfigurations before they are deployed
-siyarix run "scan IaC templates for security issues"
+# With explicit mode
+siyarix agent "scan network" --mode autonomous
 ```
+
+The agent decomposes objectives, assigns sub-tasks, executes them, and aggregates results.
 
 ---
 
-## 🌐 Web Application Testing
+## Audit Trail Verification
 
-Automate the OWASP Top 10 and beyond.
-
-```bash
-# Kick off a comprehensive web scan
-siyarix run "scan web application at https://target.com for OWASP Top 10"
-```
-*Behind the scenes, Siyarix intelligentally chains tools like Nikto, Nuclei, WPScan, and ZAProxy based on the target fingerprint.*
-
----
-
-## 🤖 Goal-Driven Autonomous Agents
-
-For complex tasks, give Siyarix an objective and let it do the heavy lifting using an Observe-Reason-Act loop.
+Every command is logged with SHA-256 hash chaining for tamper-evident proof:
 
 ```bash
-# Define the objective, step back, and let the agent work
-siyarix agent "enumerate all services, find vulnerabilities, and generate a report"
-```
-*The agent will decompose the goal, assign tasks to sub-agents, execute them safely, and aggregate everything into a clean report.*
-
----
-
-## 🔐 Unbreakable Audit Trails
-
-Every single command Siyarix runs is logged using SHA-256 chaining, ensuring tamper-evident proof of your actions.
-
-```bash
-# Review the tamper-evident log for the current session
+# View session audit log
 siyarix session-log
+
+# Verify audit chain integrity
+siyarix audit verify
 ```
-*These logs include the exact command executed, arguments, timestamps, and the AI rationale behind the action.*

@@ -1,12 +1,12 @@
 # Workflow Files
 
-Siyarix supports executing DAG-native workflow files written in YAML or JSON.
+Siyarix supports executing DAG-native workflow files in YAML or JSON format. Workflows define a directed acyclic graph of steps with explicit dependency ordering, enabling parallel execution of independent tasks.
 
-## Workflow format
+---
 
-Workflows define a directed acyclic graph (DAG) of steps with dependencies.
+## Workflow Format
 
-### YAML example
+### YAML Example
 
 ```yaml
 name: network-assessment
@@ -35,7 +35,7 @@ steps:
     timeout: 600
 ```
 
-### JSON example
+### JSON Example
 
 ```json
 {
@@ -51,17 +51,21 @@ steps:
 }
 ```
 
-## Step specification
+---
+
+## Step Specification
 
 | Field | Required | Default | Description |
 |-------|----------|---------|-------------|
 | `id` | Yes | — | Unique step identifier |
 | `instruction` | Yes | — | Command or natural language instruction |
-| `mode` | No | `integrated` | Execution mode (registry, autonomous, integrated) |
+| `mode` | No | `integrated` | Execution mode (`registry`, `autonomous`, `integrated`) |
 | `depends_on` | No | `[]` | List of step IDs this step depends on |
 | `retries` | No | `0` | Number of retries on failure |
 | `timeout` | No | `300` | Step timeout in seconds |
 | `persist` | No | `true` | Whether to persist results to offline store |
+
+---
 
 ## Execution
 
@@ -73,7 +77,9 @@ siyarix workflow run assessment.yaml
 siyarix workflow run assessment.yaml --dry-run
 ```
 
-## Workflow states
+---
+
+## Workflow States
 
 Each step progresses through these states:
 
@@ -87,9 +93,13 @@ PLANNED → QUEUED → RUNNING → COMPLETED
                       FAILED / CANCELED
 ```
 
-## Dependency resolution
+---
 
-Steps are executed in topological order. Steps with no dependencies run first, then their dependents. The runtime uses `asyncio.Semaphore` to bound concurrency.
+## Dependency Resolution
+
+Steps are executed in topological order. Steps with no dependencies run first (in parallel where possible), followed by their dependents. The runtime uses `asyncio.Semaphore` to bound concurrency.
+
+---
 
 ## Persistence
 
@@ -99,14 +109,15 @@ Workflow results are persisted to the `OfflineStore`:
 - Overall workflow status and timing
 - Plan ID for later retrieval
 
-## Dry-run mode
+---
+
+## Dry-Run Mode
 
 ```bash
 siyarix workflow run assessment.yaml --dry-run
 ```
 
 Validates:
-
 - All step IDs are unique
 - All dependency references resolve
 - No circular dependencies

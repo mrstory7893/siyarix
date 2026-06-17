@@ -1,29 +1,33 @@
 # Offline Response Registry
 
-When no AI provider is connected, Siyarix uses its **Offline Response Registry** to provide natural, context-aware replies. The registry is a collection of response templates stored in JSON files that can be extended, edited, or replaced without modifying core code.
+When no AI provider is connected, Siyarix uses the **Offline Response Registry** to provide natural, context-aware replies. The registry is a collection of response templates stored in JSON files that can be extended, edited, or replaced without modifying core code.
 
-## How it works
+---
+
+## How It Works
 
 1. User types a message in the REPL
 2. The engine finds no matching tools — falls back to `_generate_text_response`
 3. `OfflineResponder` matches the input against registry entries (exact → regex → fuzzy)
 4. The best-matching template is resolved with dynamic variables and returned
 
-## Response pack format
+---
+
+## Response Pack Format
 
 Each pack is a JSON file with a `responses` array. Each entry supports:
 
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `id` | `str` | required | Unique identifier |
-| `priority` | `int` | `50` | Higher = preferred on tie |
+| `priority` | `int` | `50` | Higher value preferred on tie |
 | `triggers` | `[str]` | `[]` | Exact-match trigger phrases |
 | `patterns` | `[str]` | `[]` | Regex patterns (matched case-insensitive) |
 | `template` | `str` | `""` | Response text with `{variable}` placeholders |
 | `match_threshold` | `float` | `0.75` | Minimum fuzzy similarity (0.0–1.0) |
-| `locale` | `str` | `"en"` | Language tag for future localization |
+| `locale` | `str` | `"en"` | Language tag for localization |
 
-Example entry:
+### Example Entry
 
 ```json
 {
@@ -36,11 +40,13 @@ Example entry:
 }
 ```
 
-## Dynamic variables
+---
+
+## Dynamic Variables
 
 These placeholders are resolved at response time:
 
-| Variable | Resolves to |
+| Variable | Resolves To |
 |----------|-------------|
 | `{username}` | Current OS username |
 | `{hostname}` | Device hostname |
@@ -53,23 +59,27 @@ These placeholders are resolved at response time:
 | `{docs_url}` | Documentation URL |
 | `{contribute_url}` | Contributing guide URL |
 
-## Matching order
+---
+
+## Matching Order
 
 For each query, entries are evaluated in priority order:
 
 1. **Exact match** against any trigger (case-insensitive) → score `1.0`
 2. **Regex match** against any pattern → score `1.0`
-3. **Fuzzy match** using `difflib.SequenceMatcher` — requires score ≥ `match_threshold`
+3. **Fuzzy match** using `difflib.SequenceMatcher` — requires score >= `match_threshold`
 
 The highest-scoring entry wins. On equal score, higher `priority` wins.
 
-## Adding responses
+---
 
-### Default pack
+## Adding Responses
+
+### Default Pack
 
 Edit `src/siyarix/offline_registry/responses.json`.
 
-### Community packs
+### Community Packs
 
 Place additional `.json` files in `src/siyarix/offline_registry/responses/`. They are loaded automatically on startup.
 
@@ -90,11 +100,13 @@ Example community pack (`responses/community.json`):
 }
 ```
 
-### Hot-reloading
+### Hot-Reloading
 
-The registry checks file modification times before each response. Edit a pack file while the REPL is running, and changes take effect immediately — no restart needed.
+The registry checks file modification times before each response. Edit a pack file while the REPL is running — changes take effect immediately without restart.
 
-## Programmatic usage
+---
+
+## Programmatic Usage
 
 ```python
 from siyarix.offline_registry import OfflineResponder
@@ -110,7 +122,9 @@ To use a custom pack directory:
 responder = OfflineResponder(pack_dir="/path/to/my/packs")
 ```
 
-## Best practices
+---
+
+## Best Practices
 
 - Keep response IDs unique across all packs
 - Use `priority` 0–100; reserve 80+ for core system responses
