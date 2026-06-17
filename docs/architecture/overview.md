@@ -1,95 +1,79 @@
-# System Overview
+# 🏗️ System Overview
 
-Siyarix is an AI-native cybersecurity operations platform. It combines a multi-provider AI planning layer with a comprehensive tool execution engine, all exposed through a CLI-first interface.
+Welcome to the architectural heart of Siyarix. Siyarix is a high-performance, AI-native cybersecurity operations platform designed to bridge the gap between human intuition and deterministic tool execution. 
 
-## High-level architecture
+Think of it as an intelligent orchestration layer that sits on top of your existing security toolkit, transforming natural language objectives into precise, safely-executed workflows.
 
-```
-User (CLI / Chat / Pipeline)
-        │
-        ▼
-┌───────────────────────────┐
-│   Interaction Modes       │
-│  (CLI, Chat, Pipeline,    │
-│   Agent, Workflow, TUI)   │
-└───────────┬───────────────┘
-            │
-            ▼
-┌───────────────────────────┐
-│   Intent Router           │
-│  (exact → regex → keyword │
-│   → LLM fallback)         │
-└───────────┬───────────────┘
-            │
-            ▼
-┌───────────────────────────┐
-│   Task Planner            │
-│  (AI or heuristic)        │
-│  + Circuit Breakers       │
-└───────────┬───────────────┘
-            │
-            ▼
-┌───────────────────────────┐
-│   Permission Gate         │
-│  (syntax → danger → ACL)  │
-└───────────┬───────────────┘
-            │
-            ▼
-┌───────────────────────────┐
-│   Execution Engine        │
-│  (parallel step exec)     │
-│  + Tool Registry          │
-│  + Tool Parsers           │
-└───────────┬───────────────┘
-            │
-            ▼
-┌───────────────────────────┐
-│   Output & Reporting      │
-│  (table/JSON/YAML/CSV,    │
-│   audit log, session log) │
-└───────────────────────────┘
+---
+
+## 🗺️ High-Level Architecture
+
+The Siyarix architecture is designed for modularity, safety, and provider independence. Here is how a request flows through the system:
+
+```mermaid
+graph TD
+    User([User Objective]) --> Interaction[Interaction Layer]
+    
+    subgraph "The Orchestration Core"
+        Interaction --> Router[Intent Router]
+        Router --> Planner[Task Planner]
+        Planner --> Gate[Permission Gate]
+    end
+    
+    subgraph "The Intelligence Engine"
+        Planner --- AI[24+ AI Providers]
+        Planner --- Registry[Tool Registry]
+    end
+    
+    subgraph "The Execution Engine"
+        Gate --> Engine[Execution Engine]
+        Engine --> Parsers[114+ Tool Parsers]
+    end
+    
+    subgraph "State & Output"
+        Parsers --> Graph[Knowledge Graph]
+        Parsers --> Audit[Audit & Reports]
+    end
 ```
 
-## Core design principles
+---
 
-1. **CLI-first**: All functionality is accessible from the command line. No GUI dependency.
-2. **AI-native**: AI planning is the default path, with graceful degradation to heuristics.
-3. **Provider-agnostic**: No hard dependency on any single AI provider. 24 provider profiles supported, from cloud to local.
-4. **Offline-capable**: The system works fully offline using heuristic fallback and local models (Ollama, LM Studio).
-5. **Safety-gated**: Every command passes through a three-stage permission gate before execution.
-6. **Extensible**: Tool parsers, providers, personas, and workflows are all pluggable.
+## 💎 Core Design Principles
 
-## Key subsystems
+Our architecture is guided by six foundational pillars:
 
-| Subsystem | Location | Purpose |
-|-----------|----------|---------|
-| CLI entry point | `cli/` | Typer app and 50+ command definitions |
-| Interactive chat | `chat/` | REPL with slash commands, multi-turn conversation |
-| Core systems | `core/` | Intent router, mode dispatcher, session kernel, agentic loop, pipeline, event bus |
-| Execution engine | `engine/` | Plan execution, safety, recovery, context management |
-| AI provider layer | `providers/` | 24 provider profiles with singleton Manager |
-| Task planners | `planner*.py` | NL-to-plan conversion (registry, autonomous) |
-| Tool registry | `registry.py` | Tool discovery, capability graph, metadata |
-| Parsers | `parsers/` | 114+ tool output parsers |
-| Security | `credential_store.py`, `permission_gate.py`, `audit_log.py` | Security controls |
-| Persistence | `offline_store.py`, `session_log.py`, `memory.py` | SQLite, cache, memory |
+1.  **💻 CLI-First**: We believe the terminal is the natural home for security operators. All functionality is accessible without any GUI dependencies.
+2.  **🧠 AI-Native**: Intelligence is not an afterthought. AI planning is our default path, with a graceful, heuristic-based fallback always ready.
+3.  **🔌 Provider-Agnostic**: Siyarix doesn't care which "brain" you use. We support 24+ provider profiles, ranging from global cloud APIs to local, privacy-first models.
+4.  **📡 Offline-Capable**: Security often happens in isolated environments. Siyarix works perfectly in air-gapped networks using local inference (Ollama, llama.cpp) and heuristic planning.
+5.  **🛡️ Safety-Gated**: Every single command passes through a multi-stage permission gate (Syntax -> Danger Analysis -> User Approval) before touching your system.
+6.  **🧱 Extensible**: From tool parsers and AI providers to personas and workflows—everything in Siyarix is a pluggable module.
 
-## Data flow
+---
 
-```
-Input (text) → Intent Router → Task Planner → Permission Gate → Execution Engine → Output
-                                                      │
-                                                      ▼
-                                               Knowledge Graph
-                                               (in-memory state)
-```
+## 🧩 Key Subsystems
 
-The knowledge graph maintains discovered entities (hosts, ports, vulns, credentials) across the session, enabling the agent to reason about relationships and plan multi-step operations.
+| Subsystem | What it Does |
+|-----------|--------------|
+| **Interaction Layer** | Manages how you talk to Siyarix, whether through a direct CLI command, the interactive Chat REPL, or a headless API. |
+| **Intent Router** | The "traffic controller." It analyzes your input using a 4-stage pipeline (Exact -> Regex -> Keyword -> LLM) to decide where it should go. |
+| **AI Provider Layer** | A robust abstraction that manages connectivity, failover, and circuit breaking across 24+ AI backends. |
+| **Task Planners** | The brains behind the operation. They decompose your high-level goals into a sequence of safe, actionable tool executions. |
+| **Execution Engine** | The workhorse. It runs tools in parallel, manages dependencies, and recovers from errors in real-time. |
+| **Tool Registry & Parsers** | Our "encyclopedia." It knows about 562+ tools and features 114+ specialized parsers to make sense of their outputs. |
+| **Security & Audit** | The guardians. Manages the encrypted credential vault, permission gates, and a tamper-evident, cryptographically chained audit trail. |
 
-## Scalability
+---
 
-- **Worker pool** (`worker_pool.py`): Bounded asyncio worker pool for concurrent operations
-- **Cache** (`cache_manager.py`): LRU cache with TTL for tool outputs and provider responses
-- **Offline store** (`offline_store.py`): SQLite with WAL mode for concurrent reads
-- **Docker**: Multi-stage Dockerfile + Docker Compose with worker, dashboard, Redis, OpenTelemetry
-- **REST API**: FastAPI server with JWT auth, scan/chat endpoints, WebSocket streaming
+## 📈 Scalability & Performance
+
+Siyarix is built to handle intensive security operations without breaking a sweat:
+
+-   **Worker Pool**: A bounded `asyncio` pool ensures we never overwhelm your system resources during parallel scans.
+-   **Smart Caching**: An LRU cache with TTL handles everything from tool outputs to AI provider responses, making repeated tasks near-instant.
+-   **Knowledge Graph**: An in-memory entity relationship model keeps track of discovered hosts, ports, and vulnerabilities, enabling the AI to "learn" about your environment in real-time.
+-   **Enterprise Ready**: Includes a multi-stage Dockerfile, REST API with JWT auth, and OpenTelemetry-powered observability.
+
+---
+
+*For a deeper dive into any of these components, explore the specific guides in the `architecture/` directory.*
