@@ -1,82 +1,130 @@
 # Testing
 
-Siyarix maintains a comprehensive test suite with **102+ test files** targeting **75%+ code coverage** across all modules.
+Siyarix maintains a comprehensive test suite with **pytest** (`asyncio_mode=auto`) targeting **75%+ code coverage** across all modules.
 
----
-
-## Test Framework
+## Framework
 
 - **pytest** with `pytest-asyncio` (auto mode) for async test support
 - **pytest-cov** for coverage reporting
 - Custom markers: `bootstrap`, `cvss`, `report`, `stealth`, `terminal`, `tool_installer`, `e2e`, `integration`
 
-## Running Tests
+## Running tests
 
 ```bash
-# Run all tests
-pytest
-
-# Run with coverage
-pytest --cov=siyarix
-
-# Run specific test file
-pytest tests/test_planner.py
-
-# Run tests matching a keyword
-pytest -k "provider"
-
-# Verbose output
-pytest -v
-
-# Stop on first failure
-pytest -x
-
-# Run tests in parallel
-pytest -n auto
-
-# Run only unit tests (skip integration)
-pytest -m "not integration"
+pytest                              # All tests
+pytest --cov=siyarix                # With coverage
+pytest tests/test_planner.py        # Specific file
+pytest -k "provider"                # Keyword match
+pytest -v                           # Verbose
+pytest -x                           # Stop on first failure
+pytest -n auto                      # Parallel execution
+pytest -m "not integration"         # Unit tests only
 ```
 
-## Test Structure
+## Test structure
 
 Tests mirror the source structure in `tests/`:
 
 ```
 tests/
-├── conftest.py              # Shared fixtures
-├── test_core.py             # Core agent tests
-├── test_cli_main.py         # CLI tests
-├── test_e2e.py              # End-to-end tests
-├── test_providers.py        # Provider tests
-├── test_planner.py          # Planner tests
-├── test_executor.py         # Executor tests
-├── test_credential_store.py # Credential vault tests
-├── test_permission_gate.py  # Permission gate tests
-├── test_knowledge_graph.py  # Knowledge graph tests
-├── test_audit_log.py        # Audit trail tests
-├── test_parsers/
+├── conftest.py                        # Shared fixtures
+├── test_core.py                       # Core agent tests
+├── test_core_components.py            # Component-level core tests
+├── test_cli_main.py                   # CLI tests
+├── test_e2e.py                        # End-to-end tests
+├── test_e2e_simulation.py             # Simulated E2E tests
+├── test_stress_resilience.py          # Stress/resilience tests
+├── test_providers.py                  # Provider tests
+├── test_providers_manager.py          # ProviderManager tests
+├── test_providers_state.py            # State manager tests
+├── test_providers_types.py            # Type system tests
+├── test_providers_usage.py            # Usage tracking tests
+├── test_planner.py                    # Planner router tests
+├── test_planner_autonomous.py         # Autonomous planner tests
+├── test_planner_registry.py           # Registry planner tests
+├── test_executor.py                   # Executor tests
+├── test_executor_autonomous.py        # Autonomous executor tests
+├── test_credential_store.py           # Credential vault tests
+├── test_permission_gate.py            # Permission gate tests
+├── test_audit_chain.py                # Audit trail tests
+├── test_knowledge_graph.py            # Knowledge graph tests
+├── test_config.py                     # Config tests
+├── test_cache_manager.py              # Cache tests
+├── test_compaction.py                 # Compaction tests
+├── test_compat_models.py              # Compatibility model tests
+├── test_connectivity.py               # Connectivity tests
+├── test_cvss_scorer.py                # CVSS scoring tests
+├── test_events.py                     # Event bus tests
+├── test_exceptions.py                 # Exception hierarchy tests
+├── test_health.py                     # Health check tests
+├── test_memory.py                     # Memory tests
+├── test_metrics.py                    # Metrics tests
+├── test_models.py                     # Model tests
+├── test_model_aliases.py              # Model alias tests
+├── test_nlp_engine.py                 # NLP engine tests
+├── test_notifications.py              # Notification tests
+├── test_offline_store.py              # Offline store tests
+├── test_ollama_utils.py               # Ollama utility tests
+├── test_onboarding.py                 # Onboarding tests
+├── test_opsec.py                      # OPSEC tests
+├── test_output_config.py              # Output config tests
+├── test_output_init.py                # Output engine tests
+├── test_performance.py                # Performance tests
+├── test_personas.py                   # Persona tests
+├── test_playbook.py                   # Playbook tests
+├── test_plugins_loader.py             # Plugin loader tests
+├── test_provider_utils.py             # Provider utility tests
+├── test_registry.py                   # Tool registry tests
+├── test_report_engine.py              # Report engine tests
+├── test_response_generator.py         # Response generator tests
+├── test_security_commands.py          # Security command tests
+├── test_security_hardening.py         # Hardening tests
+├── test_session_branching.py          # Session branching tests
+├── test_session_kernel.py             # Session kernel tests
+├── test_session_log.py                # Session log tests
+├── test_shell_review.py               # Shell review tests
+├── test_stealth.py                    # Stealth tests
+├── test_subprocess_safe_run.py        # Subprocess safety tests
+├── test_subprocess_utils.py           # Subprocess utility tests
+├── test_threat_intel.py               # Threat intel tests
+├── test_tool_availability.py          # Tool availability tests
+├── test_tool_call_repair.py           # Tool call repair tests
+├── test_tool_graph.py                 # Tool graph tests
+├── test_tool_handlers.py              # Tool handler tests
+├── test_engine_context.py             # Engine context tests
+├── test_engine_executor.py            # Engine executor tests
+├── test_engine_providers.py           # Engine provider tests
+├── test_engine_safety.py              # Engine safety tests
+├── test_execution_engine.py           # Execution engine tests
+├── test_chat.py                       # Chat tests
+├── test_chat_engine.py                # Chat engine tests
+├── test_chat_handlers.py              # Chat handler tests
+├── test_chat_openai_compat.py         # OpenAI compat tests
+├── test_bootstrap.py                  # Bootstrap tests
+├── test_branding.py                   # Branding tests
+├── test_intent_router.py              # Intent router tests
+├── test_autonomous_loop.py            # Autonomous loop tests
+├── test_main.py                       # Main entry tests
+├── test_logging_config.py             # Logging config tests
+├── test_parsers/                      # Parser test suite
 │   ├── test_nmap_parser.py
 │   ├── test_nuclei_parser.py
-│   └── ... (100+ parser tests)
-├── test_security/
-│   ├── test_compliance.py
-│   ├── test_threat_intel.py
-│   └── test_deception.py
-├── test_engine/
-│   ├── test_recovery.py
-│   ├── test_safety.py
-│   └── test_steps.py
-├── test_xi/
-│   ├── test_context_tracker.py
-│   └── test_skill_profiler.py
-├── test_chat/
-│   ├── test_engine.py
-│   └── test_handlers.py
-└── ... (additional test files per module)
+│   ├── test_parsers_ad_windows.py
+│   ├── test_parsers_boundary.py
+│   ├── test_parsers_cloud_security.py
+│   ├── test_parsers_dns_recon.py
+│   ├── test_parsers_gobuster.py
+│   ├── test_parsers_network.py
+│   ├── test_parsers_nmap.py
+│   ├── test_parsers_registry.py
+│   ├── test_parsers_web_fuzz.py
+│   ├── test_parsers_web_vuln.py
+│   └── ... (80+ individual parser tests)
+├── scripts/                           # Test helper scripts
+└── ...
 ```
 
-## Writing Tests
+## Writing tests
 
 ### Async tests
 
@@ -112,54 +160,42 @@ def temp_config(tmp_path):
     del os.environ["SIYARIX_CONFIG"]
 ```
 
-## Coverage Targets
+## Coverage
 
 ```bash
-# Current coverage target: 75%+
 pytest --cov=siyarix --cov-report=term-missing
 ```
 
 Coverage is enforced in CI via `pyproject.toml` (`fail_under = 75`).
 
-## Code Quality
+## Code quality
 
 ```bash
-# Linting with Ruff
-ruff check src/ tests/
-ruff check --fix src/ tests/   # Auto-fix
-
-# Formatting with Ruff
-ruff format src/ tests/
-
-# Type checking with MyPy (strict mode)
-mypy src/siyarix/
-
-# Dead code detection with Vulture
-vulture src/siyarix/
-
-# Security scanning with Bandit
-bandit -r src/siyarix/
+ruff check src/ tests/               # Lint
+ruff check --fix src/ tests/         # Auto-fix
+ruff format src/ tests/              # Format
+mypy src/siyarix/                    # Type check (strict mode)
+vulture src/siyarix/                 # Dead code detection
+bandit -r src/siyarix/               # Security scan
 ```
 
-## CI Testing Matrix
+## CI matrix
 
-Tests run on every pull request and push to main via GitHub Actions (47 workflows):
+Tests run on every PR and push to main via GitHub Actions:
 
 | Dimension | Values |
 |-----------|--------|
-| **Python** | 3.11, 3.12, 3.13 |
-| **OS** | ubuntu-latest, windows-latest, macos-latest |
-| **Tests** | Unit + integration + E2E |
-| **Lint** | Ruff + MyPy |
-| **Security** | Bandit (SARIF), pip-audit (critical/high fail) |
-| **Compatibility** | Build sdist/wheel, check-wheel-contents, twine check |
+| Python | 3.11, 3.12, 3.13 |
+| OS | ubuntu-latest, windows-latest, macos-latest |
+| Tests | Unit + integration + E2E |
+| Lint | Ruff + MyPy |
+| Security | Bandit (SARIF), pip-audit (critical/high fail) |
+| Compatibility | Build sdist/wheel, check-wheel-contents, twine check |
 
-## Pre-commit Hooks
-
-The repository includes pre-commit configuration:
+## Pre-commit hooks
 
 ```bash
 pre-commit install
 ```
 
-This runs Ruff, MyPy, and other checks automatically before each commit. Configuration is in `.pre-commit-config.yaml`.
+Runs Ruff, MyPy, and other checks before each commit. Configuration in `.pre-commit-config.yaml`.

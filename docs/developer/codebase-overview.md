@@ -1,141 +1,172 @@
 # Codebase Overview
 
-Siyarix is structured as a Python package at `src/siyarix/` with subpackages for core systems, engine, security, AI, UI, and parsers.
+Siyarix is a Python package at `src/siyarix/` organized into subpackages for agent orchestration, CLI, chat, AI providers, parsers, security, reporting, and output formatting.
 
-## Directory structure
+## Directory Structure
 
 ```
 src/siyarix/
-├── __init__.py              # Public API re-exports
-├── __main__.py              # python -m siyarix support
-├── main.py                  # CLI entry point (Typer app, 50+ commands)
-├── chat.py                  # Interactive chat REPL
-├── config.py                # Settings store (TOML-backed)
+├── __init__.py              # Public API: AgentCore, AgentMode, AgentStatus, SwarmRouter
+├── __main__.py              # python -m siyarix entry point
+├── main.py                  # Legacy entry, delegates to cli/
 │
-├── core/                    # Kernel primitives
-│   ├── agentic_loop.py      # Observe-Reason-Act loop
-│   ├── event_bus.py         # In-process pub/sub events
-│   ├── intent_router.py     # Semantic command routing
-│   ├── mode_dispatcher.py   # 9 interaction modes
-│   ├── pipeline.py          # Command chaining
-│   └── session_kernel.py    # Session state & operation cards
+├── cli/
+│   └── __init__.py          # Main Typer app (1782 lines) — 50+ commands, 12 command groups
 │
-├── engine/                  # Execution engine
-│   ├── context.py           # Context window compression
-│   ├── executor.py          # Core execution engine (plan-execute loop)
-│   ├── providers.py         # AI provider setup & preference chains
-│   ├── recovery.py          # Error recovery with backoff
-│   ├── safety.py            # Permission gating integration
-│   └── steps.py             # Execution modes & result aggregation
+├── chat/                    # Interactive REPL system
+│   ├── __init__.py          # Exports: start_chat, SiyarixChat, ChatSession, SmartAutocomplete
+│   ├── engine.py            # LLMEngineMixin (1207 lines) — agent loop, multi-wave, NL execution
+│   ├── repl.py              # SiyarixChat (835 lines) — prompt_toolkit REPL with split-pane
+│   ├── handlers.py          # CommandHandlersMixin (1716 lines) — 40+ slash commands
+│   ├── commands.py          # CommandProfile, CommandProfileStore, slash help categories
+│   ├── session.py           # ChatMessage, ChatSession — persistence, branching, context
+│   ├── openai_compat.py     # Unified OpenAI-compatible adapter for all 24 providers (753 lines)
+│   ├── prompts.py           # System prompt templates (SIYARIX_SYSTEM_PROMPT, COMPACT variants)
+│   ├── stubs.py             # Placeholder stubs for enterprise features
+│   ├── console.py           # Shared Rich Console instance
+│   ├── event_stream.py      # AssistantMessageEventStream — granular streaming events
+│   ├── ui.py                # SmartAutocomplete, SplitPane, ConfigPanel
+│   └── platform_utils.py    # Cross-platform command definitions, shell detection
 │
-├── security/                # Security analysis
-│   └── attack_path.py       # Attack path discovery from knowledge graph
+├── core/                    # Agent orchestration kernel
+│   ├── __init__.py          # AgentCore (639 lines) — 4 modes, planners, executors, sub-agents
+│   ├── pipeline.py          # CommandPipeline — chained command execution (| / then / and then)
+│   ├── learning.py          # ContinuousLearning — semantic memory via vector embeddings
+│   └── swarm.py             # SwarmRouter — multi-agent orchestration (Recon/Exploit/Report agents)
 │
-├── providers/               # 24 AI provider profiles (Adapters)
+├── providers/               # Multi-provider LLM abstraction layer
+│   ├── __init__.py          # Re-exports: ProviderManager, ProviderStateManager, types
+│   ├── manager.py           # ProviderManager singleton — registration, failover, credentials
+│   ├── types.py             # ProviderType, ProviderProfile, ModelInfo, CostTier, FailoverReason
+│   ├── state.py             # ProviderStateManager — cooldown, skip-known-bad cache
+│   ├── usage.py             # UsageTracker — token/cost tracking per provider/model
+│   └── profiles/            # 24 provider profiles (registry.py, openai.py, gemini.py, ollama.py, ...)
 │
-├── parsers/                 # Tool output parsers (114+ tools)
-│   ├── nmap_parser.py       # Nmap XML output
-│   ├── masscan_parser.py    # Masscan
-│   ├── metasploit_parser.py # Metasploit
-│   ├── nuclei_parser.py     # Nuclei
-│   ├── burpsuite_parser.py  # Burp Suite
-│   ├── hydra_parser.py      # Hydra
-│   ├── ffuf_parser.py       # FFUF
-│   ├── gobuster_parser.py   # Gobuster
-│   ├── nikto_parser.py      # Nikto
-│   ├── sqlmap_parser.py     # SQLMap
-│   ├── zaproxy_parser.py    # ZAP
-│   ├── shodan_parser.py     # Shodan
-│   ├── subfinder_parser.py  # Subfinder
-│   ├── amass_parser.py      # Amass
-│   ├── ... (114+ total)
-│   └── __init__.py           # ParserRegistry with protocol
+├── parsers/                 # Tool output parser subsystem
+│   ├── __init__.py          # Parser protocol + ParserRegistry (auto-discovers 80+ parsers)
+│   ├── nmap_parser.py       # Nmap XML/text output
+│   ├── nuclei_parser.py     # Nuclei JSON output
+│   ├── metasploit_parser.py # Metasploit output
+│   ├── burpsuite_parser.py  # Burp Suite log snippets
+│   ├── ffuf_parser.py       # FFUF JSON output
+│   ├── hydra_parser.py      # Hydra output
+│   └── ...                  # 80+ additional parsers for security tools
 │
-├── xi/                      # Experience Intelligence
-│   ├── context_tracker.py   # Session context tracking
-│   ├── predictor.py         # Command sequence prediction
-│   ├── service.py           # Recommendation engine
-│   └── skill_profiler.py    # User skill profiling
+├── api/                     # REST API and WebSocket server
+│   └── server.py            # FastAPI app — /health, /v1/* endpoints, WebSocket streaming
 │
-├── telemetry/               # Observability
-│   ├── opentelemetry.py     # OpenTelemetry collector
-│   └── siem.py              # SIEM forwarding (Splunk/ELK)
+├── output/                  # Premium output engine
+│   └── __init__.py          # OutputEngine — 8 formats (TABLE/JSON/YAML/CSV/HTML/XML/RAW/QUIET)
+│                            # 12 themes, export to file, progress bars, live dashboards
 │
-├── orchestration/           # Workflow runtime
-│   └── workflow_runtime.py  # DAG-based workflow execution
+├── report/                  # Security assessment report engine
+│   ├── __init__.py          # ReportEngine — MARKDOWN/HTML/JSON/SARIF rendering
+│   └── models.py            # Report, ReportConfig, ReportSection, ReportFormat
 │
-├── ux/                      # User experience
-│   ├── config_panel.py      # TUI configuration panel
-│   ├── wizard.py            # Onboarding wizard
-│   ├── split_pane.py        # Split-pane component
-│   ├── command_palette.py   # Command palette
-│   └── autocomplete.py      # Smart autocomplete
+├── plugins/                 # Dynamic plugin architecture
+│   └── loader.py            # PluginLoader — discovers external .py plugins at runtime
 │
-├── visualizations/          # Data visualization
-│   └── attack_graph.py      # Attack graph rendering
+├── templates/               # UI templates
+│   └── wizard_text.py       # Onboarding wizard text templates, ASCII art, tool lists
 │
-├── providers/               # AI provider abstraction (24 profiles)
-├── planner_*.py             # Task planners (registry, autonomous)
-├── executor_*.py            # Executors (registry, autonomous)
-├── registry.py              # Tool discovery (100+ tools)
-├── credential_store.py      # Encrypted credential vault (AES-256-GCM)
-├── audit_log.py             # Tamper-evident SHA-256 chained logging
-├── knowledge_graph.py       # In-memory relationship graph
-├── masking.py               # Bidirectional token masking
-├── permission_gate.py       # Two-stage permission control (38 patterns)
-├── playbook.py              # Incident response playbooks
-├── health.py                # System health checks
-├── metrics.py               # Performance metrics
-├── compliance.py            # Compliance framework assessments (6 frameworks)
-├── threat_intel.py          # MITRE ATT&CK, MISP/STIX feed ingestion
-├── personas.py              # Persona system (10 security mindsets)
-├── stealth.py               # Stealth/evasion engine
-├── opsec.py                 # Operational security controls
-├── session_branching.py     # Session branching for concurrent workflows
-├── dlp.py                   # Data loss prevention patterns
-├── connectivity.py          # Network connectivity checks
-├── cvss_scorer.py           # CVSS scoring engine
-├── notifications.py         # Notification dispatcher (Slack, Discord)
-├── webhooks.py              # Webhook sender
-├── worker_pool.py           # Parallel async worker pool
-├── cache_manager.py         # LRU cache with TTL
-├── offline_store.py         # SQLite offline data store
-├── offline_queue.py         # Offline task queue
-├── compaction.py            # Session compaction
-├── onboarding.py            # First-run setup wizard
-├── branding.py              # CLI branding, themes, banner
-├── nlp_engine.py            # NLP engine for intent parsing
-├── tool_installer.py        # Tool installer (apt, brew, winget, pip)
-└── ... (50+ additional modules)
+├── data/                    # Placeholder — data layer
+│   └── __init__.py          # Empty
+│
+└── Root-level modules (core systems):
+    ├── audit_log.py         # SHA-256 chained tamper-evident audit trail
+    ├── bootstrap.py         # Startup initialization, env setup
+    ├── branding.py          # CLI themes, color tokens, ASCII banner
+    ├── cache_manager.py     # LRU cache with TTL expiration and disk persistence
+    ├── compaction.py        # LLM context window optimization
+    ├── compat.py            # SessionKernel, backward compatibility layer
+    ├── compliance.py        # Compliance engine — 6 framework assessments
+    ├── config.py            # TOML-backed settings store
+    ├── connectivity.py      # Network connectivity monitoring
+    ├── context.py           # Context window management and compression
+    ├── credential_store.py  # AES-256-GCM encrypted credential vault
+    ├── cvss_scorer.py       # CVSS 3.1 scoring engine
+    ├── dlp.py               # Data Loss Prevention — secret redaction/patterns
+    ├── events.py            # EventBus — typed pub/sub event system
+    ├── exceptions.py        # SiyarixException hierarchy
+    ├── executor.py          # BaseExecutor — plan step execution
+    ├── executor_autonomous.py  # AutonomousExecutor — LLM-driven execution
+    ├── executor_registry.py # RegistryExecutor — deterministic tool execution
+    ├── health.py            # HealthChecker — system health assessment
+    ├── internal_tools.py    # Built-in tool definitions
+    ├── knowledge_graph.py   # In-memory directed graph with BFS traversal
+    ├── logging_config.py    # Logging configuration
+    ├── memory.py            # MemoryManager — semantic and episodic memory
+    ├── metrics.py           # MetricsCollector — Prometheus-compatible metrics
+    ├── models.py            # Data models, enums, dataclasses
+    ├── model_aliases.py     # Model name resolution and aliasing
+    ├── nlp_engine.py        # Zero-dependency NLP intent parser
+    ├── notifications.py     # Notification dispatcher
+    ├── offline_queue.py     # Offline request queue
+    ├── offline_store.py     # Offline scan storage
+    ├── onboarding.py        # First-run interactive wizard
+    ├── opsec.py             # Operational security controls
+    ├── performance.py       # System-aware performance tuning
+    ├── permission_gate.py   # Two-stage command permission control
+    ├── personas.py          # 10 security persona definitions
+    ├── planner.py           # Planner router (Registry ↔ Autonomous)
+    ├── planner_autonomous.py # LLM-driven plan generation
+    ├── planner_registry.py  # Template-based plan generation
+    ├── playbook.py          # Incident response playbook engine
+    ├── provider_utils.py    # Provider utility functions
+    ├── registry.py          # ToolRegistry — tool registration and resolution
+    ├── response.py          # ResponseGenerator — structured AI responses
+    ├── security_commands.py # Security command definitions
+    ├── security_hardening.py # System security hardening
+    ├── session_branching.py # JSONL tree branching sessions
+    ├── session_log.py       # Session log management
+    ├── shell_review.py      # Cross-platform command safety review
+    ├── stealth.py           # Stealth/evasion engine
+    ├── subprocess_utils.py  # Async subprocess execution helpers
+    ├── threat_intel.py      # Threat intelligence — AlienVault OTX, NVD, MITRE
+    ├── tool_availability.py # Tool availability evaluation
+    ├── tool_call_repair.py  # LLM tool call formatting repair
+    ├── tool_graph.py        # ToolCapabilityGraph — tool relationship mapping
+    ├── tool_handlers.py     # Tool execution handler registry
+    ├── tool_installer.py    # Cross-platform tool installer (apt/brew/winget/choco)
+    ├── tool_metadata.py     # Tool metadata management
+    ├── tool_models.py       # Tool capability data models
+    ├── tool_version.py      # Tool version detection
+    ├── validators.py        # Input validation and sanitization
+    ├── webhooks.py          # Webhook dispatch
+    ├── worker_pool.py       # Async worker pool with semaphore bounds
+    └── workflow.py          # Workflow execution engine
 ```
 
-## Key subsystems
+## Key Subsystems
 
-### Core kernel (`core/`)
-The foundation layer: event bus for pub/sub communication, intent router for command dispatch, mode dispatcher for 9 interaction modes, session kernel for state management, agentic loop for Observe-Reason-Act cycle, and command pipeline for chained execution.
+### Agent Orchestrator (`core/`)
+`AgentCore` dispatches across four operational modes: `REGISTRY` (heuristic), `AUTONOMOUS` (LLM-driven), `HYBRID` (combined), and `INTERACTIVE` (chat). Routes intent through planners, gates, executors, and persistence layers. Supports sub-agent creation and swarm multi-agent orchestration.
 
-### Execution engine (`engine/`)
-Processes plans into executed commands. Handles tool selection, parallel execution, output parsing, error recovery with exponential backoff, permission gating, and context window compression.
+### Chat & REPL (`chat/`)
+Full-featured interactive shell with prompt_toolkit, split-pane layout, 40+ slash commands, context-aware autocomplete, session branching with JSONL tree format, and the `LLMEngineMixin` (1207 lines) that implements the core agent loop with multi-wave execution, streaming, and provider resolution.
 
-### AI provider layer (`providers/`, `planner*.py`)
-Abstraction over 24 provider profiles with `ProviderManager` singleton, automatic failover, circuit breakers, session-disabled provider tracking, and heuristic fallback when no provider is available.
+### Provider Layer (`providers/`)
+Abstracts 24 AI providers through a unified OpenAI-compatible adapter (`openai_compat.py`). `ProviderManager` singleton manages provider profiles, credential pooling, automatic failover with circuit breakers, exponential backoff cooldown, and usage/cost tracking.
 
-### Tool system (`registry.py`, `tool_*.py`, `parsers/`)
-Discovers 100+ security tools across platforms with capability graph and version detection. 114+ parsers extract structured findings from tool output (nmap, nuclei, masscan, metasploit, burpsuite, etc.).
+### Parser System (`parsers/`)
+`ParserRegistry` auto-discovers 80+ tool output parsers at import time via `discover()` pattern. Each parser implements the `Parser` protocol (`parse(output: str) -> list[dict]`) and handles JSON, text, or XML formats with deduplication, severity mapping, and field normalization.
 
-### Experience Intelligence (`xi/`)
-Adaptive learning subsystem: context tracker (8 operation phases), skill profiler (4 experience levels), next-action predictor, and recommendation engine.
+### Security Layer (root-level modules)
+`PermissionGate` (two-stage review), `DLP` engine (40+ secret patterns), `CredentialStore` (AES-256-GCM via keyring), `AuditLogger` (SHA-256 tamper-evident chain), `StealthEngine` (covert operations), `OPSECManager` (session isolation, secure cleanup), `InputValidator` (injection prevention), and `DangerAnalyzer` (38+ dangerous command patterns).
 
-### Telemetry & Observability (`telemetry/`)
-OpenTelemetry collector for distributed tracing, SIEM forwarding to Splunk/ELK, Prometheus-compatible metrics, performance monitoring.
+### Output & Reporting (`output/`, `report/`)
+`OutputEngine` renders results in 8 formats (TABLE/JSON/YAML/CSV/HTML/XML/RAW/QUIET) across 12 themes. `ReportEngine` builds comprehensive security assessment reports in MARKDOWN, HTML (interactive dashboard with CSS/JS), JSON, and SARIF formats with CVSS 3.1 enrichment.
 
-### Security modules
-Credential store (AES-256-GCM encrypted vault), masking engine (bidirectional token redaction), permission gate (two-stage access control), audit log (SHA-256 tamper-evident chain), knowledge graph (in-memory relationship modeling with BFS traversal).
+## Stub Features
+
+The following are listed as stubs in `chat/stubs.py` and are **not fully implemented**: `CanaryTokenManager`, `CoderBridge`, `CloudScanner`, `IaCScanner`, `MobileScanner`, `IoTScanner`, `HSMService`, `ComplianceRunner` (basic exists), `SecurityImporter` (basic), `MultiModelEnsemble`, `AdversarialTester`.
 
 ## Conventions
 
-- **Type hints**: Required on all public APIs
+- **Type hints**: Required on all public APIs (mypy strict mode)
 - **Async**: `asyncio` throughout for concurrent operations
 - **Dataclasses**: Used for structured data (findings, results, configs)
 - **Error handling**: `SiyarixException` hierarchy with exit code mapping
 - **Logging**: `logging.getLogger(__name__)` per module
+- **Testing**: pytest with asyncio_mode=auto, 75% coverage minimum
+- **Linting**: ruff with target-version py311, pre-commit hooks
