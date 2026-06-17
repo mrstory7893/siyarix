@@ -1,163 +1,219 @@
-# Contributing to Siyarix 🚀
+# Contributing to Siyarix
 
-First off, a massive **thank you** for even considering contributing to Siyarix! Whether you're a seasoned security pro, a Python enthusiast, a student just starting out, or a documentation wizard—your help is what makes Siyarix thrive. 
+Thank you for considering contributing to Siyarix. Whether you are a security professional, Python developer, documentation writer, or student, your contributions help build the future of AI-native security orchestration.
 
-We aim to make Siyarix the gold standard for AI-native security orchestration, and we can't do that without an amazing community like you.
+Please take a moment to review this document before contributing.
 
 ---
 
-## 🗺️ Table of Contents
+## Table of Contents
 
 - [Code of Conduct](#code-of-conduct)
 - [Getting Started](#getting-started)
-- [Your Contribution Journey](#your-contribution-journey)
-- [Our Coding Standards](#our-coding-standards)
+- [Contribution Workflow](#contribution-workflow)
+- [Coding Standards](#coding-standards)
 - [Commit Conventions](#commit-conventions)
 - [Reporting Issues](#reporting-issues)
 - [Pull Request Guidelines](#pull-request-guidelines)
 - [Security Contributions](#security-contributions)
-- [Plugins & Modules](#plugins--modules)
-- [Documentation & AI Disclosure](#documentation--ai-disclosure)
+- [Plugins & Extensions](#plugins--extensions)
+- [Documentation](#documentation)
+- [AI-Generated Code Policy](#ai-generated-code-policy)
+- [Licensing](#licensing)
 
 ---
 
-## 🤝 Code of Conduct
+## Code of Conduct
 
-We are committed to providing a welcoming, safe, and harassment-free environment for everyone. Before you begin, please review our [Code of Conduct](CODE_OF_CONDUCT.md). Kindness and respect are our top priorities.
+This project and everyone participating in it is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). By participating, you are expected to uphold this code. Please report unacceptable behavior to the maintainers.
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
-### 📋 Prerequisites
-- **Python**: version 3.11 or later.
-- **Git**: installed and configured.
-- **GitHub Account**: for forking and opening PRs.
+### Prerequisites
 
-### 🛠️ Setting Up Your Environment
+- **Python 3.11 or later**
+- **Git** installed and configured
+- **GitHub account** for forking and opening pull requests
+
+### Development Setup
+
 ```bash
-# 1. Fork the repo on GitHub, then clone your fork:
+# Fork the repository on GitHub, then clone your fork
 git clone https://github.com/YOUR-USERNAME/siyarix.git
 cd siyarix
 
-# 2. Set up a pristine virtual environment
+# Create a virtual environment
 python -m venv .venv
-source .venv/bin/activate   # On Windows: .\.venv\Scripts\activate.ps1
 
-# 3. Install Siyarix in editable mode with all dev dependencies
-pip install -e ".[all,cli,siem]" pytest ruff mypy
+# Activate the environment
+# Linux/macOS:
+source .venv/bin/activate
+# Windows (PowerShell):
+.\.venv\Scripts\Activate.ps1
+
+# Install Siyarix in editable mode with all extras
+pip install -e ".[all,cli,siem]"
+
+# Install development tooling
+pip install pytest ruff mypy pre-commit
 ```
 
-### 🧪 Verify Your Setup
-Run these commands to make sure everything is humming along perfectly:
+### Verify Your Setup
+
 ```bash
 pytest -q           # Run the test suite
-ruff check .        # Check for linting issues
-mypy src/siyarix/   # Run static type checking
+ruff check .        # Lint checking
+mypy src/siyarix/   # Static type checking
 ```
 
 ---
 
-## 🛣️ Your Contribution Journey
+## Contribution Workflow
 
-1. **Find an Opportunity**: Browse our [Issues](https://github.com/mufthakherul/siyarix/issues) or start a discussion. If you have a big idea, it's best to discuss it first!
-2. **Fork and Branch**: Always work on a fresh branch from `main`:
+1. **Find an opportunity**: Browse [open issues](https://github.com/mufthakherul/siyarix/issues) or start a [discussion](https://github.com/mufthakherul/siyarix/discussions). For significant changes, discuss first before implementation.
+
+2. **Create a branch**: Always work from a feature branch based on `main`.
+
    ```bash
-   git checkout -b feat/my-exciting-new-feature
+   git checkout -b feat/my-feature
    ```
-3. **Build & Test**: Make your changes. We love clean, well-tested code.
-4. **Quality Check**: Run `pytest`, `ruff`, and `mypy` one last time.
-5. **Commit**: Use [Conventional Commits](#commit-conventions) and sign off with `-s`.
-6. **PR & Review**: Push your branch and open a Pull Request. We’ll be there to review it!
+
+3. **Develop and test**: Write code, add tests, run the test suite, and lint your changes.
+
+4. **Run quality checks**: Execute the full verification suite before committing.
+
+   ```bash
+   pytest
+   ruff check .
+   mypy src/siyarix/
+   ```
+
+5. **Commit your changes**: Use [Conventional Commits](#commit-conventions) and sign off with `git commit -s`.
+
+6. **Open a pull request**: Push your branch and submit a PR against the `main` branch. Provide a clear description of the changes and their motivation.
 
 ---
 
-## ✨ Our Coding Standards
+## Coding Standards
 
-We keep the Siyarix codebase clean, modern, and high-performance. 
-
-- **Language**: Python 3.11+ using modern async/await patterns.
-- **Formatting**: We use [Ruff](https://docs.astral.sh/ruff/) for everything. No need to debate style—just run `ruff format .`.
-- **Type Safety**: We love type hints! All public APIs must be fully typed.
-- **Documentation**: Use Google or NumPy style docstrings for all public functions.
-- **Testing**: If you add a feature, add a test. If you fix a bug, add a regression test.
-
----
-
-## 💬 Commit Conventions
-
-We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification to keep our history readable and automated.
-
-Format: `<type>(<scope>): <description>`
-
-| Type | When to use it |
-|------|----------------|
-| `feat` | Adding a shiny new feature. |
-| `fix` | Squashing a bug. |
-| `docs` | Improving documentation. |
-| `test` | Adding or updating tests. |
-| `refactor` | Improving code without changing behavior. |
-| `security` | Security hardening or vulnerability fixes. |
-| `chore` | Maintenance, dependencies, or tooling. |
-
-**Important**: Please sign off on your commits using `git commit -s`. This confirms your agreement with the Developer Certificate of Origin (DCO).
+- **Language**: Python 3.11+ with modern async/await patterns throughout
+- **Formatting**: [Ruff](https://docs.astral.sh/ruff/) for formatting and linting. Run `ruff format .` before committing.
+- **Type Safety**: Full type annotations required for all public APIs and encouraged for internal code
+- **Documentation**: Google-style or NumPy-style docstrings for all public functions and classes
+- **Testing**: Feature additions require tests. Bug fixes require regression tests. Target 75%+ coverage for new code.
+- **Naming**: Use descriptive, professional naming. Avoid abbreviations and ambiguous terms.
 
 ---
 
-## 🐛 Reporting Issues
+## Commit Conventions
 
-### Found a Bug?
-Help us squash it! Provide:
-- A clear, concise description.
-- A minimal, reproducible example.
-- Your environment details (OS, Python version, Siyarix version).
+We follow [Conventional Commits](https://www.conventionalcommits.org/) to maintain a readable and automated changelog.
 
-### Have a Feature Idea?
-We’d love to hear it! Explain the "Why" before the "How." What problem does it solve for security operators?
+**Format**: `<type>(<scope>): <description>`
 
-### Found a Security Vulnerability?
-**Stop!** Please do **not** report security issues via public GitHub issues. Check out our [Security Policy](SECURITY.md) for private disclosure instructions.
+| Type       | Usage                                    |
+|------------|------------------------------------------|
+| `feat`     | New feature                              |
+| `fix`      | Bug fix                                  |
+| `docs`     | Documentation only                        |
+| `test`     | Adding or updating tests                 |
+| `refactor` | Code improvement without behavior change |
+| `security` | Security hardening or vulnerability fix  |
+| `chore`    | Maintenance, dependencies, tooling       |
+| `perf`     | Performance improvement                  |
+| `ci`       | CI/CD configuration changes             |
 
----
-
-## ✅ Pull Request Guidelines
-
-Before you hit "Submit":
-- Does the code pass all tests and linting?
-- Have you added tests for your changes?
-- Is the documentation updated?
-- Is your PR description clear about **what** changed and **why**?
-
-Once submitted, a maintainer will review your work. We strive to be responsive and helpful—don't be afraid of feedback; it's how we all grow!
+All commits must be signed off (`git commit -s`) to certify agreement with the [Developer Certificate of Origin](https://developercertificate.org/).
 
 ---
 
-## 🧩 Plugins & Modules
+## Reporting Issues
 
-Siyarix is designed to be extensible. If you're contributing a new parser, provider, or tool handler:
-1. Follow existing patterns in `src/siyarix/`.
-2. Ensure your module is properly registered.
-3. Add any new external dependencies to `pyproject.toml` in the correct extra group.
+### Bug Reports
 
----
+When filing a bug report, include:
 
-## 📄 Documentation & AI Disclosure
+- Clear, concise description of the issue
+- Minimal, reproducible example or steps to reproduce
+- Environment details: OS version, Python version, Siyarix version (`siyarix --version`)
+- Relevant logs or error output (sanitize sensitive data)
+- Expected vs actual behavior
 
-### Documentation
-Docs are just as important as code. If you find a typo or an unclear section, please fix it!
+### Feature Requests
 
-### AI-Generated Code
-We welcome the use of AI tools (like Copilot or ChatGPT) to help you author code! We only ask that:
-- You remain responsible for the final code.
-- You disclose significant AI assistance in your PR description.
-- You ensure the AI-generated code meets our quality and testing standards.
+Explain the problem you are trying to solve before describing the solution. Provide context on how the feature benefits security operators and how it fits within Siyarix's architecture.
 
----
+### Security Vulnerabilities
 
-## ⚖️ Licensing
-
-By contributing, you agree that your work will be licensed under the [GNU Affero General Public License v3.0 or later](LICENSE) (SPDX: `AGPL-3.0-or-later`). 
+**Do not** report security vulnerabilities via public GitHub issues. Follow the responsible disclosure process in [SECURITY.md](SECURITY.md).
 
 ---
 
-*Thank you for being part of the Siyarix journey. Happy hacking! 🛡️*
+## Pull Request Guidelines
+
+Before submitting a pull request:
+
+- [ ] All tests pass (`pytest -q`)
+- [ ] Linting passes (`ruff check .`)
+- [ ] Type checking passes (`mypy src/siyarix/`)
+- [ ] New tests cover the changes
+- [ ] Documentation is updated (if applicable)
+- [ ] Commit messages follow Conventional Commits format
+- [ ] Commits are signed off
+- [ ] PR description clearly states **what** changed and **why**
+
+### Review Process
+
+- Maintainers will review your PR within approximately 1 week
+- Address review feedback through additional commits (no force-pushing)
+- Once approved, a maintainer will merge your PR
+
+---
+
+## Security Contributions
+
+Security researchers who discover vulnerabilities in Siyarix following the coordinated disclosure process in [SECURITY.md](SECURITY.md) are eligible for recognition in the project's security acknowledgments.
+
+---
+
+## Plugins & Extensions
+
+Siyarix supports dynamic plugin discovery from `~/.siyarix/plugins/`. When contributing a plugin, parser, provider adapter, or tool handler:
+
+1. Follow existing patterns in `src/siyarix/`
+2. Register your module through the appropriate registry
+3. Add external dependencies to `pyproject.toml` under the correct extras group
+4. Include tests for your plugin
+
+---
+
+## Documentation
+
+Documentation is maintained alongside code. When making changes:
+
+- Update or add docstrings to public APIs
+- Update relevant user-facing documentation
+- Keep the MkDocs documentation site in sync with code changes
+
+---
+
+## AI-Generated Code Policy
+
+We welcome the use of AI coding assistants (GitHub Copilot, ChatGPT, etc.) to accelerate development. By using AI-generated code in your contributions, you confirm that:
+
+- You remain fully responsible for the code's correctness and quality
+- You disclose significant AI assistance in your PR description
+- AI-generated code meets the same quality, testing, and licensing standards as human-written code
+- You have the right to contribute the code under AGPL-3.0-or-later
+
+---
+
+## Licensing
+
+By contributing to Siyarix, you agree that your contributions will be licensed under the [GNU Affero General Public License v3.0 or later](LICENSE) (SPDX: `AGPL-3.0-or-later`). You retain copyright over your contributions and grant the project a perpetual, worldwide, non-exclusive, royalty-free license to use them under these terms.
+
+---
+
+*Thank you for being part of the Siyarix community.*

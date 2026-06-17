@@ -1,38 +1,40 @@
 # Contributors
 
-Siyarix is built by the community, for the community. Every contribution — code, documentation, bug reports, security findings, reviews, and ideas — makes this project better.
+Siyarix is built by the community, for the community. Every contribution -- code, documentation, bug reports, security findings, reviews, and ideas -- makes this project stronger.
 
 ---
 
 ## Project Maintainer
 
-- **MD Mufthakherul Islam Miraz** ([`@mufthakherul`](https://github.com/mufthakherul))
-  - Architecture design, core development, project vision
+| Name | Role | Focus Areas |
+|------|------|-------------|
+| **MD Mufthakherul Islam Miraz** ([@mufthakherul](https://github.com/mufthakherul)) | Creator & Lead Maintainer | Architecture design, core development, project vision, security model |
 
 ---
 
-## How to Be Listed
+## Recognition Criteria
 
-Contributors are recognized for:
+Contributors are recognized in this file and in the project's release notes for:
 
-- Merged pull requests (code, docs, tests, CI/CD)
-- Security vulnerability reports (with permission)
-- Significant and impactful issue reports
-- Community leadership (discussions, reviews, governance)
-
-To be added to this file, open a pull request adding your name and contribution, or ask in your PR comments.
-
----
+- **Merged pull requests**: code, documentation, tests, CI/CD improvements
+- **Security vulnerability reports**: responsible disclosure per [SECURITY.md](SECURITY.md)
+- **Significant issue reports**: detailed, reproducible bug reports or well-researched feature requests
+- **Community leadership**: sustained participation in discussions, reviews, and governance
 
 ## Contributor Badges
 
 | Badge | Meaning |
 |-------|---------|
-| :star: | Core contributor — substantial, ongoing contributions |
-| :shield: | Security researcher — responsible disclosure |
-| :book: | Documentation contributor |
-| :bug: | Bug reporter |
-| :rocket: | Feature contributor |
+| Core | Substantial, ongoing code or architecture contributions |
+| Security | Responsible security vulnerability disclosure |
+| Docs | Documentation improvements |
+| Bug | Significant bug reports with reproduction steps |
+| Feature | Notable feature contributions |
+| Community | Community management, discussions, support |
+
+## How to Be Listed
+
+Open a pull request adding your name and a description of your contributions, or request recognition in your merged PR comments.
 
 ---
 

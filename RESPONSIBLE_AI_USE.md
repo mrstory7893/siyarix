@@ -1,9 +1,10 @@
 # Responsible AI Use Policy
 
-**Effective Date:** May 2026
-**Version:** 1.0.0
+**Effective Date:** June 2026  
+**Version:** 3.0.0  
+**Applies to:** All AI-powered features of Siyarix v3.0.0
 
-Siyarix integrates artificial intelligence models to assist with cybersecurity tasks including planning, analysis, and automation. This policy outlines expectations, limitations, and responsibilities for all users of Siyarix's AI-powered features.
+Siyarix integrates artificial intelligence models from multiple providers to assist with cybersecurity tasks including planning, analysis, code generation, and automation. This policy defines the principles, expectations, limitations, and responsibilities governing the use of Siyarix's AI-powered features.
 
 ---
 
@@ -11,29 +12,42 @@ Siyarix integrates artificial intelligence models to assist with cybersecurity t
 
 | Principle | Commitment |
 |-----------|------------|
-| **Human Oversight** | AI-assisted actions must be reviewable and overridable by human operators |
-| **Transparency** | AI-generated outputs should be identifiable as such |
-| **Safety** | Safety mechanisms must not be bypassable by default |
-| **Privacy** | User data and targets must be protected from unnecessary exposure |
-| **Accountability** | Human operators remain responsible for all actions taken through the platform |
+| **Human Oversight** | AI-assisted actions must be reviewable, understandable, and overridable by human operators at all times |
+| **Transparency** | AI-generated outputs must be clearly identifiable as such, including which model or provider generated them |
+| **Safety** | Safety mechanisms (Permission Gate, Masking Engine, Danger Analysis) must not be bypassable through default configuration |
+| **Privacy** | User data, target information, and credentials must be protected from unnecessary exposure to AI providers |
+| **Accountability** | Human operators remain fully responsible for all actions taken through the platform, including AI-assisted actions |
+| **Fairness** | AI models should be used in ways that do not discriminate against or harm protected groups or individuals |
+| **Reliability** | AI features should degrade gracefully when models are unavailable or produce unreliable outputs |
 
 ---
 
-## 2. Human Oversight Expectations
+## 2. Human Oversight
 
-- AI-generated execution plans **must be reviewed** before execution in safety-critical contexts.
-- Autonomous execution modes must have clearly documented limitations and escalation paths.
-- The platform must provide mechanisms for users to pause, cancel, or override AI-generated actions.
-- Users should understand the AI model's capabilities and limitations before relying on autonomous features.
+- AI-generated execution plans **must be reviewed** before execution in safety-critical contexts
+- The Permission Gate provides two-stage danger analysis that cannot be permanently disabled through standard configuration
+- Autonomous execution modes have clearly documented limitations and escalation paths to human operators
+- The platform provides mechanisms to pause, cancel, modify, or override AI-generated actions at every stage
+- Users should understand the capabilities, limitations, and failure modes of the AI model they are using before relying on autonomous features
+
+### Oversight Tiers by Mode
+
+| Mode | AI Autonomy | Human Oversight Required |
+|------|-------------|--------------------------|
+| **REGISTRY** | Tool execution with AI context | Command review recommended |
+| **INTERACTIVE** | AI-assisted planning | Step-by-step approval |
+| **HYBRID** | AI proposes actions | Human approval for destructive operations |
+| **AUTONOMOUS** | Goal-driven closed loop | Configuration limits and circuit breakers apply |
 
 ---
 
-## 3. Transparency Requirements
+## 3. Transparency
 
-- AI-generated outputs (plans, commands, reports) should be clearly labeled as AI-assisted.
-- The platform should indicate which AI model or provider generated a given output.
-- Users should be informed when AI models are operating under reduced capability (fallback/heuristic mode).
-- Modification history of AI-generated plans should be traceable.
+- AI-generated outputs (plans, commands, analysis, reports) are clearly labeled as AI-assisted
+- The platform indicates which AI model or provider generated each output
+- Users are notified when AI models operate under reduced capability (fallback to heuristic/offline mode)
+- Modification history of AI-generated plans is traceable through the session audit log
+- AI system prompts and safety instructions are documented in the project source code
 
 ---
 
@@ -43,97 +57,115 @@ Siyarix integrates artificial intelligence models to assist with cybersecurity t
 
 AI features of Siyarix must not be used to:
 
-- Automate unauthorized access to systems
-- Generate exploit code targeting unpatched vulnerabilities without authorization
-- Automate social engineering or phishing campaigns
-- Bypass human review or safety mechanisms intentionally
-- Deceive individuals about the AI-assisted nature of interactions
-- Process or exfiltrate personal data without legal basis
-- Generate malware, ransomware, or other malicious payloads
+- Automate unauthorized access to systems or networks
+- Generate exploit code targeting unpatched vulnerabilities without prior authorization
+- Automate social engineering, phishing, or vishing campaigns
+- Intentionally bypass human review or safety mechanisms
+- Deceive individuals about the AI-assisted nature of interactions or outputs
+- Process, exfiltrate, or store personal data without legal basis or authorization
+- Generate malware, ransomware, worms, trojans, or other malicious payloads
 - Conduct operations that would violate the [Ethical Use Policy](ETHICAL_USE.md)
+- Automate attacks against critical infrastructure without lawful mandate
 
-### 4.2 Prompt Injection & Manipulation
+### 4.2 Prompt Injection & Safety Boundary Violations
 
-Attempting to bypass or manipulate safety instructions embedded in AI system prompts is prohibited. This includes:
+Attempting to bypass, manipulate, or disable safety mechanisms embedded in AI system prompts or the platform's safety layer is prohibited. This includes:
 
-- Jailbreaking attempts targeting the AI planner
-- Prompt injection to execute unauthorized commands
-- Attempting to disable safety resolvers or masking engines
+- Jailbreaking, prompt injection, or adversarial prompt attempts targeting the AI planner
+- Crafting inputs designed to bypass the Permission Gate or Danger Analysis
+- Attempting to disable the Safety Resolver, Masking Engine, or other safety components
+- Deliberately providing misleading context to elicit unauthorized actions from the AI
 
 ---
 
 ## 5. Autonomous Action Limitations
 
-- Autonomous execution (no human-in-the-loop) should be limited to well-defined, low-risk operations.
-- Destructive or disruptive operations should always require human approval.
-- The platform should provide clear indication of autonomous mode status.
-- Default configurations should favor safety over autonomy.
+- Autonomous execution (no human-in-the-loop approval) is limited to well-defined, low-risk, non-destructive operations by default
+- Destructive or disruptive operations (system modification, data deletion, service interruption) always require human approval
+- The platform provides clear visual indication of autonomous mode status during operation
+- Default configurations favor safety over autonomy -- users must explicitly enable higher-risk modes
+- Autonomous execution includes configurable circuit breakers: max steps, max duration, rate limits, and failure thresholds
+- Scheduled recurring autonomous operations include notification and escalation mechanisms
 
 ---
 
-## 6. Hallucination Awareness
+## 6. Hallucination & Error Awareness
 
-AI models may produce incorrect or dangerous outputs, including:
+AI models may produce incorrect, nonsensical, or dangerous outputs, including:
 
-- Non-existent tool names or flags
-- Incorrect command syntax
-- Invalid IP addresses or network configurations
-- Plausible-sounding but incorrect security analysis
-- Dangerous command patterns that appear safe
+- Non-existent tool names, command-line flags, or invocation patterns
+- Incorrect command syntax for real tools
+- Invalid IP addresses, network ranges, or system configurations
+- Plausible-sounding but factually incorrect security analysis
+- Dangerous command patterns that appear benign to non-experts
+- Misidentified software versions, CVEs, or vulnerability classifications
+- Incorrect or hallucinated compliance requirements or regulatory citations
 
-Users must:
+### User Obligations
 
-- Verify critical AI-generated commands before execution
-- Test plans in dry-run mode when available
-- Report persistent hallucination patterns to maintainers
+- Verify critical AI-generated commands in a safe environment before execution
+- Test plans using dry-run or review modes when available
+- Cross-reference AI-generated findings with manual verification where possible
+- Report persistent hallucination patterns or consistent errors to project maintainers
+- Never assume AI-generated security advice is correct without verification
 
 ---
 
-## 7. Verification Requirements
+## 7. Pre-Execution Verification Checklist
 
-Before executing AI-generated security operations:
+Before executing AI-generated security operations, verify:
 
-1. Review the full execution plan
-2. Verify target specifications are correct
-3. Confirm safety resolver has analyzed the plan
-4. Check that masking/redaction is active for cloud AI calls
-5. Test on non-production systems when possible
+1. The full execution plan has been reviewed and understood
+2. Target specifications (IPs, domains, ports, paths) are correct and within authorized scope
+3. The Permission Gate has analyzed the plan and issued a risk assessment
+4. The Masking Engine is active for cloud AI provider interactions
+5. Destructive operations have been explicitly approved (if applicable)
+6. A backup or recovery plan exists for target systems
+7. The operation is within the authorized scope of testing
 
 ---
 
 ## 8. Logging & Auditing
 
-- AI-assisted actions should be logged with sufficient detail for post-event analysis.
-- Audit logs should capture: prompt, generated plan, user modifications (if any), execution results.
-- Logs should be tamper-evident where practical.
-- Users should have access to their own AI interaction history.
+- All AI-assisted actions are logged with sufficient detail for post-event analysis and incident response
+- Audit logs capture: prompt summary, generated plan, user modifications, execution results, and provider information
+- Full AI prompts and responses are not stored in logs by default (debug logging may capture them for troubleshooting)
+- Audit log entries are tamper-evident through cryptographic chaining (SHA-256)
+- Users can access their own AI interaction history through session logs
+- Provider selection and failover events are recorded with cause and resolution
 
 ---
 
 ## 9. Model Safety Considerations
 
-- Users should be aware that AI providers may have their own data handling policies when using cloud models.
-- Local/offline models are recommended for sensitive targets or air-gapped environments.
-- The masking engine should be verified active before sending target data to cloud AI providers.
-- API keys should be stored using the encrypted credential vault, not in plaintext configuration.
+- Users should be aware that cloud AI providers have their own data handling, privacy, and retention policies
+- Local/offline models (Ollama, LM Studio, llama.cpp, vLLM, LocalAI) are strongly recommended for:
+  - Classified or sensitive target environments
+  - Air-gapped networks without external connectivity
+  - Operations subject to GDPR/CCPA data processing restrictions
+  - Internal corporate networks with data export prohibitions
+- The Masking Engine automatically redacts IPs, domains, credentials, and custom patterns before sending data to cloud providers
+- API keys are stored using AES-256-GCM encrypted credential vault, not in plaintext configuration
 
 ---
 
-## 10. Data Privacy Expectations
+## 10. Data Privacy
 
-- Target data sent to cloud AI providers is subject to that provider's privacy policy.
-- Encrypted masking should be used when processing sensitive targets.
-- Session data stored locally should be protected at rest.
-- Users should minimize sharing of personal or sensitive data in AI prompts.
+- Target data sent to cloud AI providers is subject to that provider's privacy policy and terms of service
+- The bidirectional masking engine should be verified active before sending target data to cloud AI providers
+- Session data stored locally (`~/.siyarix/`) is protected at rest
+- Users should minimize sharing of personal data, credentials, or sensitive information in AI prompts
+- When using cloud AI providers, assume data is processed in jurisdictions where the provider operates
 
 ---
 
 ## 11. Responsible Automation
 
-- Automated security operations should include circuit breakers and rate limiting.
-- Recurring automated scans should not overwhelm target systems.
-- Distributed or parallel execution should respect target capacity.
-- Scheduled operations should include notification mechanisms.
+- Automated security operations must include circuit breakers: max execution time, max steps, rate limits
+- Recurring automated scans and operations must not overwhelm target systems or networks
+- Distributed or parallel execution modes must respect target capacity and network constraints
+- Scheduled operations should include pre-execution notifications and post-execution summaries
+- Automated operations should implement exponential backoff and retry limits
 
 ---
 
@@ -141,14 +173,16 @@ Before executing AI-generated security operations:
 
 Organizations deploying Siyarix's AI features should:
 
-- Assess compliance with applicable AI regulations (EU AI Act, etc.)
-- Maintain documentation of AI system deployment and configuration
-- Conduct periodic reviews of AI-assisted security operations
-- Train operators on responsible AI use and platform safety features
+- Assess compliance with applicable AI regulations (EU AI Act, proposed U.S. AI frameworks, sector-specific AI rules)
+- Maintain documentation of AI system deployment, configuration, and model selection
+- Conduct periodic reviews of AI-assisted security operations and safety mechanism effectiveness
+- Train operators on responsible AI use, platform safety features, and AI limitation awareness
+- Establish incident response procedures for AI-related failures or safety boundary violations
+- Review AI provider terms of service for data handling, model usage restrictions, and liability limitations
 
 ---
 
-*This policy supplements the GNU Affero General Public License v3.0 and the [Ethical Use Policy](ETHICAL_USE.md). It is intended as a governance framework, not legal advice. Consult qualified professionals for regulatory compliance guidance.*
+*This policy supplements the GNU Affero General Public License v3.0 or later and the [Ethical Use Policy](ETHICAL_USE.md). It is intended as a governance framework and best-practice guidance, not legal advice. Consult qualified professionals for regulatory compliance guidance specific to your organization and jurisdiction.*
 
 ---
 
