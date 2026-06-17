@@ -8,9 +8,8 @@ Siyarix uses AI providers for:
 
 1. **Task planning**: Converting natural language to structured execution plans
 2. **Interactive chat**: Multi-turn conversation about security operations
-3. **Code review**: Security vulnerability analysis in code
-4. **Report generation**: Summarizing findings and suggesting remediation
-5. **Tool selection**: Recommending appropriate tools for objectives
+3. **Report generation**: Summarizing findings and suggesting remediation
+4. **Tool selection**: Recommending appropriate tools for objectives
 
 ## Human oversight
 
@@ -27,7 +26,7 @@ The AI assists but does not replace human judgment.
 AI providers may:
 
 - Generate incorrect or incomplete plans
-- Suggest tools that are not available on the system
+- Suggest tools not available on the system
 - Misinterpret user intent, especially with ambiguous input
 - Hallucinate tool names, arguments, or capabilities
 
@@ -41,8 +40,6 @@ The system documents which AI provider was used for each operation:
 siyarix audit-log
 # Shows: provider used, model, latency, confidence
 ```
-
-Users can see exactly which provider handled each request.
 
 ## Data protection
 

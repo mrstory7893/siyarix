@@ -38,7 +38,3 @@ When conveying a combined work under this exception:
 ### 4. No additional restrictions
 
 This exception does not authorize you to impose any further restrictions on recipients' exercise of rights granted under the AGPL for the Siyarix code itself.
-
----
-
-*SPDX-License-Identifier: AGPL-3.0-or-later WITH Siyarix-plugin-exception*

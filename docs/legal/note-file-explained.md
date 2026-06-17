@@ -25,50 +25,24 @@ AGPL-3.0 Section 5(a) requires that the NOTICE file be preserved in all distribu
 ## NOTICE sections
 
 ### (a) Project Identity
-
 Basic project metadata: name, description, homepage, license, SPDX identifier.
 
 ### (b) Copyright Notice
-
 Copyright held by MD MUFTHAKHERUL ISLAM MIRAZ and contributors.
 
 ### (c) License Reference
-
 How to find the license, what AGPL-3.0-or-later means.
 
 ### (d) Third-Party Dependencies
-
-A table listing:
-
-- Direct runtime dependencies with their licenses
-- Each entry includes: Package, Version, License, SPDX
-- Dependencies listed include: typer, rich, httpx, pydantic, cryptography, keyring, etc.
+A table listing direct runtime dependencies with their licenses (typer, rich, httpx, pydantic, cryptography, keyring, etc.), each with Package, Version, License, and SPDX fields.
 
 ### (e) AI Model Provider Architecture
-
-Documents the AI provider abstraction layer:
-
-- Provider-agnostic design
-- 10 registered providers
-- Dynamic selection and failover
-- No hard SDK dependency (providers are optional extras)
-- Local/offline operation capability
+Documents the provider-agnostic abstraction layer: dynamic selection, failover, optional SDK dependencies (extras), and local/offline operation capability.
 
 ### (f) Disclaimer of Affiliation
-
-Explicitly disclaims affiliation with:
-
-- Google (Gemini)
-- OpenAI (GPT)
-- Anthropic (Claude)
-- Groq
-- Together AI
-- Meta (Llama)
-- Mistral AI
-- Any other provider
+Explicitly disclaims affiliation with Google (Gemini), OpenAI (GPT), Anthropic (Claude), Groq, Together AI, Meta (Llama), Mistral AI, and any other provider.
 
 ### (g) Project Homepage
-
 Source code URL, issue tracker, distribution channels.
 
 ## SPDX header

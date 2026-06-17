@@ -7,16 +7,16 @@ The Siyarix name and logo are project trademarks.
 This policy covers:
 
 - **Word mark**: "Siyarix"
-- **Logo**: The Siyarix project logo (if any)
+- **Logo**: The Siyarix project logo
 - **Derivatives**: "Siyarix AI", "Siyarix CLI", etc.
 
 ## Usage without permission
 
-You may use the Siyarix trademarks without permission in these cases:
+You may use Siyarix trademarks without permission in these cases:
 
 - Referring to the project by name in text
 - Stating that your product or service works with Siyarix
-- Using the name in compliance with the AGPL-3.0 license requirements
+- Using the name in compliance with AGPL-3.0 license requirements
 - Forking the project under a different name (must not imply affiliation)
 - Writing about the project (reviews, articles, blog posts)
 
@@ -51,7 +51,7 @@ Any other distribution claiming to be "official Siyarix" should be treated with 
 
 ## Reporting misuse
 
-If you see the Siyarix name being used in a misleading or unauthorized way, please open an issue at: https://github.com/mufthakherul/siyarix/issues
+If you see the Siyarix name being used in a misleading or unauthorized way, please open an issue at https://github.com/mufthakherul/siyarix/issues.
 
 ## License
 

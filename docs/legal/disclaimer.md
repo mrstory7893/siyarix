@@ -37,7 +37,7 @@ Siyarix integrates with third-party AI providers (OpenAI, Google, Anthropic, etc
 - Do not control AI provider APIs, uptime, or behavior
 - Are not responsible for AI provider data handling practices
 - Recommend reviewing each provider's privacy policy before use
-- Provide local/offline alternatives (Ollama, LM Studio, noop)
+- Provide local/offline alternatives (Ollama, LM Studio, registry fallback)
 
 ## Third-party tools
 
