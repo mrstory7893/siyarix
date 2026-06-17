@@ -1,12 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-"""Tests for output/__init__.py — OutputEngine / OutputFormatter (281 stmts, ~51%)."""
+"""Tests for output/__init__.py - OutputEngine / OutputFormatter."""
 
 from __future__ import annotations
 
 import json
+import os
+import sys
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 
 from siyarix.output import (
     OutputEngine,
@@ -15,15 +19,10 @@ from siyarix.output import (
     OutputTheme,
     THEMES,
     YAML_AVAILABLE,
+    _formatter_args,
     get_formatter,
     set_formatter,
-    _formatter_args,
 )
-
-
-# ---------------------------------------------------------------------------
-# OutputEngine — initialization & theme
-# ---------------------------------------------------------------------------
 
 
 class TestEngineInit:
@@ -429,3 +428,154 @@ class TestModuleFunctions:
 
     def test_formatter_args_defaults(self):
         assert "no_color" in _formatter_args
+
+class TestOutputCoverage:
+    """Cover uncovered lines in output/__init__.py."""
+
+    def test_yaml_import_fail(self):
+        with patch("siyarix.output._yaml", None), patch("siyarix.output.YAML_AVAILABLE", False):
+            from siyarix.output import OutputEngine
+            engine = OutputEngine()
+            with patch("siyarix.output.RICH_AVAILABLE", False):
+                engine.print_yaml({"key": "val"})
+
+    def test_print_table_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            engine.print_table([{"a": "1", "b": "2"}], columns=["a", "b"])
+
+    def test_print_json_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            engine.print_json({"key": "val"})
+
+    def test_print_yaml_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.YAML_AVAILABLE", True), patch("siyarix.output.RICH_AVAILABLE", False):
+            engine.print_yaml({"key": "val"})
+
+    def test_print_csv_no_data(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.print_csv([])
+
+    def test_print_csv_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            engine.print_csv([{"a": "1"}])
+
+    def test_print_success_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            engine.print_success("done")
+
+    def test_print_error_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            engine.print_error("fail")
+
+    def test_print_warning_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            engine.print_warning("warn")
+
+    def test_print_info_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            engine.print_info("info")
+
+    def test_print_progress_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            items = [1, 2, 3]
+            fn = MagicMock()
+            engine.print_progress(items, fn, "Testing")
+            assert fn.call_count == 3
+
+    def test_prompt_confirm_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            with patch("builtins.input", return_value=""):
+                assert engine.prompt_confirm("ok?", default=True) is True
+
+    def test_prompt_confirm_no_rich_yes(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            with patch("builtins.input", return_value="y"):
+                assert engine.prompt_confirm("ok?") is True
+
+    def test_export_html_no_rich(self, tmp_path):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            engine._export_html([{"a": "1"}])
+
+    def test_export_xml_no_rich(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            engine._export_xml([{"a": "1"}])
+
+    def test_export_to_file_no_rich(self, tmp_path):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        engine.console = None
+        with patch("siyarix.output.RICH_AVAILABLE", False):
+            p = tmp_path / "out.json"
+            engine.export_to_file({"key": "val"}, str(p))
+            assert p.exists()
+
+    def test_raw_print_console_exception(self):
+        from siyarix.output import OutputEngine
+        engine = OutputEngine()
+        mock_console = MagicMock()
+        mock_console.print.side_effect = Exception("print fail")
+        engine.console = mock_console
+        with patch("siyarix.output.logger") as mock_log:
+            engine._raw_print("hello")
+            mock_log.exception.assert_called_once()
+
+    def test_output_formatter_raw_print_console_exception(self):
+        from siyarix.output import OutputFormatter
+        fmt = OutputFormatter()
+        mock_console = MagicMock()
+        mock_console.print.side_effect = Exception("console fail")
+        fmt.engine.console = mock_console
+        with patch("siyarix.output.logger") as mock_log:
+            fmt._raw_print("test")
+            mock_log.exception.assert_called_once()
+
+    def test_get_formatter_invalid_verbose(self):
+        from siyarix.output import get_formatter
+        import sys
+        fmt = get_formatter("table")
+        assert fmt is not None
+
+
+# ═══════════════════════════════════════════════════════════════════
+# parsers/__init__.py (91% - missing lines)
+# ═══════════════════════════════════════════════════════════════════

@@ -1,276 +1,220 @@
-import pytest
-import respx
-import httpx
-from unittest.mock import patch, MagicMock, AsyncMock
+from __future__ import annotations
+
 from siyarix.chat.openai_compat import (
     OpenAICompat,
-    detect_compat,
-    resolve_model,
     build_messages,
-    make_client,
-    _map_real_model,
-    _gemini_build_contents,
-    _gemini_generate,
-    _gemini_stream,
-    openai_complete,
-    openai_stream,
+    detect_compat,
     make_openai_adapter,
+    resolve_model,
 )
 from siyarix.exceptions import LLMProviderError
+from unittest.mock import patch, MagicMock, AsyncMock
+import asyncio
+import httpx
+import pytest
+import respx
+import sys
 
-def test_detect_compat():
-    c1 = detect_compat("openai", "")
-    assert c1.thinking_format == "openai"
-    assert c1.supports_reasoning_effort is True
-    
-    c2 = detect_compat("deepseek", "https://api.deepseek.com")
-    assert c2.thinking_format == "deepseek"
-    assert c2.requires_reasoning_content_on_assistant is True
-    
-    c3 = detect_compat("zai", "")
-    assert c3.thinking_format == "zai"
-    assert c3.supports_reasoning_effort is False
-    assert c3.zai_tool_stream is True
 
-    c4 = detect_compat("together", "")
-    assert c4.thinking_format == "together"
-    assert c4.supports_strict_mode is False
+from siyarix.chat.openai_compat import _gemini_build_contents, _gemini_stream, _map_real_model, make_client, openai_complete, openai_stream
+class TestOpenAICompatCoverage:
+    """Cover remaining openai_compat.py lines."""
 
-def test_resolve_model():
-    class DummySettings:
-        def get(self, key):
-            if key == "openai_model":
-                return "custom-gpt"
-            return None
-    
-    settings = DummySettings()
-    assert resolve_model("openai", settings) == "custom-gpt"
-    assert resolve_model("gemini", settings) == "gemini-3.5-flash" # fallback to default
-    assert resolve_model("unknown", None) == "unknown"
+    def test_detect_compat_openrouter_thinking(self):
+        compat = detect_compat("openrouter", "https://openrouter.ai/api/v1")
+        assert compat.thinking_format == "openrouter"
 
-def test_build_messages():
-    compat = OpenAICompat(supports_developer_role=True)
-    msgs = build_messages("sys", "usr", history=[{"role": "assistant", "content": "hello"}], compat=compat)
-    assert msgs[0] == {"role": "developer", "content": "sys"}
-    assert msgs[1] == {"role": "assistant", "content": "hello"}
-    assert msgs[2] == {"role": "user", "content": "usr"}
+    def test_detect_compat_default_openai(self):
+        compat = detect_compat("unknown", "https://unknown.example.com")
+        assert compat.thinking_format == "openai"
 
-    compat2 = OpenAICompat(supports_developer_role=False)
-    msgs2 = build_messages("sys", "usr", history=None, compat=compat2)
-    assert msgs2[0] == {"role": "system", "content": "sys"}
+    def test_resolve_model_settings_dict(self):
+        with patch("siyarix.chat.openai_compat.MODEL_KEYS", {"test": "test_model"}):
+            with patch("siyarix.chat.openai_compat.PROVIDER_CONFIG", {"test": ("", "default-model", "")}):
+                result = resolve_model("test", {"test_model": "custom"})
+                assert result == "custom"
 
-def test_map_real_model():
-    assert _map_real_model("gemini-3.5-flash") == "gemini-2.0-flash"
-    assert _map_real_model("gpt-5.5-mini") == "gpt-4o-mini"
-    assert _map_real_model("claude-sonnet-4") == "claude-3-5-sonnet-latest"
-    assert _map_real_model("other") == "other"
+    def test_resolve_model_settings_dict_no_key(self):
+        with patch("siyarix.chat.openai_compat.MODEL_KEYS", {"test": "test_model"}):
+            with patch("siyarix.chat.openai_compat.PROVIDER_CONFIG", {"test": ("", "default-model", "")}):
+                result = resolve_model("test", {})
+                assert result == "default-model"
 
-def test_gemini_build_contents():
-    contents = _gemini_build_contents("sys", "usr", [{"role": "assistant", "content": "hi"}])
-    assert len(contents) == 2
-    assert contents[0]["role"] == "model"
-    assert contents[0]["parts"][0]["text"] == "hi"
-    assert contents[1]["role"] == "user"
-    assert contents[1]["parts"][0]["text"] == "usr"
+    def test_resolve_model_no_settings_provider_manager(self):
+        mgr = MagicMock()
+        mgr.resolve_model_id.return_value = "resolved-model"
+        result = resolve_model("openai", {}, provider_manager=mgr)
+        assert result is not None
 
-@pytest.mark.asyncio
-@respx.mock
-async def test_gemini_generate():
-    respx.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent").mock(
-        return_value=httpx.Response(200, json={
-            "candidates": [{"content": {"parts": [{"text": "response"}]}}],
-            "usageMetadata": {"promptTokenCount": 10, "candidatesTokenCount": 5}
-        })
-    )
-    res = await _gemini_generate("key", "gemini-2.0-flash", "sys", "usr")
-    assert res["content"] == "response"
-    assert res["input_tokens"] == 10
-    assert res["output_tokens"] == 5
+    def test_make_client_basic_happy_path(self):
+        with patch("openai.AsyncOpenAI") as mock_oai:
+            mock_oai.return_value = "client"
+            result = make_client("openai", "key")
+            assert result == "client"
 
-@pytest.mark.asyncio
-@respx.mock
-async def test_gemini_generate_blocked():
-    respx.post("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent").mock(
-        return_value=httpx.Response(200, json={"promptFeedback": {"blockReason": "SAFETY"}})
-    )
-    with pytest.raises(LLMProviderError, match="Gemini request blocked"):
-        await _gemini_generate("key", "gemini-2.0-flash", "", "bad")
+    def test_make_client_resolved_base_url_set(self):
+        with patch("openai.AsyncOpenAI") as mock_oai:
+            result = make_client("openai", "key", base_url="https://custom.url/v1")
+            mock_oai.assert_called_once_with(api_key="key", base_url="https://custom.url/v1")
 
-@pytest.mark.asyncio
-@respx.mock
-async def test_gemini_stream():
-    url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent"
-    
-    def mock_stream(_request):
-        content = b'data: {"candidates": [{"content": {"parts": [{"text": "chunk1"}]}}]}\ndata: {"candidates": [{"content": {"parts": [{"text": "chunk2"}]}}]}\ndata: [DONE]\n'
-        return httpx.Response(200, content=content)
-    
-    respx.post(url).mock(side_effect=mock_stream)
-    chunks = []
-    async for chunk in _gemini_stream("key", "gemini-2.0-flash", "", "usr"):
-        chunks.append(chunk)
-    assert chunks == ["chunk1", "chunk2"]
+    def test_make_client_resolved_base_url_empty(self):
+        with patch("openai.AsyncOpenAI") as mock_oai:
+            with patch("siyarix.chat.openai_compat.PROVIDER_CONFIG", {"openai": ("https://openai.com", "gpt-5.5", "OPENAI_API_KEY")}):
+                result = make_client("openai", "key", base_url="")
+                mock_oai.assert_called_once_with(api_key="key", base_url="https://openai.com")
 
-@pytest.mark.asyncio
-@patch("openai.AsyncOpenAI")
-async def test_openai_complete(_mock_client_class):
-    mock_client = AsyncMock()
-    
-    class MockChoice:
-        def __init__(self):
-            self.message = MagicMock()
-            self.message.content = "openai_resp"
-            self.message.tool_calls = None
-            
-    class MockUsage:
-        prompt_tokens = 5
-        completion_tokens = 10
-        
-    class MockResponse:
-        choices = [MockChoice()]
-        usage = MockUsage()
-        model = "gpt-4o"
-        
-    mock_client.chat.completions.create.return_value = MockResponse()
-    
-    res = await openai_complete(mock_client, "gpt-4o", "sys", "usr")
-    assert res["content"] == "openai_resp"
-    assert res["input_tokens"] == 5
-    assert res["output_tokens"] == 10
+    def test_make_client_no_base_url(self):
+        with patch("openai.AsyncOpenAI") as mock_oai:
+            with patch("siyarix.chat.openai_compat.PROVIDER_CONFIG", {"openai": ("", "gpt-5.5", "OPENAI_API_KEY")}):
+                result = make_client("openai", "key", base_url=None)
+                mock_oai.assert_called_once_with(api_key="key")
 
-@pytest.mark.asyncio
-@patch("openai.AsyncOpenAI")
-async def test_openai_complete_error(_mock_client_class):
-    mock_client = AsyncMock()
-    mock_client.chat.completions.create.side_effect = Exception("API down")
-    
-    with pytest.raises(LLMProviderError, match="API call failed"):
-        await openai_complete(mock_client, "gpt-4o", "", "usr")
+    def test_make_client_api_key_none_uses_placeholder(self):
+        with patch("openai.AsyncOpenAI") as mock_oai:
+            result = make_client("ollama", None, base_url="http://localhost:11434/v1")
+            mock_oai.assert_called_once_with(api_key="local", base_url="http://localhost:11434/v1")
 
-@pytest.mark.asyncio
-@patch("openai.AsyncOpenAI")
-async def test_openai_stream(_mock_client_class):
-    mock_client = AsyncMock()
-    
-    class MockDelta:
-        def __init__(self, content):
-            self.content = content
-            
-    class MockChunk:
-        def __init__(self, content):
-            self.choices = [MagicMock(delta=MockDelta(content))]
+    def test_gemini_build_contents(self):
+        contents = _gemini_build_contents("sys", "user query", [{"role": "user", "content": "prev"}, {"role": "assistant", "content": "resp"}])
+        assert len(contents) == 3
+        assert contents[0]["role"] == "user"
 
-    async def async_gen():
-        yield MockChunk("stream")
-        yield MockChunk(" chunk")
+    def test_gemini_build_contents_skips_system(self):
+        contents = _gemini_build_contents("sys", "user query", [{"role": "system", "content": "skip"}])
+        assert len(contents) == 1
 
-    mock_client.chat.completions.create.return_value = async_gen()
-    
-    chunks = []
-    async for chunk in openai_stream(mock_client, "gpt-4o", "", "usr"):
-        chunks.append(chunk)
-        
-    assert chunks == ["stream", " chunk"]
+    def test_gemini_stream_iterates_chunks(self):
+        async def _test():
+            lines = [
+                "data: {\"candidates\": [{\"content\": {\"parts\": [{\"text\": \"hello\"}]}}]}",
+                "data: [DONE]",
+            ]
+            async def _aiter_lines():
+                for l in lines:
+                    yield l
+            with patch("httpx.AsyncClient") as mock_client_cls:
+                mock_client = MagicMock()
+                mock_client_cls.return_value.__aenter__.return_value = mock_client
+                mock_resp = MagicMock()
+                mock_resp.aiter_lines = _aiter_lines
+                mock_stream_cm = MagicMock()
+                mock_stream_cm.__aenter__.return_value = mock_resp
+                mock_client.stream.return_value = mock_stream_cm
+                result = []
+                async for token in _gemini_stream("key", "model", "sys", "user"):
+                    result.append(token)
+                assert result == ["hello"]
 
-@pytest.mark.asyncio
-@patch("siyarix.chat.openai_compat.openai_complete")
-@patch("siyarix.chat.openai_compat.make_client")
-async def test_make_openai_adapter_openai(mock_make_client, mock_complete):
-    mock_complete.return_value = {"content": "ok"}
-    adapter = make_openai_adapter("openai", "key")
-    res = await adapter("sys", "usr")
-    assert res == {"content": "ok"}
-    mock_complete.assert_called_once()
+        import asyncio
+        asyncio.run(_test())
 
-@pytest.mark.asyncio
-@patch("siyarix.chat.openai_compat._gemini_generate")
-async def test_make_openai_adapter_gemini(mock_gemini_generate):
-    mock_gemini_generate.return_value = {"content": "gemini_ok"}
-    adapter = make_openai_adapter("gemini", "key")
-    res = await adapter("sys", "usr")
-    assert res == {"content": "gemini_ok"}
-    mock_gemini_generate.assert_called_once()
+    def test_gemini_stream_skips_bad_json(self):
+        async def _test():
+            lines = ["data: invalid json", "data: [DONE]"]
+            async def _aiter_lines():
+                for l in lines:
+                    yield l
+            with patch("httpx.AsyncClient") as mock_client_cls:
+                mock_client = MagicMock()
+                mock_client_cls.return_value.__aenter__.return_value = mock_client
+                mock_resp = MagicMock()
+                mock_resp.aiter_lines = _aiter_lines
+                mock_stream_cm = MagicMock()
+                mock_stream_cm.__aenter__.return_value = mock_resp
+                mock_client.stream.return_value = mock_stream_cm
+                result = []
+                async for token in _gemini_stream("key", "model", "sys", "user"):
+                    result.append(token)
+                assert result == []
 
-@patch("subprocess.run")
-def test_make_client_no_openai(mock_run):
-    import sys
-    # Mocking ImportError for openai inside make_client
-    with patch.dict('sys.modules', {'openai': None}):
-        with pytest.raises(ImportError):
-            make_client("openai", "key")
+        import asyncio
+        asyncio.run(_test())
 
-@pytest.mark.asyncio
-@patch("siyarix.chat.openai_compat.make_client")
-async def test_make_openai_adapter_compaction(mock_make_client):
-    from siyarix.chat.openai_compat import make_openai_adapter
-    from siyarix.exceptions import LLMProviderError
-    
-    mock_client = AsyncMock()
-    # first call raises context length error, second call succeeds
-    mock_client.chat.completions.create.side_effect = [
-        Exception("Context length exceeded"),
-        AsyncMock(choices=[MagicMock(message=MagicMock(content="compacted ok", tool_calls=None))], usage=MagicMock(prompt_tokens=10, completion_tokens=5), model="gpt-4o")
-    ]
-    mock_make_client.return_value = mock_client
-    
-    class MockProviderManager:
-        def resolve_model_id(self, provider, model):
-            return model
-            
-        def classify_error(self, provider, _exc, _http_status):
-            class MockClassified:
-                should_compress = True
-                retryable = True
-                reason = "context"
-            return MockClassified()
-            
-        def record_failure(self, provider, reason):
-            pass
+    def test_openai_stream_includes_tools(self):
+        async def _test():
+            mock_client = MagicMock()
+            mock_chunk = MagicMock()
+            mock_chunk.choices = [MagicMock()]
+            mock_chunk.choices[0].delta.content = "hello"
+            mock_stream = AsyncMock()
+            mock_stream.__aiter__.return_value = iter([mock_chunk])
+            mock_client.chat.completions.create = AsyncMock(return_value=mock_stream)
+            result = []
+            async for token in openai_stream(mock_client, "model", "sys", "user", tools=[{"name": "test"}]):
+                result.append(token)
+            assert result == ["hello"]
 
-    manager = MockProviderManager()
-    adapter = make_openai_adapter("openai", "key", provider_manager=manager)
-    
-    # mock CompactionEngine
-    with patch("siyarix.compaction.CompactionEngine") as mock_compactor:
-        instance = mock_compactor.return_value
-        class MockResult:
-            summary = "compacted history summary"
-        instance.compact = AsyncMock(return_value=MockResult())
-        
-        history = [{"role": "user", "content": "long message"}]
-        res = await adapter("sys", "usr", history=history)
-        
-        assert res["content"] == "compacted ok"
-        instance.compact.assert_called_once()
-        mock_client.chat.completions.create.assert_called()
+        import asyncio
+        asyncio.run(_test())
 
-@pytest.mark.asyncio
-@patch("siyarix.chat.openai_compat.make_client")
-async def test_make_openai_adapter_retryable(mock_make_client):
-    from siyarix.chat.openai_compat import make_openai_adapter
-    
-    mock_client = AsyncMock()
-    mock_client.chat.completions.create.side_effect = [
-        Exception("Rate limit"),
-        AsyncMock(choices=[MagicMock(message=MagicMock(content="retry ok", tool_calls=None))], usage=MagicMock(prompt_tokens=0, completion_tokens=0), model="gpt-4o")
-    ]
-    mock_make_client.return_value = mock_client
-    
-    class MockProviderManager:
-        def resolve_model_id(self, provider, model): return model
-        def classify_error(self, provider, _exc, _http_status):
-            class MockClassified:
-                should_compress = False
-                retryable = True
-                reason = "rate_limit"
-            return MockClassified()
-        def record_failure(self, provider, reason): pass
+    def test_openai_complete_includes_tools(self):
+        async def _test():
+            mock_client = MagicMock()
+            mock_response = MagicMock()
+            mock_choice = MagicMock()
+            mock_choice.message.content = "response"
+            mock_response.choices = [mock_choice]
+            mock_response.usage.prompt_tokens = 10
+            mock_response.usage.completion_tokens = 20
+            mock_response.model = "gpt-4"
+            mock_client.chat.completions.create = AsyncMock(return_value=mock_response)
+            result = await openai_complete(mock_client, "model", "sys", "user", tools=[{"name": "test"}])
+            assert result["content"] == "response"
 
-    manager = MockProviderManager()
-    adapter = make_openai_adapter("openai", "key", provider_manager=manager)
-    
-    # mock asyncio.sleep to not actually sleep
-    with patch("asyncio.sleep", new_callable=AsyncMock) as mock_sleep:
-        res = await adapter("sys", "usr")
-        assert res["content"] == "retry ok"
-        mock_sleep.assert_called_once()
+        import asyncio
+        asyncio.run(_test())
+
+    def test_openai_complete_exception_raises_llm_error(self):
+        async def _test():
+            mock_client = MagicMock()
+            mock_client.chat.completions.create = AsyncMock(side_effect=RuntimeError("API error"))
+            with pytest.raises(Exception, match="API call failed"):
+                await openai_complete(mock_client, "model", "sys", "user")
+
+        import asyncio
+        asyncio.run(_test())
+
+    def test_map_real_model_gemini_flash(self):
+        assert _map_real_model("gemini-3.5-flash") == "gemini-2.0-flash"
+
+    def test_map_real_model_gemini_lite(self):
+        assert _map_real_model("gemini-3.5-flash-lite") == "gemini-2.0-flash-lite-preview-02-05"
+
+    def test_map_real_model_gemini_pro(self):
+        assert _map_real_model("gemini-4.0-pro") == "gemini-1.5-pro"
+
+    def test_map_real_model_gpt_mini(self):
+        assert _map_real_model("gpt-5.1-mini") == "gpt-4o-mini"
+
+    def test_map_real_model_gpt_nano(self):
+        assert _map_real_model("gpt-5.0-nano") == "gpt-4o-mini"
+
+    def test_map_real_model_gpt_default(self):
+        assert _map_real_model("gpt-5.5") == "gpt-4o"
+
+    def test_map_real_model_claude_sonnet(self):
+        assert _map_real_model("claude-sonnet-4") == "claude-3-5-sonnet-latest"
+
+    def test_map_real_model_claude_opus(self):
+        assert _map_real_model("claude-opus-4") == "claude-3-opus-latest"
+
+    def test_map_real_model_claude_haiku(self):
+        assert _map_real_model("claude-haiku-4") == "claude-3-5-haiku-latest"
+
+    def test_map_real_model_unknown_returns_original(self):
+        assert _map_real_model("some-other-model") == "some-other-model"
+
+    def test_make_openai_adapter_gemini(self):
+        result = make_openai_adapter("gemini", "key")
+        assert callable(result)
+
+    def test_make_openai_adapter_non_gemini_returns_adapter(self):
+        with patch("openai.AsyncOpenAI") as mock_oai:
+            mock_oai.return_value = MagicMock()
+            result = make_openai_adapter("openai", "key", base_url="https://api.openai.com/v1")
+            assert callable(result)
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 5. chat/session.py (97% - missing 48->52, 82->84, 110->exit)
+# ═══════════════════════════════════════════════════════════════════

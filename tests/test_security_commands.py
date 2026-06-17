@@ -1,14 +1,22 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
 
 from __future__ import annotations
 
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from click.testing import CliRunner
 from typer import Typer
 from typer.main import get_command
 
+from siyarix.chat.commands import CommandProfile, CommandProfileStore
+from siyarix.dlp import DLPEngine
 from siyarix.security_commands import security_app
+
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+
+
+
 
 
 @pytest.fixture
@@ -30,6 +38,7 @@ def invoke_security(cli: Typer, runner: CliRunner, args: list[str]) -> str:
     return result.output
 
 
+from unittest.mock import patch, MagicMock, AsyncMock
 class TestSecurityGroup:
     def test_help(self, cli: Typer, runner: CliRunner) -> None:
         command = get_command(cli)
@@ -206,3 +215,175 @@ class TestPlaybooks:
         assert "pb_ransomware" in output
         assert "Ransomware Response" in output
         assert "phishing" in output.lower()
+
+class TestCommandsCoverage:
+    """Cover missing commands.py lines."""
+
+    def test_save_sets_created_at_when_empty(self, tmp_path):
+        from siyarix.chat.commands import CommandProfileStore, CommandProfile
+        store = CommandProfileStore()
+        store._profiles_dir = tmp_path
+        p = CommandProfile(name="test", command="ls")
+        p.created_at = ""
+        store.save(p)
+        assert p.created_at != ""
+
+    def test_list_credentials_skips_bad_json(self, tmp_path):
+        from siyarix.chat.commands import CommandProfileStore
+        store = CommandProfileStore()
+        store._profiles_dir = tmp_path
+        (tmp_path / "bad.json").write_text("not json")
+        result = store.list_credentials()
+        assert result == []
+
+    def test_delete_returns_false_when_missing(self, tmp_path):
+        from siyarix.chat.commands import CommandProfileStore
+        store = CommandProfileStore()
+        store._profiles_dir = tmp_path
+        assert store.delete("nonexistent") is False
+
+    def test_render_replaces_params(self):
+        from siyarix.chat.commands import CommandProfileStore
+        store = CommandProfileStore()
+        result = store.render("hello {name}", {"name": "world"})
+        assert result == "hello world"
+
+
+# ═══════════════════════════════════════════════════════════════════
+# chat/prompts.py (88% - missing line 34)
+# ═══════════════════════════════════════════════════════════════════
+class TestDLPCoverage:
+    """Cover missing DLP lines."""
+
+    def test_redact_non_string_returns_unchanged(self):
+        engine = DLPEngine()
+        assert engine.redact(42) == 42
+
+    def test_redact_secrets(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        result = engine.redact("My key is AKIAIOSFODNN7EXAMPLE")
+        assert "[REDACTED AWS_KEY]" in result
+
+    def test_redact_pii(self):
+        engine = DLPEngine(redact_secrets=False, redact_pii=True)
+        result = engine.redact("Email: test@example.com")
+        assert "[REDACTED EMAIL]" in result
+
+    def test_redact_logs_when_changed(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        with patch("siyarix.dlp.logger") as mock_log:
+            engine.redact("AKIAIOSFODNN7EXAMPLE")
+            mock_log.debug.assert_called_once()
+
+    def test_redact_dict_recursive(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        data = {"nested": {"key": "AKIAIOSFODNN7EXAMPLE"}, "list": ["secret AKIAIOSFODNN7EXAMPLE"]}
+        result = engine.redact_dict(data)
+        assert "[REDACTED AWS_KEY]" in result["nested"]["key"]
+        assert "[REDACTED AWS_KEY]" in result["list"][0]
+
+    def test_redact_dict_non_string_value_passthrough(self):
+        engine = DLPEngine()
+        result = engine.redact_dict({"num": 42, "flag": True})
+        assert result["num"] == 42
+        assert result["flag"] is True
+
+
+# ═══════════════════════════════════════════════════════════════════
+# executor.py (67% - selective key lines)
+# ═══════════════════════════════════════════════════════════════════
+class TestCommandsSaveEdge:
+    """Line 122-124: profile.created_at already set => skip assignment."""
+
+    def test_save_with_created_at_already_set(self, tmp_path):
+        store = CommandProfileStore()
+        store._profiles_dir = tmp_path
+        p = CommandProfile(name="existing", command="ls", created_at="2024-01-01T00:00:00")
+        store.save(p)
+        assert p.created_at == "2024-01-01T00:00:00"
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 5. audit_log.py (91% - many uncovered lines)
+# ═══════════════════════════════════════════════════════════════════
+class TestDLPEngine:
+    """Cover DLP filtering engine: exact match, regex, false positive, not_available branches."""
+
+    def test_redact_non_string_returns_as_is(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        assert engine.redact(123) == 123
+        assert engine.redact(None) is None
+        assert engine.redact([1, 2, 3]) == [1, 2, 3]
+
+    def test_redact_secrets_false_skips_secret_patterns(self):
+        engine = DLPEngine(redact_secrets=False, redact_pii=False)
+        text = "My AWS key is AKIAIOSFODNN7EXAMPLE"
+        result = engine.redact(text)
+        assert "AKIAIOSFODNN7EXAMPLE" in result
+
+    def test_redact_secrets_with_secret_enabled(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        text = "My AWS key is AKIAIOSFODNN7EXAMPLE"
+        result = engine.redact(text)
+        assert "AKIAIOSFODNN7EXAMPLE" not in result
+        assert "[REDACTED AWS_KEY]" in result
+
+    def test_redact_pii_true_masks_pii(self):
+        engine = DLPEngine(redact_secrets=False, redact_pii=True)
+        text = "user@example.com and 123-45-6789"
+        result = engine.redact(text)
+        assert "user@example.com" not in result
+        assert "123-45-6789" not in result
+        assert "[REDACTED EMAIL]" in result
+        assert "[REDACTED SSN]" in result
+
+    def test_redact_both_secrets_and_pii(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=True)
+        text = "AKIAIOSFODNN7EXAMPLE and user@example.com"
+        result = engine.redact(text)
+        assert "[REDACTED AWS_KEY]" in result
+        assert "[REDACTED EMAIL]" in result
+
+    def test_redact_no_change_logs_debug(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        with patch("siyarix.dlp.logger") as mock_log:
+            engine.redact("nothing sensitive here")
+            mock_log.debug.assert_not_called()
+
+    def test_redact_with_change_logs_debug(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        with patch("siyarix.dlp.logger") as mock_log:
+            engine.redact("key is AKIAIOSFODNN7EXAMPLE")
+            mock_log.debug.assert_called_once()
+
+    def test_redact_dict_string_value(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        data = {"key": "AKIAIOSFODNN7EXAMPLE"}
+        result = engine.redact_dict(data)
+        assert "[REDACTED AWS_KEY]" in str(result)
+
+    def test_redact_dict_nested_dict(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        data = {"outer": {"inner": "AKIAIOSFODNN7EXAMPLE"}}
+        result = engine.redact_dict(data)
+        assert "[REDACTED AWS_KEY]" in str(result)
+
+    def test_redact_dict_list_values(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        data = {"items": ["safe", "AKIAIOSFODNN7EXAMPLE"]}
+        result = engine.redact_dict(data)
+        assert result["items"][0] == "safe"
+        assert "[REDACTED AWS_KEY]" in result["items"][1]
+
+    def test_redact_dict_other_types_preserved(self):
+        engine = DLPEngine(redact_secrets=True, redact_pii=False)
+        data = {"num": 42, "flag": True, "none": None}
+        result = engine.redact_dict(data)
+        assert result["num"] == 42
+        assert result["flag"] is True
+        assert result["none"] is None
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 2. chat/platform_utils.py (37% - missing 124-131, 139, 152-167, 180-201)
+# ═══════════════════════════════════════════════════════════════════

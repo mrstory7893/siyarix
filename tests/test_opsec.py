@@ -1,14 +1,17 @@
+
+from __future__ import annotations
+from pathlib import Path
+from siyarix.opsec import OPSECManager
+from siyarix.opsec import OPSECManager, OPSECStatus, opsec_manager, random_string
+from unittest.mock import MagicMock, patch
+
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 """Tests for siyarix.opsec — operational security."""
 
-from __future__ import annotations
-
-from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 
-from siyarix.opsec import OPSECManager, OPSECStatus, opsec_manager, random_string
+
 
 
 class TestRandomString:
@@ -192,3 +195,73 @@ class TestOPSECManager:
 
     def test_module_singleton(self) -> None:
         assert isinstance(opsec_manager, OPSECManager)
+
+class TestOPSECCoverage:
+    """Cover uncovered OPSEC lines."""
+
+    def test_is_active_with_burn_after_reading(self):
+        mgr = OPSECManager()
+        mgr._status.burn_after_reading = True
+        assert mgr.is_active is True
+
+    def test_isolate_no_namespace_generates_one(self):
+        mgr = OPSECManager()
+        result = mgr.isolate(target="10.0.0.1", use_tor=True)
+        assert mgr._status.isolated is True
+        assert "siyarix_isolated" in mgr._status.namespace
+        assert result.success is True
+
+    def test_burn_with_session_id(self):
+        mgr = OPSECManager()
+        sess_dir = mgr._log_dir / "sessions" / "sess_test123"
+        sess_dir.mkdir(parents=True)
+        (sess_dir / "log.txt").write_text("test data")
+        result = mgr.burn(session_id="test123")
+        assert result.items_destroyed >= 1
+        assert result.success is True
+
+    def test_burn_all_sessions(self):
+        mgr = OPSECManager()
+        sess_dir = mgr._log_dir / "sessions"
+        sess_dir.mkdir(parents=True)
+        sub = sess_dir / "sess_abc"
+        sub.mkdir()
+        (sub / "data.txt").write_text("data")
+        result = mgr.burn()
+        assert result.items_destroyed > 0
+
+    def test_burn_all_sessions_with_file(self):
+        mgr = OPSECManager()
+        sess_dir = mgr._log_dir / "sessions"
+        sess_dir.mkdir(parents=True)
+        (sess_dir / "a_session_file.log").write_text("data")
+        result = mgr.burn()
+        assert result.items_destroyed > 0
+
+    def test_secure_delete_empty_file(self, tmp_path):
+        from siyarix.opsec import OPSECManager
+        mgr = OPSECManager()
+        f = tmp_path / "empty.txt"
+        f.write_text("")
+        mgr._secure_delete(f)
+
+    def test_secure_delete_error_logged(self, tmp_path):
+        from siyarix.opsec import OPSECManager
+        mgr = OPSECManager()
+        f = tmp_path / "nonexistent.txt"
+        mgr._secure_delete(f)
+
+    def test_status_dict(self):
+        mgr = OPSECManager()
+        d = mgr.status_dict()
+        assert "is_active" in d
+        assert "isolated" in d
+
+    def test_random_string(self):
+        s = random_string(8)
+        assert len(s) >= 8
+
+
+# ═══════════════════════════════════════════════════════════════════
+# output/__init__.py (88% - selective key lines)
+# ═══════════════════════════════════════════════════════════════════

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 import json
@@ -240,3 +242,277 @@ class TestSessionLogger:
     def test_path_format(self, logger):
         path = logger._path("abc-123")
         assert path.name == "abc-123.json"
+
+
+
+"""Extra tests for session_log targeting uncovered lines."""
+
+
+from unittest.mock import patch
+
+import pytest
+
+from siyarix.session_log import (
+    CommandEntry,
+    SafetyEvent,
+    SessionLog,
+    SessionLogger,
+)
+
+
+class TestSessionLoggerListLogs:
+    def test_list_logs_dir_not_exists(self, tmp_path):
+        logger = SessionLogger(log_dir=tmp_path / "nonexistent")
+        assert logger.list_logs() == []
+
+    def test_list_logs_skips_empty_and_unlinks(self, logger, sample_log):
+        logger.save(sample_log)
+        empty = logger._log_dir / "empty.json"
+        empty.write_text("", encoding="utf-8")
+        logger.list_logs()
+        # Empty file should have been unlinked
+        assert not empty.exists()
+
+    def test_list_logs_skips_corrupt_and_continues(self, logger, sample_log):
+        logger.save(sample_log)
+        bad = logger._log_dir / "bad.json"
+        bad.write_text("{{{corrupt", encoding="utf-8")
+        logs = logger.list_logs()
+        assert len(logs) == 1
+        assert logs[0]["session_id"] == "test-session-1"
+
+
+class TestSessionLoggerExportMarkdown:
+    def test_export_markdown_with_safety_events(self, logger):
+        log = SessionLog(
+            session_id="s1",
+            timestamp_start="2024-01-01T00:00:00",
+            timestamp_end="2024-01-01T01:00:00",
+            persona="hunter",
+            llm_provider="openai",
+            llm_model="gpt-4",
+            user="alice",
+            safety_events=[
+                SafetyEvent(type="permission_gate", command="rm -rf", action="blocked"),
+            ],
+        )
+        logger.save(log)
+        md = logger.export_markdown("s1")
+        assert "## Safety Events" in md
+        assert "rm -rf" in md
+        assert "blocked" in md
+
+    def test_export_markdown_with_masked_input(self, logger):
+        log = SessionLog(
+            session_id="s2",
+            commands=[
+                CommandEntry(
+                    id=1,
+                    timestamp="2024-01-01T00:00:00",
+                    input="password=secret",
+                    masked_input="password=****",
+                    approved=True,
+                    execution_time_ms=100.0,
+                    output_summary="ok",
+                    full_output_ref="logs/s2/cmd_01_output.txt",
+                    ai_plan=["step1"],
+                ),
+            ],
+        )
+        logger.save(log)
+        md = logger.export_markdown("s2")
+        assert "password=****" in md
+        assert "step1" in md
+        assert "logs/s2/cmd_01_output.txt" in md
+
+    def test_export_markdown_no_masked_input(self, logger):
+        log = SessionLog(
+            session_id="s3",
+            commands=[
+                CommandEntry(
+                    id=1,
+                    timestamp="2024-01-01T00:00:00",
+                    input="ls -la",
+                    masked_input="",
+                    ai_plan=[],
+                    approved=True,
+                    execution_time_ms=50.0,
+                    output_summary="files",
+                    full_output_ref="",
+                ),
+            ],
+        )
+        logger.save(log)
+        md = logger.export_markdown("s3")
+        assert "ls -la" in md
+        # masked_input is empty so should not appear
+        assert "- **Masked:**" not in md
+        # ai_plan is empty so no AI Plan line
+        assert "- **AI Plan:**" not in md
+        # full_output_ref is empty so no Full Output line
+        assert "- **Full Output:**" not in md
+
+    def test_export_markdown_command_fields(self, logger):
+        log = SessionLog(
+            session_id="s4",
+            commands=[
+                CommandEntry(
+                    id=1,
+                    timestamp="2024-01-01T00:00:00",
+                    input="nmap -sV 10.0.0.1",
+                    masked_input="nmap -sV TARGET",
+                    ai_plan=["recon", "scan"],
+                    approved=False,
+                    execution_time_ms=2500.0,
+                    output_summary="Ports 22,80,443 open",
+                    full_output_ref="logs/s4/cmd_01_output.txt",
+                ),
+            ],
+        )
+        logger.save(log)
+        md = logger.export_markdown("s4")
+        assert "nmap -sV TARGET" in md
+        assert "recon" in md and "scan" in md
+        assert "2500.0ms" in md
+        assert "Ports 22,80,443 open" in md
+        assert "logs/s4/cmd_01_output.txt" in md
+        assert "**Approved:** False" in md
+
+
+class TestSessionLoggerAddCommandAudit:
+    def test_add_command_audit_exception_is_handled(self, logger):
+        log = SessionLog(
+            session_id="audit-fail",
+            user="testuser",
+            persona="pentester",
+            commands=[],
+        )
+        logger.save(log)
+        with patch("siyarix.session_log.audit.log", side_effect=Exception("audit down")):
+            result = logger.add_command(
+                "audit-fail",
+                input_text="nmap -sV target",
+                approved=True,
+            )
+            # Should succeed despite audit failure
+            assert result is True
+
+    def test_add_command_empty_ai_plan_defaults(self, logger):
+        log = SessionLog(session_id="empty-plan", commands=[])
+        logger.save(log)
+        logger.add_command("empty-plan", input_text="echo hi", ai_plan=None)
+        loaded = logger.load("empty-plan")
+        assert loaded.commands[0].ai_plan == []
+
+    def test_add_command_creates_output_ref(self, logger):
+        log = SessionLog(session_id="ref-test", commands=[])
+        logger.save(log)
+        logger.add_command("ref-test", input_text="nmap scan")
+        loaded = logger.load("ref-test")
+        assert loaded.commands[0].full_output_ref.startswith("logs/ref-test/cmd_01")
+
+
+class TestSessionLoggerMisc:
+    def test_create_log_defaults(self, logger):
+        log = logger.create_log(session_id="auto-gen")
+        assert log.session_id == "auto-gen"
+        assert log.persona == ""
+        assert log.llm_provider == ""
+        assert log.llm_model == ""
+        assert log.user == ""
+        assert log.timestamp_start != ""
+        assert log.timestamp_end == ""
+
+    def test_add_safety_event_not_found(self, logger):
+        assert logger.add_safety_event("missing", "cmd", "blocked") is False
+
+    def test_track_tool_usage_increment(self, logger):
+        log = SessionLog(
+            session_id="usage-test",
+            tool_usage={"nmap": 1},
+        )
+        logger.save(log)
+        logger.track_tool_usage("usage-test", "nmap", count=2)
+        loaded = logger.load("usage-test")
+        assert loaded.tool_usage["nmap"] == 3
+
+    def test_track_tool_usage_new_tool(self, logger):
+        log = SessionLog(session_id="usage-new", tool_usage={})
+        logger.save(log)
+        logger.track_tool_usage("usage-new", "nuclei", count=5)
+        loaded = logger.load("usage-new")
+        assert loaded.tool_usage["nuclei"] == 5
+
+    def test_track_tool_usage_not_found(self, logger):
+        assert logger.track_tool_usage("missing", "tool") is False
+
+    def test_update_end_time_not_found(self, logger):
+        assert logger.update_end_time("missing") is False
+
+    def test_delete_not_found(self, logger):
+        assert logger.delete("missing") is False
+
+    def test_path_format(self, logger):
+        path = logger._path("test-session")
+        assert str(path).endswith("test-session.json")
+
+    def test_export_json_str(self, logger):
+        log = SessionLog(session_id="json-export")
+        logger.save(log)
+        js = logger.export_json_str("json-export")
+        assert js is not None
+        import json
+        data = json.loads(js)
+        assert data["session_id"] == "json-export"
+
+    def test_export_json_str_not_found(self, logger):
+        assert logger.export_json_str("missing") is None
+
+    def test_export_sarif_with_commands(self, logger):
+        log = SessionLog(
+            session_id="sarif-test",
+            commands=[
+                CommandEntry(id=1, input="nmap scan", output_summary="ports found"),
+                CommandEntry(id=2, input="nuclei scan", output_summary="vulns found"),
+            ],
+        )
+        logger.save(log)
+        sarif_str = logger.export_sarif("sarif-test")
+        import json
+        sarif = json.loads(sarif_str)
+        assert len(sarif["runs"][0]["results"]) == 2
+        assert sarif["runs"][0]["results"][0]["ruleId"] == "CMD-0001"
+        assert sarif["runs"][0]["results"][1]["ruleId"] == "CMD-0002"
+
+    def test_export_sarif_not_found(self, logger):
+        assert logger.export_sarif("missing") is None
+
+
+@pytest.fixture
+def logger(tmp_path):
+    return SessionLogger(log_dir=tmp_path)
+
+
+@pytest.fixture
+def sample_log():
+    return SessionLog(
+        session_id="test-session-1",
+        timestamp_start="2024-01-01T00:00:00",
+        timestamp_end="",
+        persona="bug_hunter",
+        llm_provider="openai",
+        llm_model="gpt-4",
+        user="testuser",
+        commands=[
+            CommandEntry(
+                id=1,
+                timestamp="2024-01-01T00:00:01",
+                input="nmap -sV target",
+                output_summary="open ports found",
+            ),
+        ],
+        tool_usage={"nmap": 1, "gobuster": 2},
+        safety_events=[
+            SafetyEvent(type="permission_gate", command="rm -rf /", action="blocked"),
+        ],
+    )

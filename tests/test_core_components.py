@@ -1,10 +1,14 @@
-import pytest
-import json
-from unittest.mock import MagicMock, AsyncMock, patch
 
+from siyarix.core.learning import ContinuousLearning
+from siyarix.core.learning import ContinuousLearning, Experience
 from siyarix.core.pipeline import CommandPipeline, PipelineStep, PipelineResult
 from siyarix.core.swarm import SwarmRouter, SwarmTask, ReconAgent, ExploitAgent, ReportAgent
-from siyarix.core.learning import ContinuousLearning, Experience
+from unittest.mock import MagicMock, AsyncMock, patch
+import asyncio
+import json
+import pytest
+
+
 
 def test_pipeline_parse():
     pipeline = CommandPipeline()
@@ -125,3 +129,81 @@ async def test_continuous_learning_query():
     
     assert len(results) == 1
     assert results[0].action == "scan"
+
+import asyncio
+class TestLearningCoverage:
+    """Cover missing learning.py lines."""
+
+    @pytest.mark.asyncio
+    async def test_get_embedding_from_openai(self):
+        from siyarix.core.learning import ContinuousLearning
+        mem = MagicMock()
+        cl = ContinuousLearning(memory=mem)
+        with patch.object(cl.providers, "get_api_key", return_value="sk-test"):
+            with patch("openai.AsyncOpenAI") as MockAO:
+                mock_client = AsyncMock()
+                mock_client.embeddings.create = AsyncMock(
+                    return_value=MagicMock(data=[MagicMock(embedding=[0.1, 0.2, 0.3])])
+                )
+                MockAO.return_value = mock_client
+                emb = await cl._get_embedding("test text")
+                assert emb == [0.1, 0.2, 0.3]
+
+    @pytest.mark.asyncio
+    async def test_get_embedding_from_ollama(self):
+        from siyarix.core.learning import ContinuousLearning
+        mem = MagicMock()
+        cl = ContinuousLearning(memory=mem)
+        cl._embedding_cache = {}
+        with patch.object(cl.providers, "get_api_key", return_value=None):
+            with patch.object(cl.providers, "get_base_url", return_value="http://localhost:11434"):
+                with patch("httpx.AsyncClient") as MockClient:
+                    mock_resp = MagicMock()
+                    mock_resp.status_code = 200
+                    mock_resp.json.return_value = {"embedding": [0.5, 0.6]}
+                    mock_client = AsyncMock()
+                    mock_client.__aenter__.return_value = mock_client
+                    mock_client.post = AsyncMock(return_value=mock_resp)
+                    MockClient.return_value = mock_client
+                    emb = await cl._get_embedding("test")
+                    assert emb == [0.5, 0.6]
+
+    @pytest.mark.asyncio
+    async def test_get_embedding_simulated_fallback(self):
+        from siyarix.core.learning import ContinuousLearning
+        mem = MagicMock()
+        cl = ContinuousLearning(memory=mem)
+        cl._embedding_cache = {}
+        with patch.object(cl.providers, "get_api_key", return_value=None):
+            with patch.object(cl.providers, "get_base_url", return_value=None):
+                emb = await cl._get_embedding("test text")
+                assert len(emb) == 32
+
+    @pytest.mark.asyncio
+    async def test_get_embedding_simulated_exception(self):
+        from siyarix.core.learning import ContinuousLearning
+        mem = MagicMock()
+        cl = ContinuousLearning(memory=mem)
+        cl._embedding_cache = {}
+        with patch.object(cl.providers, "get_api_key", return_value=None):
+            with patch.object(cl.providers, "get_base_url", return_value=None):
+                with patch("hashlib.sha256", side_effect=Exception("fail")):
+                    emb = await cl._get_embedding("test")
+                    assert emb == [0.0] * 32
+
+    @pytest.mark.asyncio
+    async def test_query_similar_experiences_handles_bad_data(self):
+        from siyarix.core.learning import ContinuousLearning, Experience
+        mem = MagicMock()
+        cl = ContinuousLearning(memory=mem)
+        cl._embedding_cache["test"] = [0.1] * 32
+        bad_entry = MagicMock()
+        bad_entry.value = "not json"
+        mem.search.return_value = [bad_entry]
+        results = await cl.query_similar_experiences("scan", "target")
+        assert results == []
+
+
+# ═══════════════════════════════════════════════════════════════════
+# credential_store.py (71% - selective key lines)
+# ═══════════════════════════════════════════════════════════════════

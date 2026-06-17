@@ -1,12 +1,14 @@
+
+from __future__ import annotations
+from siyarix.cvss_scorer import CVSSResult, CVSSScorer, CVSSVector, Severity
+import pytest
+
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
 """Tests for CVSSScorer."""
 
-from __future__ import annotations
 
-import pytest
 
-from siyarix.cvss_scorer import CVSSResult, CVSSScorer, CVSSVector, Severity
 
 pytestmark = pytest.mark.cvss
 
@@ -96,3 +98,42 @@ class TestCVSSScorer:
         assert scorer._severity_from_score(5.0) == Severity.MEDIUM
         assert scorer._severity_from_score(2.0) == Severity.LOW
         assert scorer._severity_from_score(0.0) == Severity.NONE
+
+class TestCVSSCoverage:
+    """Cover missing cvss_scorer.py lines: edge cases in score calculations."""
+
+    def test_score_without_vector_creates_default(self):
+        scorer = CVSSScorer()
+        result = scorer.score()
+        assert result.score > 0
+
+    def test_score_with_overrides(self):
+        scorer = CVSSScorer()
+        result = scorer.score(attack_vector="physical", scope="changed")
+        assert result.vector.attack_vector == "physical"
+        assert result.vector.scope == "changed"
+
+    def test_score_base_zero_when_impact_zero(self):
+        scorer = CVSSScorer()
+        result = scorer.score(
+            confidentiality="none",
+            integrity="none",
+            availability="none",
+        )
+        assert result.score == 0.0
+
+    def test_score_from_cve(self):
+        scorer = CVSSScorer()
+        result = scorer.score_from_cve("CVE-2023-1234", "remote code execution vulnerability")
+        assert result.score > 0
+
+    def test_parse_vector_string(self):
+        scorer = CVSSScorer()
+        v = scorer.parse_vector_string("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H")
+        assert v.attack_vector == "network"
+        assert v.confidentiality == "high"
+
+
+# ═══════════════════════════════════════════════════════════════════
+# dlp.py (70% - missing 38, 42-50, 51, 61-66)
+# ═══════════════════════════════════════════════════════════════════

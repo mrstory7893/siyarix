@@ -1,7 +1,3 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-
-"""Tests for siyarix.cache_manager — intelligent caching system."""
-
 from __future__ import annotations
 
 import time
@@ -17,6 +13,11 @@ from siyarix.cache_manager import (
     cache_manager,
     cached,
 )
+
+
+@pytest.fixture
+def cache(tmp_path) -> CacheManager:
+    return CacheManager(cache_dir=str(tmp_path / "cache"))
 
 
 class TestCacheEntry:
@@ -211,3 +212,131 @@ class TestCachedDecorator:
 
     def test_decorator_singleton(self) -> None:
         assert cache_manager is not None
+
+class TestCacheManagerCoverage:
+    """Cover missing cache_manager lines."""
+
+    def test_save_index_memory_only_returns_early(self):
+        from siyarix.cache_manager import CacheManager
+        cm = CacheManager()
+        with patch("siyarix.opsec.opsec_manager") as mock_opsec:
+            mock_opsec.status.memory_only = True
+            cm._save_index()
+
+    def test_save_index_import_error_continues(self):
+        from siyarix.cache_manager import CacheManager
+        cm = CacheManager()
+        with patch.dict("sys.modules", {"siyarix.opsec": None}):
+            cm._save_index()
+
+    def test_get_memory_only_returns_entry_data(self):
+        from siyarix.cache_manager import CacheManager, CacheEntry
+        cm = CacheManager()
+        cm._entries["k"] = CacheEntry(key="k", data="mem_data", created_at=time.monotonic(), ttl=9999)
+        with patch("siyarix.opsec.opsec_manager") as m:
+            m.status.memory_only = True
+            assert cm.get("k") == "mem_data"
+
+    def test_get_import_error_returns_file_data(self):
+        from siyarix.cache_manager import CacheManager, CacheEntry
+        cm = CacheManager()
+        cm._entries["k"] = CacheEntry(key="k", data="x", created_at=time.monotonic(), ttl=9999)
+        with patch("siyarix.opsec.opsec_manager") as mock_os:
+            mock_os.status.memory_only = False
+            with patch.object(Path, "read_text", return_value="file_data"):
+                assert cm.get("k") == "file_data"
+
+    def test_set_import_error_sets_memory_only_false(self):
+        from siyarix.cache_manager import CacheManager
+        cm = CacheManager()
+        with patch.dict("sys.modules", {"siyarix.opsec": None}):
+            cm.set("k", "data", "tool_output")
+            assert "k" in cm._entries
+
+    def test_set_memory_only_skips_disk_write(self):
+        from siyarix.cache_manager import CacheManager, CacheEntry
+        cm = CacheManager()
+        entry = CacheEntry(key="k", data="d")
+        cm._entries["k"] = entry
+        with patch("siyarix.opsec.opsec_manager") as m:
+            m.status.memory_only = True
+            with patch.object(Path, "write_text") as mock_write:
+                cm.set("k2", "data2", "tool_output")
+            mock_write.assert_not_called()
+
+    def test_invalidate_exception_logged(self):
+        from siyarix.cache_manager import CacheManager, CacheEntry
+        cm = CacheManager()
+        cm._entries["k"] = CacheEntry(key="k", domain="d")
+        with patch.object(Path, "glob", return_value=[Path("f.cache")]):
+            with patch.object(Path, "unlink", side_effect=OSError("fail")):
+                with patch("siyarix.cache_manager.logger") as mock_log:
+                    cm.invalidate("d")
+                    mock_log.warning.assert_called_once()
+
+
+# ═══════════════════════════════════════════════════════════════════
+# chat/commands.py (84% - missing 122-124, 139-140, 148, 152-155)
+# ═══════════════════════════════════════════════════════════════════
+class TestCacheManagerCoverage02More:
+    """Cover remaining cache_manager.py lines 126-127, 192-193."""
+
+    def test_get_import_error_returns_none(self):
+        cm = CacheManager()
+        cm._entries["k"] = CacheEntry(key="k", data="x", created_at=time.monotonic(), ttl=9999)
+        with patch("siyarix.opsec.opsec_manager") as mock_os:
+            mock_os.status.memory_only = False
+            with patch.object(Path, "read_text", side_effect=OSError("read error")):
+                assert cm.get("k") is None
+
+    def test_invalidate_all_exception_logged(self):
+        cm = CacheManager()
+        cm._entries["k"] = CacheEntry(key="k", domain="d", data="x", created_at=time.monotonic(), ttl=9999)
+        with patch.object(Path, "glob", return_value=[Path("k.cache")]):
+            with patch.object(Path, "unlink", side_effect=OSError("fail")):
+                with patch("siyarix.cache_manager.logger") as mock_log:
+                    cm.invalidate()
+                    mock_log.warning.assert_called()
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 8. credential_store.py (73% - many uncovered lines)
+# ═══════════════════════════════════════════════════════════════════
+
+@pytest.fixture
+def cred_store(tmp_path, monkeypatch):
+    monkeypatch.setenv("SIYARIX_CONFIG_DIR", str(tmp_path / "siyarix"))
+    monkeypatch.setenv("SIYARIX_USE_KEYRING", "0")
+    s = CredentialStore(master_password="test_master")
+    return s
+class TestCacheManagerCoverageMore:
+    """Cover remaining cache_manager.py lines 126-127, 192-193."""
+
+    def test_get_import_error_returns_none(self):
+        cm = CacheManager()
+        cm._entries["k"] = CacheEntry(key="k", data="x", created_at=time.monotonic(), ttl=9999)
+        with patch("siyarix.opsec.opsec_manager") as mock_os:
+            mock_os.status.memory_only = False
+            with patch.object(Path, "read_text", side_effect=OSError("read error")):
+                assert cm.get("k") is None
+
+    def test_invalidate_all_exception_logged(self):
+        cm = CacheManager()
+        cm._entries["k"] = CacheEntry(key="k", domain="d", data="x", created_at=time.monotonic(), ttl=9999)
+        with patch.object(Path, "glob", return_value=[Path("k.cache")]):
+            with patch.object(Path, "unlink", side_effect=OSError("fail")):
+                with patch("siyarix.cache_manager.logger") as mock_log:
+                    cm.invalidate()
+                    mock_log.warning.assert_called()
+
+
+# ═══════════════════════════════════════════════════════════════════
+# 8. credential_store.py (73% - many uncovered lines)
+# ═══════════════════════════════════════════════════════════════════
+
+@pytest.fixture
+def cred_store(tmp_path, monkeypatch):
+    monkeypatch.setenv("SIYARIX_CONFIG_DIR", str(tmp_path / "siyarix"))
+    monkeypatch.setenv("SIYARIX_USE_KEYRING", "0")
+    s = CredentialStore(master_password="test_master")
+    return s
