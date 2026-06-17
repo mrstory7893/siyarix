@@ -200,7 +200,7 @@ class TestIkeScanParser:
 
 
 
-"""Comprehensive tests for parser batch 2 — bloodhound, netcat, scoutsuite, dnsrecon, bloodhound-python, searchsploit."""
+"""Comprehensive coverage tests for: bloodhound, netcat, scoutsuite, dnsrecon, bloodhound-python, searchsploit."""
 
 import json
 import pytest
@@ -1052,7 +1052,7 @@ class TestFindomainParser:
     def test_dedup(self):
         r = FindomainParser().parse('{"domain":"test.com"}\n{"domain":"test.com"}')
         assert len(r) == 1
-class TestIkeScanParser_final_b2:
+class TestIkeScanParser:
     def test_empty(self):
         assert IkeScanParser().parse("") == []
 
@@ -1135,7 +1135,7 @@ class TestMasscanParser:
     def test_skip_non_match(self):
         r = MasscanParser().parse("some random output")
         assert len(r) == 0
-class TestNetcatParser_final_b2:
+class TestNetcatParser:
     def test_empty(self):
         assert NetcatParser().parse("") == []
 
@@ -1202,7 +1202,7 @@ class TestNmapParser:
     def test_text_port_line_with_extra(self):
         r = NmapParser().parse("Nmap scan report for 10.0.0.1\n22/tcp open  ssh OpenSSH 6.0")
         assert len(r) == 1
-class TestRustscanParser_final_b2:
+class TestRustscanParser:
     def test_empty(self):
         assert RustscanParser().parse("") == []
 
@@ -1251,7 +1251,7 @@ class TestShodanParser:
 
     def test_blank_line_skipped(self):
         assert ShodanParser().parse("\n") == []
-class TestTcpdumpParser_final_b2:
+class TestTcpdumpParser:
     def test_empty(self):
         assert TcpdumpParser().parse("") == []
 
@@ -1304,7 +1304,7 @@ class TestTcpdumpParser_final_b2:
     def test_blank_line_skipped(self):
         r = TcpdumpParser().parse("\n\n")
         assert len(r) == 0
-class TestZgrabParser_final_b2:
+class TestZgrabParser:
     def test_empty(self):
         assert ZgrabParser().parse("") == []
 

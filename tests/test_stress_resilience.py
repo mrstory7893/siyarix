@@ -28,11 +28,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PHASE 1: CHAOS SIMULATION
+# CHAOS SIMULATION
 # ═════════════════════════════════════════════════════════════════════════════
 
 
-class TestPhase1_ChaosSimulation:
+class TestChaosSimulation:
     @pytest.mark.asyncio
     async def test_1a_high_concurrency_worker_pool(self):
         from siyarix.worker_pool import AsyncWorkerPool
@@ -171,11 +171,11 @@ class TestPhase1_ChaosSimulation:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PHASE 2: ADVERSARIAL INPUT RESILIENCE
+# ADVERSARIAL INPUT RESILIENCE
 # ═════════════════════════════════════════════════════════════════════════════
 
 
-class TestPhase2_AdversarialInput:
+class TestAdversarialInput:
     @pytest.mark.asyncio
     async def test_2a_extreme_payload_sizes(self):
         from siyarix.security_hardening import validator
@@ -266,11 +266,11 @@ class TestPhase2_AdversarialInput:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PHASE 4: SELF-HEALING ACTIVATION
+# SELF-HEALING ACTIVATION
 # ═════════════════════════════════════════════════════════════════════════════
 
 
-class TestPhase4_SelfHealing:
+class TestSelfHealing:
     @pytest.mark.asyncio
     async def test_4a_calculate_backoff_delay(self):
         import random
@@ -336,11 +336,11 @@ class TestPhase4_SelfHealing:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PHASE 5: SECURITY & EXECUTION SAFETY AUDIT
+# SECURITY & EXECUTION SAFETY AUDIT
 # ═════════════════════════════════════════════════════════════════════════════
 
 
-class TestPhase5_SecurityAudit:
+class TestSecurityAudit:
     @pytest.mark.asyncio
     async def test_5a_no_unsafe_eval(self):
         src_dir = Path(__file__).resolve().parent.parent / "src" / "siyarix"
@@ -389,11 +389,11 @@ class TestPhase5_SecurityAudit:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PHASE 6: PERFORMANCE & STABILITY LIMIT TEST
+# PERFORMANCE & STABILITY LIMIT TEST
 # ═════════════════════════════════════════════════════════════════════════════
 
 
-class TestPhase6_PerformanceLimit:
+class TestPerformanceLimit:
     @pytest.mark.asyncio
     async def test_6a_max_parallel_resolver(self):
         from siyarix.security_hardening import DangerAnalyzer
@@ -447,11 +447,11 @@ class TestPhase6_PerformanceLimit:
 
 
 # ═════════════════════════════════════════════════════════════════════════════
-# PHASE 7: FAILURE AUTO-FIX — patches verified
+# FAILURE AUTO-FIX — patches verified
 # ═════════════════════════════════════════════════════════════════════════════
 
 
-class TestPhase7_FailureAutoFix:
+class TestFailureAutoFix:
     @pytest.mark.asyncio
     async def test_7a_worker_pool_correct_signature(self):
         from siyarix.worker_pool import AsyncWorkerPool

@@ -212,7 +212,7 @@ class TestSearchsploitParser:
         assert p.parse("") == []
 
 
-"""Comprehensive tests for parser batch 3 — dmitry, rustscan, dnsmap, enum4linux, yara, theharvester, smbclient, jwt_tool, smbmap, ldapsearch."""
+"""Comprehensive coverage tests for: dmitry, rustscan, dnsmap, enum4linux, yara, theharvester, smbclient, jwt_tool, smbmap, ldapsearch."""
 
 from siyarix.parsers.dmitry_parser import DmitryParser
 from siyarix.parsers.rustscan_parser import RustscanParser
@@ -680,7 +680,7 @@ class TestNiktoParser:
         assert findings[0]["severity"] in ("medium", "info")
 
 
-"""Tests for parsers with coverage <60% — batch 6."""
+"""Comprehensive coverage tests for parser integrations."""
 
 from siyarix.parsers.gau_parser import GauParser
 from siyarix.parsers.mimikatz_parser import MimikatzParser
@@ -1923,7 +1923,7 @@ class TestDalfoxParserBranches:
 # ---------------------------------------------------------------------------
 # 16. dig_parser.py  — missing 29
 # ---------------------------------------------------------------------------
-class TestJwtToolParser_final_b2:
+class TestJwtToolParser:
     def test_empty(self):
         assert JwtToolParser().parse("") == []
         assert JwtToolParser().parse("   ") == []
@@ -2018,7 +2018,7 @@ class TestNucleiParser:
 
     def test_blank_line_skipped(self):
         assert NucleiParser().parse("\n") == []
-class TestSearchsploitParser_final_b2:
+class TestSearchsploitParser:
     def test_empty(self):
         assert SearchsploitParser().parse("") == []
 
@@ -2093,7 +2093,7 @@ class TestSqlmapParser:
     def test_debug_level(self):
         r = SqlmapParser().parse("[DEBUG] connecting to target")
         assert r[0]["severity"] == "low"
-class TestSshAuditParser_final_b2:
+class TestSshAuditParser:
     def test_empty(self):
         assert SshAuditParser().parse("") == []
 
@@ -2129,7 +2129,7 @@ class TestSshAuditParser_final_b2:
     def test_blank_line_skipped(self):
         r = SshAuditParser().parse("\n\n")
         assert len(r) == 0
-class TestSslscanParser_final_b2:
+class TestSslscanParser:
     def test_empty(self):
         assert SslscanParser().parse("") == []
 
@@ -2173,7 +2173,7 @@ class TestSslscanParser_final_b2:
     def test_blank_line_skipped(self):
         r = SslscanParser().parse("\n\n")
         assert len(r) == 0
-class TestSslyzeParser_final_b2:
+class TestSslyzeParser:
     def test_empty(self):
         assert SslyzeParser().parse("") == []
 
@@ -2238,7 +2238,7 @@ class TestTestsslParser:
     def test_blank_line_skipped(self):
         r = TestsslParser().parse("\n\n")
         assert len(r) == 0
-class TestWafw00fParser_final_b2:
+class TestWafw00fParser:
     def test_empty(self):
         assert Wafw00fParser().parse("") == []
         assert Wafw00fParser().parse("   ") == []
@@ -2285,7 +2285,7 @@ class TestWafw00fParser_final_b2:
     def test_json_waf_with_app_name(self):
         r = Wafw00fParser().parse('{"url":"https://example.com","detected":true,"waf":[],"app":"cloudflare"}')
         assert any("cloudflare" in f["title"] for f in r)
-class TestWapitiParser_final_b2:
+class TestWapitiParser:
     def test_empty(self):
         assert WapitiParser().parse("") == []
 
@@ -2354,7 +2354,7 @@ class TestWpscanParser:
     def test_blank_line_skipped(self):
         r = WpscanParser().parse("\n\n")
         assert len(r) == 0
-class TestXsstrikeParser_final_b2:
+class TestXsstrikeParser:
     def test_empty(self):
         assert XsstrikeParser().parse("") == []
         assert XsstrikeParser().parse("   ") == []

@@ -1032,7 +1032,7 @@ class TestDnstwistParser:
         assert "::1" in findings[0]["evidence"]
 
 
-"""Comprehensive tests for parser batch 8 — covering 24 low-coverage parsers to reach >95% each."""
+"""Comprehensive coverage tests for: covering 24 low-coverage parsers to reach >95% each."""
 
 import json
 import pytest
@@ -1600,7 +1600,7 @@ class TestDnsxParserBranches:
 # 24. enum4linux_parser.py  — missing 96, 99-114, 101, 117, 151, 161-163,
 #       171, 188-201, 206-219, 224-237, 255-267, 271-283, 301-313, 319
 # ---------------------------------------------------------------------------
-class TestReconNgParser_final_b2:
+class TestReconNgParser:
     def test_empty(self):
         assert ReconNgParser().parse("") == []
 
@@ -1630,7 +1630,7 @@ class TestReconNgParser_final_b2:
     def test_dedup(self):
         r = ReconNgParser().parse("host | 10.0.0.1\nhost | 10.0.0.1")
         assert len(r) == 0
-class TestSublist3rParser_final_b2:
+class TestSublist3rParser:
     def test_empty(self):
         assert Sublist3rParser().parse("") == []
 
@@ -1652,7 +1652,7 @@ class TestSublist3rParser_final_b2:
     def test_blank_line_skipped(self):
         r = Sublist3rParser().parse("\n\n")
         assert len(r) == 0
-class TestTheharvesterParser_final_b2:
+class TestTheharvesterParser:
     def test_empty(self):
         assert TheharvesterParser().parse("") == []
 

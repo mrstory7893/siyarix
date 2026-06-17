@@ -2826,7 +2826,7 @@ class TestEnum4linuxParserBranches:
 # ---------------------------------------------------------------------------
 # 25. ettercap_parser.py  — missing 18
 # ---------------------------------------------------------------------------
-class TestEvilWinrmParser_final_b2:
+class TestEvilWinrmParser:
     def test_empty(self):
         assert EvilWinrmParser().parse("") == []
         assert EvilWinrmParser().parse("   ") == []
@@ -2854,7 +2854,7 @@ class TestEvilWinrmParser_final_b2:
     def test_json_non_dict_skipped(self):
         r = EvilWinrmParser().parse('["hello"]')
         assert len(r) == 0
-class TestImpacketParser_final_b2:
+class TestImpacketParser:
     def test_empty(self):
         assert ImpacketParser().parse("") == []
 
@@ -2877,7 +2877,7 @@ class TestImpacketParser_final_b2:
     def test_skip_blank_line(self):
         r = ImpacketParser().parse("\n\n")
         assert len(r) == 0
-class TestPypykatzParser_final_b2:
+class TestPypykatzParser:
     def test_empty(self):
         assert PypykatzParser().parse("") == []
         assert PypykatzParser().parse("   ") == []
@@ -2905,7 +2905,7 @@ class TestPypykatzParser_final_b2:
     def test_dedup(self):
         r = PypykatzParser().parse("password: mypass123\npassword: mypass123")
         assert len(r) == 1
-class TestResponderParser_final_b2:
+class TestResponderParser:
     def test_empty(self):
         assert ResponderParser().parse("") == []
         assert ResponderParser().parse("   ") == []
@@ -2941,7 +2941,7 @@ class TestResponderParser_final_b2:
     def test_nbtns_poison(self):
         r = ResponderParser().parse("NBT-NS poison response sent")
         assert any("poison response" in f["title"].lower() for f in r)
-class TestSharphoundParser_final_b2:
+class TestSharphoundParser:
     def test_empty(self):
         assert SharphoundParser().parse("") == []
 
@@ -2972,7 +2972,7 @@ class TestSharphoundParser_final_b2:
     def test_dedup_json(self):
         r = SharphoundParser().parse('{"Type":"user","Props":{"name":"jdoe","domain":"EXAMPLE"}}\n{"Type":"user","Props":{"name":"jdoe","domain":"EXAMPLE"}}')
         assert len(r) == 1
-class TestSmbclientParser_final_b2:
+class TestSmbclientParser:
     def test_empty(self):
         assert SmbclientParser().parse("") == []
         assert SmbclientParser().parse("   ") == []
@@ -3029,7 +3029,7 @@ class TestSmbclientParser_final_b2:
     def test_server_desc_updates_target(self):
         r = SmbclientParser().parse("Server = [TARGET]")
         assert any("SMB server: TARGET" in f["title"] for f in r)
-class TestSmbmapParser_final_b2:
+class TestSmbmapParser:
     def test_empty(self):
         assert SmbmapParser().parse("") == []
         assert SmbmapParser().parse("   ") == []

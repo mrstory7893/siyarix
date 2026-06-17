@@ -1264,7 +1264,7 @@ class TestDirsearchParserBranches:
 # 19. dmitry_parser.py  — missing 73, 76, 91-106, 112-125, 131-144,
 #       150-163, 168-166, 186-199, 205-70
 # ---------------------------------------------------------------------------
-class TestHttpxParser_final_b2:
+class TestHttpxParser:
     def test_empty(self):
         assert HttpxParser().parse("") == []
         assert HttpxParser().parse("   ") == []
@@ -1323,7 +1323,7 @@ class TestKiterunnerParser:
     def test_blank_line_skipped(self):
         r = KiterunnerParser().parse("\n\n")
         assert len(r) == 0
-class TestWgetParser_final_b2:
+class TestWgetParser:
     def test_empty(self):
         assert WgetParser().parse("") == []
 

@@ -386,7 +386,7 @@ class TestLdapsearchParser:
         assert p.parse("") == []
 
 
-"""Tests for parsers with coverage below 60% — batch 4."""
+"""Comprehensive coverage tests for parser integrations."""
 
 import json
 import pytest
@@ -564,7 +564,7 @@ class TestSmtpUserEnumParser:
         assert len(findings) >= 3
 
 
-"""Tests for parsers with coverage between 60-80% — batch 5."""
+"""Comprehensive coverage tests for parser integrations."""
 
 import json
 import pytest
@@ -1022,7 +1022,7 @@ class TestFingerParser_extra_b6:
         assert len(findings) == 0
 
 
-"""Comprehensive tests for parser batch 7 — bloodhound, sherlock, dirb, commix, sublist3r, semgrep, zaproxy, s3scanner, exiftool, dnsx, ffuf, curl, katana, shuffledns, naabu, dnstwist."""
+"""Comprehensive coverage tests for: bloodhound, sherlock, dirb, commix, sublist3r, semgrep, zaproxy, s3scanner, exiftool, dnsx, ffuf, curl, katana, shuffledns, naabu, dnstwist."""
 
 import json
 import pytest
@@ -1945,7 +1945,7 @@ def _check(finding, expected_tool):
     for field in ("title", "severity", "description", "evidence", "tool", "target", "timestamp"):
         assert field in finding, f"Missing {field}"
     assert finding["tool"] == expected_tool, f"Expected {expected_tool}, got {finding['tool']}"
-class TestFingerParser_final_b2:
+class TestFingerParser:
     def test_empty(self):
         assert FingerParser().parse("") == []
         assert FingerParser().parse("   ") == []
@@ -2010,7 +2010,7 @@ class TestFingerParser_final_b2:
     def test_header_line_skipped(self):
         r = FingerParser().parse("Login    Name       Tty    Idle")
         assert len(r) == 0
-class TestGitleaksParser_final_b2:
+class TestGitleaksParser:
     def test_empty(self):
         assert GitleaksParser().parse("") == []
 
@@ -2060,7 +2060,7 @@ class TestGitleaksParser_final_b2:
     def test_entropy_value_error_no_crash(self):
         r = GitleaksParser().parse('{"ruleID":"r","file":"f","entropy":"not-a-float"}')
         assert len(r) == 1
-class TestGowitnessParser_final_b2:
+class TestGowitnessParser:
     def test_empty(self):
         assert GowitnessParser().parse("") == []
 
@@ -2167,7 +2167,7 @@ class TestKubectlParser:
     def test_json_decode_error_ignored(self):
         r = KubectlParser().parse("{bad}")
         assert len(r) == 0
-class TestLdapsearchParser_final_b2:
+class TestLdapsearchParser:
     def test_empty(self):
         assert LdapsearchParser().parse("") == []
         assert LdapsearchParser().parse("   ") == []
@@ -2237,7 +2237,7 @@ class TestProwlerParser:
     def test_json_decode_error_skipped(self):
         r = ProwlerParser().parse("{bad}")
         assert len(r) == 0
-class TestScoutsuiteParser_final_b2:
+class TestScoutsuiteParser:
     def test_empty(self):
         assert ScoutsuiteParser().parse("") == []
 
@@ -2268,7 +2268,7 @@ class TestScoutsuiteParser_final_b2:
     def test_non_dict_finding_data_skipped(self):
         r = ScoutsuiteParser().parse('{"services":{"ec2":{"findings":{"f1":"string_not_dict"}}}}')
         assert len(r) == 0
-class TestSmtpUserEnumParser_final_b2:
+class TestSmtpUserEnumParser:
     def test_empty(self):
         assert SmtpUserEnumParser().parse("") == []
         assert SmtpUserEnumParser().parse("   ") == []
@@ -2368,7 +2368,7 @@ class TestTrivyParser:
     def test_non_list_result(self):
         r = TrivyParser().parse('{"Results": []}')
         assert len(r) == 0
-class TestTrufflehogParser_final_b2:
+class TestTrufflehogParser:
     def test_empty(self):
         assert TrufflehogParser().parse("") == []
 
@@ -2397,7 +2397,7 @@ class TestTrufflehogParser_final_b2:
     def test_dedup(self):
         r = TrufflehogParser().parse('[{"DetectorName":"AWS","Verified":false,"RawV2":"s","SourceMetadata":{"Data":{"Git":{"file":"x","line":1}}}}]\n')
         assert len(r) == 1
-class TestVolatilityParser_final_b2:
+class TestVolatilityParser:
     def test_empty(self):
         assert VolatilityParser().parse("") == []
 
@@ -2441,7 +2441,7 @@ class TestVolatilityParser_final_b2:
     def test_json_decode_error_falls_through(self):
         r = VolatilityParser().parse("{bad}")
         assert len(r) >= 0
-class TestYaraParser_final_b2:
+class TestYaraParser:
     def test_empty(self):
         assert YaraParser().parse("") == []
 
@@ -2480,7 +2480,7 @@ class TestYaraParser_final_b2:
     def test_rule_simple_only_when_no_current_rule(self):
         r = YaraParser().parse("rule FirstRule\nOnlyName")
         assert len(r) == 1
-class TestBanditParserBranches_final_b3:
+class TestBanditParserBranches:
     """Covers: summary line with count inside JSON string value (lines 81-85)."""
 
     def test_summary_count_creates_finding(self):
@@ -3178,7 +3178,7 @@ class TestKubectlParserAdditionalBranches:
 # ============================================================================
 # 6. recon_ng_parser.py  — 164-171
 # ============================================================================
-class TestYaraParserAdditionalBranches_final_b5:
+class TestYaraParserAdditionalBranches:
     """Covers: offset_str truthy, RULE_DECL match, RULE_SIMPLE match,
        string_ids in simple, meta match with current_meta."""
 
