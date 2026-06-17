@@ -2636,8 +2636,26 @@ sudo rm -rf /usr/local/lib/ollama /usr/lib/ollama /lib/ollama 2>/dev/null
             logger.warning("Failed to start llama.cpp: %s", exc)
 
     @staticmethod
+    def _restore_tty() -> None:
+        """Restore TTY to cooked mode if it was put in raw mode (e.g. by prompt_toolkit)."""
+        try:
+            import termios
+            import tty
+
+            fd = sys.stdin.fileno()
+            attrs = termios.tcgetattr(fd)
+            # Only restore if currently in raw mode
+            if attrs[3] & (termios.ECHO | termios.ICANON) == 0:
+                tty.setcbreak(fd)  # alternative approach
+                attrs[3] |= termios.ECHO | termios.ICANON
+                termios.tcsetattr(fd, termios.TCSANOW, attrs)
+        except Exception:
+            pass
+
+    @staticmethod
     def _restart_siyarix() -> None:
         print("\033[2J\033[H", end="", flush=True)
+        OnboardingWizard._restore_tty()
         if os.name == "nt":
             creationflags = getattr(subprocess, "CREATE_NEW_CONSOLE", 0)
             subprocess.Popen(
@@ -2646,7 +2664,9 @@ sudo rm -rf /usr/local/lib/ollama /usr/lib/ollama /lib/ollama 2>/dev/null
                 creationflags=creationflags,
             )
         else:
-            os.execv(sys.executable, [sys.executable, "-m", "siyarix"] + sys.argv[1:])
+            subprocess.Popen(
+                [sys.executable, "-m", "siyarix"] + sys.argv[1:],
+            )
         sys.exit(0)
 
 
