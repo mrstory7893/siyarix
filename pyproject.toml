@@ -123,6 +123,7 @@ markers = [
   "stealth: stealth mode behavior tests",
   "terminal: terminal detection tests",
   "tool_installer: tool installer tests",
+  "e2e: end-to-end integration tests",
 ]
 
 [tool.coverage.report]
