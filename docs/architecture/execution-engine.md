@@ -1,158 +1,258 @@
 # Execution Engine
 
-The execution engine (`engine/executor.py`) is the core runtime that transforms plans into executed commands.
+The Execution Engine is the runtime that transforms `ExecutionPlan` objects into executed commands. It builds execution plans from goals, resolves dependencies, dispatches steps in parallel via the `WorkerPool`, routes output through parsers, and handles errors with exponential backoff.
+
+---
 
 ## Architecture
 
 ```
-ExecutionPlan
-    │
-    ▼
-┌─────────────────────────────────────┐
-│         ExecutionEngine             │
-│                                     │
-│  1. Validate plan structure         │
-│  2. Check permission gate per step  │
-│  3. Resolve dependency ordering     │
-│  4. Execute steps (parallel where   │
-│     possible)                       │
-│  5. Route output through parsers    │
-│  6. Collect findings                │
-│  7. Handle errors with backoff      │
-│  8. Aggregate results               │
-└─────────────────────────────────────┘
-    │
-    ▼
-EngineResult
+ExecutionPlan (from Planner)
+         │
+         ▼
+┌──────────────────────────────────────────────────┐
+│                ExecutionEngine                    │
+│                                                   │
+│  1. Validate plan structure & integrity           │
+│  2. Check PermissionGate per step (BLOCK/REVIEW/  │
+│     ALLOW)                                        │
+│  3. Resolve dependency ordering (topological)     │
+│  4. Group steps into parallel layers              │
+│  5. Dispatch via WorkerPool (bounded concurrency) │
+│  6. Route output through tool-specific parsers    │
+│  7. Extract findings → KnowledgeGraph             │
+│  8. Handle errors (retry, backoff, fail)          │
+│  9. Aggregate results → EngineResult              │
+└──────────────────────┬───────────────────────────┘
+                       │
+                       ▼
+                EngineResult
+         (steps_completed, steps_failed,
+          findings, duration, errors)
 ```
 
-## Plan structure
+---
 
-An `ExecutionPlan` contains:
+## Plan Structure
 
 ```python
 @dataclass
 class ExecutionPlan:
-    target: str                    # Target host/network/URL
-    steps: list[ExecutionStep]     # Ordered/parallel steps
-    errors: list[str]              # Planning errors (if any)
-    mode: ExecutionMode            # REGISTRY / AUTONOMOUS / INTEGRATED
+    target: str                          # Target host/network/URL
+    steps: list[ExecutionStep]           # Ordered/parallel steps
+    errors: list[str]                    # Planning errors (if any)
+    mode: ExecutionMode                  # REGISTRY | AUTONOMOUS | HYBRID | INTERACTIVE
+    metadata: dict                       # Planner metadata, confidence, etc.
 ```
 
-Each `ExecutionStep` has:
-
-- **tool**: Tool name from registry (nmap, nuclei, etc.)
-- **command**: Full command string to execute
-- **args**: Structured arguments
-- **dependencies**: Step indices that must complete first
-- **output_parser**: Parser class for results
-- **timeout**: Per-step timeout
-
-## Step execution
-
-### Dependency resolution
-
-Steps are grouped into layers:
-
-```
-Layer 0: [nmap scan]           (no dependencies)
-Layer 1: [nuclei, nikto]       (depends on nmap results)
-Layer 2: [metasploit]          (depends on nuclei & nikto)
-```
-
-Steps within the same layer execute in parallel via `asyncio.gather()`.
-
-### Parallel execution
-
-The `worker_pool.py` bounds concurrency:
-
-```python
-pool = AsyncWorkerPool(max_workers=config.get("default_parallel", 3))
-results = await pool.map(execute_step, parallel_steps)
-```
-
-### Tool execution
-
-Each tool is executed via `executor.py::safe_run_sync()`:
-
-1. Tool name resolved to binary path (`dynamic_resolver.py`)
-2. Command formatted with target and arguments
-3. Executed as subprocess with timeout
-4. Stdout/stderr captured
-5. Return code checked
-
-### Output parsing
-
-Tool output is routed through the appropriate parser:
-
-```python
-parser = NmapParser()   # for nmap output
-findings = parser.parse(stdout)
-```
-
-Each parser extracts structured findings: ports, services, vulnerabilities, banners.
-
-### Error recovery
-
-`engine/recovery.py` implements exponential backoff with jitter:
-
-- Transient errors (connection reset, timeout): retry with delay
-- Permanent errors (invalid target, bad tool): fail immediately
-- Backoff: `min(2^attempt + jitter, max_delay)` where jitter is random 0-1s
-
-## Execution modes
-
-### REGISTRY mode
-
-Uses the `ToolRegistry` to build plans without AI:
-
-1. Intent determines tool capability requirement
-2. Registry returns matching tools with platform support
-3. Tools are ordered by specificity
-4. Each tool is invoked with standard arguments
-
-### AUTONOMOUS mode
-
-AI provider has full control:
-
-1. Provider receives intent, target, and context
-2. Provider returns structured plan (tool names, order, arguments)
-3. Plan is executed without user confirmation
-4. Safety still enforced by permission gate
-
-### INTEGRATED mode (default)
-
-AI-assisted with safety gates:
-
-1. AI provider suggests a plan
-2. Permission gate evaluates each step
-3. Flagged commands require user confirmation
-4. User can modify, approve, or reject steps
-
-## Tool registry
-
-The `ToolRegistry` (`registry.py`) maintains metadata for 100+ tools with a capability graph:
+### ExecutionStep
 
 ```python
 @dataclass
-class ToolInfo:
-    name: str
-    tags: list[str]    # ["port_scan", "vuln_scan", "web_scan"]
-    platforms: list[str]       # ["linux", "darwin", "win32"]
-    binary: str                # Expected binary name
-    install_hints: str         # How to install
-    version_cmd: str           # How to check version
-    default_args: dict         # Default arguments
+class ExecutionStep:
+    tool: str                            # Tool name from ToolRegistry
+    command: str                         # Full command string to execute
+    args: dict                           # Structured arguments
+    dependencies: list[int]              # Step indices that must complete first
+    output_parser: str                    # Parser class name for results
+    timeout: int                         # Per-step timeout in seconds
+    retry_count: int                     # Maximum retries on transient failure
+    allow_review: bool                   # Whether step requires REVIEW gate
 ```
 
-Discovery happens at startup: the registry scans PATH for known binaries and records their tags.
+---
 
-## Result collection
+## Executor Types
 
-The engine produces `EngineResult`:
+Siyarix provides three executor implementations, selected by the `ExecutionMode`:
 
-- **steps_completed**: Count of successfully executed steps
-- **steps_failed**: Count of failed steps
-- **findings**: List of extracted findings from parsers
-- **duration**: Total execution time
-- **errors**: Error messages for failed steps
+| Executor | Mode | Behavior |
+|----------|------|----------|
+| **BaseExecutor** | INTERACTIVE | Per-step user confirmation, incremental output, interactive review |
+| **RegistryExecutor** | REGISTRY | Deterministic template execution, no AI dependency, offline-capable |
+| **AutonomousExecutor** | AUTONOMOUS | Full autonomy, Observe-Reason-Act loop, continuous until objective met |
+
+```python
+if plan.mode == ExecutionMode.REGISTRY:
+    executor = RegistryExecutor(plan, gate, worker_pool)
+elif plan.mode == ExecutionMode.AUTONOMOUS:
+    executor = AutonomousExecutor(plan, gate, worker_pool, provider_manager)
+elif plan.mode == ExecutionMode.HYBRID:
+    executor = HybridExecutor(plan, gate, worker_pool, provider_manager)
+elif plan.mode == ExecutionMode.INTERACTIVE:
+    executor = BaseExecutor(plan, gate, worker_pool, interactive=True)
+
+result = await executor.execute()
+```
+
+---
+
+## Dependency Resolution
+
+Steps are organized into dependency layers using topological ordering:
+
+```
+Layer 0: [recon_scan, dns_enum]          # No dependencies
+Layer 1: [nuclei_scan, nikto_scan]        # Depends on recon_scan
+Layer 2: [metasploit_exploit]             # Depends on nuclei + nikto
+Layer 3: [report_generation]              # Depends on exploit results
+```
+
+Steps within the same layer execute concurrently via `asyncio.gather()`.
+Cross-layer dependencies enforce sequential execution.
+
+---
+
+## WorkerPool
+
+Bounded async concurrency via `WorkerPool`:
+
+```python
+pool = WorkerPool(
+    max_workers=config.get("default_parallel", 3),
+    queue_size=config.get("queue_size", 50)
+)
+results = await pool.map(execute_step, parallel_steps)
+```
+
+- Configurable max concurrent workers
+- Backpressure via bounded queue
+- Graceful task cancellation on shutdown
+
+---
+
+## Tool Execution
+
+Each tool step is executed via `safe_run_sync()`:
+
+1. **Tool resolution**: Resolve tool name → binary path via `ToolRegistry` + `dynamic_resolver`
+2. **Command formatting**: Substitute target and arguments into command template
+3. **Subprocess execution**: Run as subprocess with configurable timeout
+4. **I/O capture**: Simultaneous stdout/stderr capture
+5. **Exit code evaluation**: Determine success/failure from return code
+
+```python
+async def safe_run_sync(step: ExecutionStep) -> StepResult:
+    binary = await ToolRegistry.resolve_binary(step.tool)
+    command = format_command(binary, step.args)
+    
+    proc = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+        timeout=step.timeout
+    )
+    stdout, stderr = await proc.communicate()
+    
+    return StepResult(
+        tool=step.tool,
+        exit_code=proc.returncode,
+        stdout=stdout.decode(),
+        stderr=stderr.decode(),
+        duration=proc.duration
+    )
+```
+
+---
+
+## Output Parsing
+
+Tool output is routed through tool-specific parsers:
+
+```python
+parser = get_parser(step.output_parser)  # e.g., NmapParser, NucleiParser
+findings = parser.parse(step_result.stdout)
+```
+
+Each parser extracts structured findings:
+- **Port Scanners**: ports, protocols, service versions, banners
+- **Vuln Scanners**: vulnerability IDs, severity, CVSS vectors, descriptions
+- **Web Scanners**: URLs, technologies, directories, forms
+- **Recon Tools**: subdomains, DNS records, WHOIS data
+
+Findings are immediately inserted into the **KnowledgeGraph** for downstream reasoning.
+
+---
+
+## Error Recovery
+
+The `recovery` module implements exponential backoff with jitter:
+
+```python
+async def execute_with_retry(step):
+    for attempt in range(step.retry_count + 1):
+        try:
+            return await execute_step(step)
+        except TransientError as e:
+            if attempt == step.retry_count:
+                raise
+            delay = min(2 ** attempt + random.uniform(0, 1), MAX_BACKOFF)
+            await asyncio.sleep(delay)
+```
+
+| Error Type | Behavior |
+|-----------|----------|
+| **Transient** (connection reset, timeout) | Retry with exponential backoff + jitter |
+| **Permanent** (invalid target, bad tool) | Fail immediately, log error |
+| **Permission** (gate BLOCK) | Fail immediately, log to AuditLogger |
+| **Resource** (OOM, disk full) | Pause, retry after cooldown |
+
+---
+
+## CommandPipeline
+
+The `CommandPipeline` enables chaining commands in a DAG:
+
+```yaml
+pipeline:
+  - id: recon
+    tool: nmap
+    target: $target
+    flags: -sV -sC
+  - id: vuln_scan
+    tool: nuclei
+    depends_on: [recon]
+    input: "{recon.output}"
+  - id: report
+    tool: report
+    depends_on: [vuln_scan]
+    format: sarif
+```
+
+Pipelines support:
+- Step chaining via `depends_on` references
+- Variable interpolation (`$target`, `{step.output}`)
+- Conditional execution based on prior step status
+- Pipeline-level timeout and error handling
+
+---
+
+## EngineResult
+
+```python
+@dataclass
+class EngineResult:
+    steps_completed: int                  # Successful steps
+    steps_failed: int                     # Failed steps
+    steps_skipped: int                    # Steps skipped (dependency failure)
+    findings: list[Finding]              # Extracted findings from parsers
+    duration: float                       # Total execution time (seconds)
+    errors: list[StepError]              # Error details for failed steps
+    artifacts: dict[str, str]            # Output artifacts (file paths)
+    session_id: str                       # Associated session ID
+```
+
+---
+
+## Integration Points
+
+| Component | Integration |
+|-----------|------------|
+| **PermissionGate** | Pre-execution BLOCK/REVIEW/ALLOW per step |
+| **DLP Engine** | Post-gate data leak inspection |
+| **KnowledgeGraph** | Findings inserted in real-time |
+| **AuditLogger** | Every execution logged with SHA-256 chain |
+| **EventBus** | Events emitted per step lifecycle |
+| **MetricsCollector** | Execution duration, success rate, error rate |
+| **CacheManager** | Cached tool outputs (LRU + TTL) |
+| **OfflineStore** | Results persisted for offline retrieval |

@@ -1,118 +1,175 @@
-# Experience Intelligence (XI)
+# Experience Intelligence & Continuous Learning
 
-The Experience Intelligence subsystem (`xi/`) provides adaptive learning, context tracking, skill profiling, and predictive recommendations.
+Siyarix v3.0.0 includes a continuous learning system that uses semantic memory via vector embeddings to record experiences, find similar past operations, and improve decision-making over time.
 
-## Components
+The subsystem comprises three components: **MemoryManager** (semantic embedding storage), **ContinuousLearning** (experience recording and recall), and **ResponseGenerator** (structured AI output formatting).
+
+---
+
+## Architecture
 
 ```
-xi/
-├── context_tracker.py   # Real-time session context tracking
-├── skill_profiler.py    # User expertise detection and profiling
-├── predictor.py         # Next-action prediction engine
-└── service.py           # Recommendation engine
+User Action / Tool Result
+          │
+          ▼
+┌─────────────────────┐     ┌──────────────────────┐
+│  MemoryManager      │     │  ContinuousLearning   │
+│  • embedding gen    │◄────│  • record experience  │
+│  • vector storage   │     │  • find similar       │
+│  • cosine search    │     │  • update patterns    │
+│  • importance decay │     │  • consolidate        │
+└─────────┬───────────┘     └──────────┬───────────┘
+          │                            │
+          └────────────┬───────────────┘
+                       │
+                       ▼
+              ┌────────────────┐
+              │  Planner /     │
+              │  AgentCore     │
+              │  • informed    │
+              │    decisions   │
+              └────────────────┘
+                       │
+                       ▼
+              ┌────────────────┐
+              │ ResponseGenerator │
+              │ • structured AI   │
+              │   responses       │
+              └────────────────┘
 ```
 
-## Context tracker
+---
 
-The `ContextTracker` maintains real-time session awareness across 8 operation phases:
+## 1. MemoryManager
 
-| Phase | Description |
-|-------|-------------|
-| `IDLE` | No active operation |
-| `RECON` | Reconnaissance in progress |
-| `SCANNING` | Network/service scanning |
-| `ENUMERATION` | Service enumeration |
-| `EXPLOITATION` | Active exploitation |
-| `POST_EXPLOIT` | Post-exploitation activities |
-| `REPORTING` | Report generation |
-| `CLEANUP` | Session cleanup |
+The `MemoryManager` (`memory.py`) provides embedding-based semantic memory. It generates vector embeddings for text content and stores them for similarity-based retrieval.
 
-Tracks:
-
-- Current and historical operation phases
-- Target inventory (all hosts discovered in session)
-- Tool execution history (tools used, frequency)
-- Findings accumulation (counts by severity)
-
-### Usage
+### Embedding Generation
 
 ```python
-tracker = ContextTracker()
-tracker.update_phase("SCANNING")
-tracker.add_finding(port=80, service="http")
-current_context = tracker.get_context_summary()
+from siyarix.memory import MemoryManager
+
+memory = MemoryManager()
+embedding = await memory.generate_embedding(
+    "Host 10.0.0.1 has Apache 2.4.41 vulnerable to CVE-2024-1234"
+)
 ```
 
-## Skill profiler
+Embeddings are generated via the configured AI provider (OpenAI, Ollama, or simulated fallback using character-level similarity).
 
-The `SkillProfiler` evaluates user expertise level based on 5 behavioral factors:
-
-| Factor | What it measures |
-|--------|-----------------|
-| Tool diversity | Range of different tools used |
-| Advanced features | Use of complex flags, custom configurations |
-| Command volume | Number of commands executed per session |
-| Error rate | Frequency of failed or invalid commands |
-| Speed | Time between commands (faster = more experienced) |
-
-### Experience levels
-
-| Level | Description | Characteristics |
-|-------|-------------|-----------------|
-| `BEGINNER` | New user | Few tools, basic commands, higher error rate |
-| `INTERMEDIATE` | Regular user | Multiple tools, some advanced commands |
-| `ADVANCED` | Experienced operator | Wide tool range, custom workflows |
-| `EXPERT` | Power user | All tools, complex pipelines, minimal errors |
-
-### Usage
+### Similarity Search
 
 ```python
-profiler = SkillProfiler()
-profile = profiler.evaluate_session(session_record)
-# Returns: SkillProfile(level="ADVANCED", confidence=0.85)
+similar = await memory.find_similar(
+    query="Apache vulnerabilities",
+    top_k=5
+)
+# Returns list of (content, similarity_score, metadata) tuples
 ```
 
-## Predictor
+Cosine similarity is used for vector comparison. Results include original content, metadata (source, timestamp, severity), and similarity score.
 
-The `Predictor` suggests the next action based on:
+### Importance Decay
 
-1. **Phase-based prediction**: After scanning, suggest enumeration
-2. **Tool follow-up**: After running nmap, suggest parsing results
-3. **Findings-based**: If vulnerabilities found, suggest exploitation
-4. **Learned patterns**: Matches current session against past patterns
+Memory entries have an importance score that decays over time. Entries accessed infrequently or older than the retention threshold are pruned during consolidation cycles.
 
-### Usage
+---
+
+## 2. ContinuousLearning
+
+The `ContinuousLearning` class (`core/learning.py`) manages long-term semantic memory by recording experiences and querying similar past experiences.
+
+### Experience Recording
 
 ```python
-predictor = Predictor()
-prediction = predictor.predict_next(context_tracker)
-# Returns: Prediction(action="run vuln scan", confidence=0.78)
+@dataclass
+class Experience:
+    content: str
+    embedding: list[float]
+    metadata: dict
+    timestamp: datetime
+
+learning = ContinuousLearning()
+await learning.record_experience(
+    content="Scanned 10.0.0.0/24 with nmap, found 5 open hosts",
+    metadata={"target": "10.0.0.0/24", "tool": "nmap", "findings": 5}
+)
 ```
 
-## Recommendation engine
-
-The `XICoreService` combines all XI components into actionable recommendations:
+### Finding Similar Experiences
 
 ```python
-service = XICoreService()
-recs = service.recommend(session_context)
-# Returns: [XICoreRecommendation(action="...", reason="...", priority=...)]
+similar = await learning.query_similar(
+    query="Scan 10.0.0.0/24 for open ports",
+    top_k=3
+)
+# Returns past experiences with similar context
 ```
 
-### Recommendation types
+This enables the planner and agent core to make informed decisions based on historical patterns. For example, if a previous scan of a similar subnet led to specific follow-up actions, those patterns influence current planning.
 
-| Type | When triggered |
-|------|----------------|
-| Risk awareness | Target scope is expanding rapidly |
-| Tool suggestion | Relevant tool available but unused |
-| Phase advancement | Current phase complete, suggest next |
-| Learning tip | User making repeated errors |
-| Efficiency gain | Workflow could be automated |
+### Consolidation
 
-## Use cases
+Repeated similar observations are consolidated into abstract knowledge:
 
-- **Adaptive UI**: Adjust interface complexity based on user skill
-- **Smart defaults**: Pre-fill commands based on common patterns
-- **Proactive assistance**: Suggest next steps without being asked
-- **Skill development**: Identify areas where the user could improve
-- **Session handoff**: Provide context summary when resuming a session
+```
+Raw observations:
+  - "Host A runs Apache 2.4.41"
+  - "Host B runs Apache 2.4.41"
+  - "Host C runs Apache 2.4.49"
+
+Consolidated:
+  "Apache 2.4.x is the predominant web server (3 hosts identified).
+   Multiple versions present; 2.4.41 has known high-severity CVEs."
+```
+
+### Persistence
+
+Experiences are persisted to `~/.siyarix/memory/` as JSON files, enabling cross-session memory. The system loads existing memory on startup and saves new experiences automatically.
+
+---
+
+## 3. ResponseGenerator
+
+The `ResponseGenerator` (`response.py`) produces structured, context-aware AI responses. It converts raw findings and execution results into formatted output suitable for display in the REPL, API responses, or report sections.
+
+```python
+from siyarix.response import ResponseGenerator
+
+generator = ResponseGenerator()
+response = await generator.generate(
+    intent="explain_finding",
+    data={
+        "finding": finding,
+        "context": context_summary,
+        "user_question": "What does this mean?"
+    }
+)
+```
+
+The generator adapts its output based on:
+- **User context**: Current phase, recent commands, target inventory
+- **Finding severity**: Critical findings get detailed explanations
+- **Output format**: Structured for the requested output format (table, JSON, etc.)
+
+---
+
+## Integration Points
+
+| Component | Integration | Purpose |
+|-----------|-------------|---------|
+| **AgentCore** | `execute_goal()` → `query_similar()` | Past experiences influence planning |
+| **Planner** | Plan generation → similar experience context | Better tool selection based on history |
+| **REPL** | User input → context from memory | Proactive suggestions from learned patterns |
+| **ReportEngine** | Finding enrichment → experience correlation | Context-aware report generation |
+
+---
+
+## Planned Enhancements
+
+The following advanced XI features are planned for future releases:
+
+- **ContextTracker**: Session phase tracking across 8 operation phases (IDLE, RECON, SCANNING, ENUMERATION, EXPLOITATION, POST_EXPLOIT, REPORTING, CLEANUP) with real-time phase transitions
+- **SkillProfiler**: Evaluate user expertise (BEGINNER → EXPERT) based on tool diversity, command volume, error rate, and advanced feature usage — adapting UI complexity and confirmation levels accordingly
+- **Predictor**: Next-action prediction using four strategies (phase-based, tool follow-up, findings-based, learned patterns) with confidence scoring and feedback-driven weight adjustment
+- **Streaming Event System**: Dedicated event stream (`xi.*` events) for real-time phase changes, skill updates, prediction readiness, and pattern learning notifications
