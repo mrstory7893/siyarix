@@ -132,6 +132,47 @@ class RegistryPlanner:
                 },
                 {"description": "Web server vulnerability scan", "tool": "nikto", "args": {}},
             ],
+            "headers_check": [
+                {
+                    "description": "HTTP security headers analysis",
+                    "tool": "curl",
+                    "args": {"flags": "-sI"},
+                },
+                {
+                    "description": "SSL/TLS certificate inspection",
+                    "tool": "openssl",
+                    "args": {"flags": "s_client -connect {target}:443 -servername {target}"},
+                },
+            ],
+            "cors_check": [
+                {
+                    "description": "CORS headers and preflight analysis",
+                    "tool": "curl",
+                    "args": {"flags": "-sI -H 'Origin: https://evil.com'"},
+                },
+                {
+                    "description": "Verbose CORS header extraction",
+                    "tool": "curl",
+                    "args": {"flags": "-s -D - -H 'Origin: https://evil.com' -H 'Access-Control-Request-Method: GET' -X OPTIONS"},
+                },
+            ],
+            "ssl_audit": [
+                {
+                    "description": "SSL/TLS certificate chain validation",
+                    "tool": "openssl",
+                    "args": {"flags": "s_client -connect {target}:443 -servername {target}"},
+                },
+                {
+                    "description": "SSL/TLS cipher suite enumeration",
+                    "tool": "nmap",
+                    "args": {"flags": "--script ssl-enum-ciphers -p 443"},
+                },
+                {
+                    "description": "SSL/TLS certificate info via nmap",
+                    "tool": "nmap",
+                    "args": {"flags": "--script ssl-cert -p 443"},
+                },
+            ],
             "brute_force": [
                 {
                     "description": "Target service discovery and version identification",
@@ -719,6 +760,9 @@ class RegistryPlanner:
             (("dns recon", "dns enum", "dns record", "nameserver", "mx record"), "dns_recon"),
             (("smb", "netbios", "windows share", "cifs"), "smb_enum"),
             (("full scan", "full audit", "comprehensive scan", "thorough check"), "full_audit"),
+            (("http header", "response header", "security header"), "headers_check"),
+            (("cors", "cross-origin", "cross origin"), "cors_check"),
+            (("ssl", "tls", "certificate", "https cert", "cipher"), "ssl_audit"),
         ]
         for keywords, template_name in kw_map:
             if any(kw in goal_lower for kw in keywords):
@@ -821,6 +865,25 @@ class RegistryPlanner:
                     f"-L {_USERNAME_WORDLIST} -P {_PASSWORD_WORDLIST}",
                 ),
                 "crack": ("hashcat", "Hash cracking", ""),
+                "cors": ("curl", "CORS check", "-sI -H 'Origin: https://evil.com'"),
+                "certificate": ("openssl", "Certificate info", "s_client -connect {target}:443"),
+                "cipher": ("nmap", "Cipher suite check", "--script ssl-enum-ciphers -p 443"),
+                "header": ("curl", "Header check", "-sIL"),
+                "cookie": ("curl", "Cookie analysis", "-sIL -D -"),
+                "redirect": ("curl", "Redirect chain", "-sIL -o /dev/null -w '%{redirect_url}'"),
+                "screenshot": ("eyewitness", "Web screenshot", ""),
+                "cloud": ("curl", "Cloud metadata check", "-sI"),
+                "aws": ("curl", "AWS metadata check", "-sI"),
+                "azure": ("curl", "Azure metadata check", "-sI"),
+                "gcp": ("curl", "GCP metadata check", "-sI"),
+                "docker": ("nmap", "Docker discovery", "-sT -p 2375,2376"),
+                "k8s": ("nmap", "Kubernetes discovery", "-sT -p 6443,10250,10255"),
+                "api": ("curl", "API endpoint check", "-s -o /dev/null -w '%{http_code}'"),
+                "waf": ("nmap", "WAF detection", "--script http-waf-detect -p 80,443"),
+                "cdn": ("curl", "CDN detection", "-sI"),
+                "ldap": ("nmap", "LDAP enumeration", "--script ldap-rootdse -p 389"),
+                "kerberos": ("nmap", "Kerberos enumeration", "--script krb5-enum-users -p 88"),
+                "ntlm": ("nmap", "NTLM info", "--script http-ntlm-info -p 80,443"),
             }
             matched_keyword = None
             for keyword in sorted(intent_map, key=len, reverse=True):

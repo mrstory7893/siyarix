@@ -304,39 +304,41 @@ def init_wizard(
     asyncio.run(wizard.run())
 
 
-def _run_batch_lines(lines: list[str]) -> None:
-    """Execute a list of command lines through the chat REPL handler."""
+def _run_batch_lines(
+    lines: list[str],
+    mode: str = "integrated",
+    offline_mode: str | None = None,
+) -> None:
+    """Execute a list of command lines through the chat REPL handler.
+
+    When *offline_mode* is set, runs all natural-language commands through
+    the registry planner instead of hardcoding a handful of canned responses.
+    """
     from ..chat import SiyarixChat
 
-    chat = SiyarixChat(mode="integrated")
+    chat = SiyarixChat(mode=mode)
+    is_offline = offline_mode == "offline" or mode == "offline"
+
+    # Show mode indicator for non-interactive mode
+    if is_offline:
+        console.print("[yellow]⚡ Offline mode active — using heuristic planning[/yellow]")
+    else:
+        console.print(f"[dim]Mode: {mode}[/dim]")
+
     for line in lines:
         line = line.strip()
         if not line or line.startswith("#"):
             continue
-        console.print(f"[bold]> {line}[/bold]")
+        console.print(f"[bold]{'[OFFLINE]' if is_offline else ''} > {line}[/bold]")
         if line.startswith("/"):
             asyncio.run(chat._handle_slash(line))
         else:
-            # Try AI first, fallback to simple responses if not available
             try:
-                # For simple batch processing, provide basic responses
-                if line in ["hello", "hi", "hey"]:
-                    console.print("Hello! I'm Siyarix, your cybersecurity command center.")
-                elif line in ["bye", "goodbye"]:
-                    console.print("Goodbye! Stay secure!")
-                elif line == "version":
-                    from .. import __version__
-
-                    console.print(f"Siyarix version {__version__}")
-                elif line in ["help", "/help"]:
-                    asyncio.run(chat._handle_slash("/help"))
-                elif line == "status":
-                    asyncio.run(chat._handle_slash("/status"))
+                if is_offline:
+                    asyncio.run(chat._execute_instruction(line))
                 else:
-                    console.print(f"[dim]Command not recognized in offline mode: {line}[/dim]")
-                    console.print(
-                        "[dim]Try '/help' for available commands or use AI mode for natural language processing.[/dim]"
-                    )
+                    chat._session.add_message("user", line)
+                    asyncio.run(chat._execute_instruction(line))
             except Exception as e:
                 console.print(f"[dim]Error processing command: {e}[/dim]")
         console.print()
@@ -410,7 +412,7 @@ def main_callback(
             console.print(
                 f"[dim]Executing batch script: {resolved} ({len(script_lines)} commands)[/dim]"
             )
-            _run_batch_lines(script_lines)
+            _run_batch_lines(script_lines, mode=mode, offline_mode=mode)
         else:
             console.print(f"[red]Batch script not found: {resolved}[/red]")
             raise typer.Exit(1)
@@ -420,7 +422,9 @@ def main_callback(
     if _IS_STDIN_PIPE and ctx.invoked_subcommand is None:
         lines = [line for line in sys.stdin if line.strip()]
         if lines:
-            _run_batch_lines([line.strip() for line in lines])
+            _run_batch_lines(
+                [line.strip() for line in lines], mode=mode, offline_mode=mode
+            )
         return
 
     # No subcommand: check onboarding regardless of TTY
@@ -449,6 +453,8 @@ def main_callback(
 
         # TTY: launch interactive chat
         if _IS_TTY:
+            if mode and mode.lower() in ("offline", "registry"):
+                console.print(f"[yellow]⚡ Starting in offline mode — heuristic planning only[/yellow]")
             start_chat(
                 mode=mode, target=target, session_id=session or None, resume=resume or bool(session)
             )

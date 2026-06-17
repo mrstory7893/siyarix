@@ -1,6 +1,7 @@
 from __future__ import annotations
 from .platform_utils import build_platform_context
 import asyncio
+import json
 import logging
 import os
 import shutil
@@ -132,15 +133,7 @@ class LLMEngineMixin:
             if self._mode in ("registry", "offline"):
                 response = self._generate_text_response(instruction) or ""
                 if not response:
-                    response = (
-                        "I couldn't build a plan from your request. "
-                        "Try being more specific — for example:\n"
-                        "  •  **scan** example.com\n"
-                        "  •  **enumerate** example.com\n"
-                        "  •  **dns recon** on example.com\n"
-                        "  •  **port scan** 10.0.0.1\n\n"
-                        "Type **`/help`** to see all available commands."
-                    )
+                    response = self._build_offline_fallback_response(instruction)
                 self._print_assistant(response)
             else:
                 prov_name, api_key = self._resolve_provider()
@@ -202,6 +195,21 @@ class LLMEngineMixin:
         except Exception as exc:
             logger.debug("Ensemble integration skipped: %s", exc)
 
+        # Auto-queue plan for retry if in offline mode and plan has steps but execution may fail
+        if self._mode in ("registry", "offline") and plan.steps:
+            try:
+                from ..offline_queue import OfflineCommandQueue
+                queue = OfflineCommandQueue()
+                cache_key = f"plan:{plan.id}"
+                queue.enqueue(
+                    instruction=instruction,
+                    target=self._session.target or target,
+                    mode=self._mode,
+                    max_attempts=2,
+                )
+            except Exception:
+                pass
+
         # Adversarial plan review
         try:
             from .stubs import AdversarialTester, AdversarialSeverity
@@ -242,7 +250,21 @@ class LLMEngineMixin:
 
         # Execute with live output — pass plan so it's not discarded
         t0 = time.monotonic()
-        result = await engine.execute(instruction, plan=plan, interactive=False)
+        try:
+            result = await engine.execute(instruction, plan=plan, interactive=False)
+        except Exception as exc:
+            elapsed = time.monotonic() - t0
+            logger.error("Execution failed: %s", exc, exc_info=True)
+            error_msg = str(exc)
+            if self._mode in ("registry", "offline"):
+                self._print_assistant(
+                    f"**Execution Error:** {error_msg}\n\n"
+                    "This command has been queued for retry. "
+                    "You can check queue status with `/queue status`."
+                )
+            else:
+                console.print(f"[red]Execution failed: {error_msg}[/red]")
+            return
         elapsed = time.monotonic() - t0
 
         # Save to offline store
@@ -313,59 +335,141 @@ class LLMEngineMixin:
         """Return a text response for non-tool queries, or ``None`` to let the pipeline proceed."""
         lowered = user_input.strip().lower()
         greetings = {
-            "hello",
-            "hi",
-            "hey",
-            "sup",
-            "what's up",
-            "help",
-            "good morning",
-            "good evening",
-            "good afternoon",
+            "hello", "hi", "hey", "sup", "what's up", "help",
+            "good morning", "good evening", "good afternoon",
+            "howdy", "yo", "greetings", "hey there",
         }
-        if lowered in greetings or lowered.startswith(("hello ", "hi ", "hey ")):
-            import getpass
-            from datetime import datetime, timezone
+        if lowered in greetings or lowered.startswith(("hello ", "hi ", "hey ", "howdy ")):
+            return self._build_greeting_response()
 
-            username = getpass.getuser()
-            hour = datetime.now(timezone.utc).hour
-            if hour < 12:
-                tod = "morning"
-            elif hour < 17:
-                tod = "afternoon"
-            elif hour < 21:
-                tod = "evening"
-            else:
-                tod = "night"
+        # Farewell responses
+        if lowered in ("bye", "goodbye", "see you", "see ya", "cya", "farewell"):
             return (
-                f"Good **{tod}**, **{username}**.\n\n"
-                "I'm **Siyarix** — your cybersecurity intelligence system. "
-                "I'm here to help with any security task, whether offensive, defensive, "
-                "investigative, or advisory.\n\n"
-                "**Areas of expertise:**\n"
-                "- Reconnaissance and attack surface mapping — ports, services, subdomains, technologies\n"
-                "- Vulnerability detection — web, network, cloud, Active Directory, wireless\n"
-                "- Defensive analysis — detection engineering, log analysis, hardening, IR\n"
-                "- Cloud security assessment — IAM, storage, containers, serverless\n"
-                "- Threat intelligence — TTP mapping, IoC analysis, adversary profiling\n"
-                "- Forensics and incident response — timeline reconstruction, artefact analysis\n"
-                "- Governance and compliance — framework assessment, policy review, risk analysis\n\n"
-                "I am an ongoing under-development project, and my knowledge base is improving "
-                "day by day. I am built and sustained by community of security "
-                "researchers, developers, and practitioners from around the world. Every "
-                "contribution, bug report, feature suggestion, and pull request helps me "
-                "serve you better. I am deeply grateful to everyone who has helped shape "
-                "my project.\n\n"
-                "If you'd like to join them, contributions and issue reports are always welcome:\n"
-                "- Repo: https://github.com/mufthakherul/siyarix\n"
-                "- Contributing: https://github.com/mufthakherul/siyarix/blob/main/CONTRIBUTING.md\n\n"
-                "For maximum capability, connect an **LLM provider** — OpenRouter, OpenAI, Gemini, "
-                "Anthropic, Groq, Together, or Ollama (local). "
-                "Without one, I use built-in heuristic planning.\n\n"
-                "Just tell me what you'd like to accomplish — I'll handle the rest.\n"
+                "Goodbye! Stay curious, stay ethical.\n\n"
+                "Type **`/exit`** to quit or just keep exploring."
+            )
+
+        # How are you / status questions
+        if any(q in lowered for q in ("how are you", "how's it going", "what can you do", "what are you")):
+            return (
+                "I'm **Siyarix** — your cybersecurity intelligence system, operating in "
+                f"**{self._mode}** mode. "
+                "I can help with reconnaissance, vulnerability detection, network scanning, "
+                "web auditing, and more.\n\n"
+                "In **offline mode**, I use built-in heuristic planning without an LLM. "
+                "Just describe what you want to accomplish, and I'll build a plan.\n\n"
+                "**Examples:**\n"
+                "- `scan example.com`\n"
+                "- `enumerate subdomains of target.com`\n"
+                "- `port scan 10.0.0.1`\n"
+                "- `check for vulns on https://app.local`\n"
+                "- `dns recon on example.com`\n\n"
                 "Type **`/help`** for all commands."
             )
+
+        # Thank you
+        if lowered in ("thanks", "thank you", "ty", "thx", "appreciate it"):
+            return "You're welcome! Let me know if you need anything else."
+
+        # Source / version queries
+        if lowered in ("version", "what version", "source", "github"):
+            from .. import __version__
+            return (
+                f"**Siyarix** version **{__version__}**\n\n"
+                "Source code: https://github.com/mufthakherul/siyarix\n"
+                "Contributing: https://github.com/mufthakherul/siyarix/blob/main/CONTRIBUTING.md"
+            )
+
         return None
+
+    def _build_offline_fallback_response(self, instruction: str) -> str:
+        lowered = instruction.lower()
+
+        suggestions = []
+        if any(kw in lowered for kw in ("scan", "port", "nmap")):
+            suggestions.append("  • **`scan example.com`** — full port scan")
+        if any(kw in lowered for kw in ("web", "http", "website", "site")):
+            suggestions.append("  • **`check http headers on example.com`** — web audit")
+        if any(kw in lowered for kw in ("dns", "domain", "subdomain", "nameserver")):
+            suggestions.append("  • **`dns recon on example.com`** — DNS enumeration")
+        if any(kw in lowered for kw in ("vuln", "cve", "vulnerability", "exploit")):
+            suggestions.append("  • **`vuln scan on example.com`** — vulnerability scan")
+        if any(kw in lowered for kw in ("ssl", "tls", "certificate", "cipher")):
+            suggestions.append("  • **`ssl check on example.com`** — TLS audit")
+        if any(kw in lowered for kw in ("brute", "crack", "password", "hydra")):
+            suggestions.append("  • **`brute force ssh on target`** — credential testing")
+        if any(kw in lowered for kw in ("smb", "windows", "netbios")):
+            suggestions.append("  • **`smb enum on 10.0.0.1`** — SMB enumeration")
+        if any(kw in lowered for kw in ("cloud", "aws", "azure", "gcp")):
+            suggestions.append("  • **`cloud audit on example.com`** — cloud assessment")
+        if any(kw in lowered for kw in ("wifi", "wireless", "wpa")):
+            suggestions.append("  • **`wifi audit`** — wireless assessment")
+        if any(kw in lowered for kw in ("headers", "http", "security headers")):
+            suggestions.append("  • **`headers on example.com`** — HTTP security headers")
+        if any(kw in lowered for kw in ("cors", "cross")):
+            suggestions.append("  • **`cors check on example.com`** — CORS policy")
+
+        if suggestions:
+            return (
+                "I couldn't build a complete plan from your request. "
+                "Based on what you described, here are some suggestions:\n\n"
+                + "\n".join(suggestions[:5])
+                + "\n\nType **`/help`** to see all available commands."
+            )
+
+        # Last resort — show a small generic help with common patterns
+        return (
+            "I didn't recognize that as a security task I can handle in offline mode. "
+            "Try one of these patterns:\n\n"
+            "  • **`scan <target>`** — full reconnaissance\n"
+            "  • **`port scan <target>`** — TCP port scan\n"
+            "  • **`web audit <url>`** — web application audit\n"
+            "  • **`dns recon <domain>`** — DNS enumeration\n"
+            "  • **`vuln scan <target>`** — vulnerability scan\n\n"
+            "Type **`/help`** for all commands, or switch to **integrated** mode "
+            "with `/mode integrated` for LLM-powered interpretation."
+        )
+
+    def _build_greeting_response(self) -> str:
+        import getpass
+        from datetime import datetime, timezone
+
+        username = getpass.getuser()
+        hour = datetime.now(timezone.utc).hour
+        if hour < 12:
+            tod = "morning"
+        elif hour < 17:
+            tod = "afternoon"
+        elif hour < 21:
+            tod = "evening"
+        else:
+            tod = "night"
+
+        mode_info = ""
+        if self._mode in ("offline", "registry"):
+            mode_info = (
+                "I'm currently in **offline mode** — using built-in heuristic planning "
+                "without an LLM. I can still handle most security tasks.\n\n"
+                "**Example commands:**\n"
+                "- `scan example.com` — full recon\n"
+                "- `port scan 10.0.0.1` — network scan\n"
+                "- `check http headers on example.com` — web audit\n"
+                "- `enumerate subdomains of target.com` — subdomain discovery\n"
+                "- `dns recon on example.com` — DNS enumeration\n"
+                "- `vuln scan on https://app.local` — vulnerability scan"
+            )
+        else:
+            mode_info = (
+                "For maximum capability, I'm connected to an LLM. "
+                "Just describe any security task and I'll handle it."
+            )
+
+        return (
+            f"Good **{tod}**, **{username}**.\n\n"
+            "I'm **Siyarix** — your cybersecurity intelligence system.\n\n"
+            f"{mode_info}\n\n"
+            "Type **`/help`** for all available commands."
+        )
 
     def _should_use_compact(self) -> bool:
         """Return True if we should send the compact (reminder) system prompt."""

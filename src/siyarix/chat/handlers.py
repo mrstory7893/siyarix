@@ -126,6 +126,7 @@ class CommandHandlersMixin:
             "/retest": self._cmd_retest,
             "/stealth": self._cmd_stealth,
             "/audit": self._cmd_audit,
+            "/queue": self._cmd_queue,
         }
 
         handler = handlers.get(command)
@@ -1626,3 +1627,90 @@ class CommandHandlersMixin:
             )
         else:
             console.print("[yellow]Usage: /audit export|status|verify[/yellow]")
+
+    async def _cmd_queue(self, args: str) -> None:
+        """Handle /queue command for offline command queue management."""
+        from ..offline_queue import OfflineCommandQueue
+
+        tokens = args.split() if args else []
+        action = tokens[0].lower() if tokens else "status"
+
+        try:
+            queue = OfflineCommandQueue()
+        except Exception as exc:
+            console.print(f"[red]Failed to open queue: {exc}[/red]")
+            return
+
+        if action == "status":
+            stats = queue.stats()
+            total = stats["pending"] + stats["completed"] + stats["failed"]
+            if total == 0:
+                console.print("[dim]No queued commands.[/dim]")
+                return
+            console.print(
+                Panel(
+                    f"[bold]Offline Command Queue[/bold]\n\n"
+                    f"[yellow]Pending:[/yellow] {stats['pending']}\n"
+                    f"[green]Completed:[/green] {stats['completed']}\n"
+                    f"[red]Failed:[/red] {stats['failed']}\n"
+                    f"[bold]Total:[/bold] {total}",
+                    border_style="cyan",
+                )
+            )
+
+        elif action == "list":
+            commands = queue.get_all(limit=20)
+            if not commands:
+                console.print("[dim]No queued commands.[/dim]")
+                return
+            from rich.table import Table
+            table = Table(title="Queued Commands", header_style="bold cyan")
+            table.add_column("ID (short)", style="dim")
+            table.add_column("Instruction", style="white")
+            table.add_column("Status", style="yellow")
+            table.add_column("Attempts", justify="right")
+            for cmd in commands[:20]:
+                status_color = {
+                    "pending": "yellow",
+                    "processing": "cyan",
+                    "completed": "green",
+                    "failed": "red",
+                }.get(cmd.status, "white")
+                table.add_row(
+                    cmd.id[:8],
+                    cmd.instruction[:50],
+                    f"[{status_color}]{cmd.status}[/{status_color}]",
+                    f"{cmd.attempts}/{cmd.max_attempts}",
+                )
+            console.print(table)
+
+        elif action == "retry":
+            count = queue.retry_failed()
+            console.print(f"[green]✓ {count} failed commands reset to pending for retry.[/green]")
+
+        elif action == "clear":
+            count = queue.clear_completed()
+            console.print(f"[green]✓ Cleared {count} completed commands.[/green]")
+
+        elif action == "flush":
+            commands = queue.dequeue(10)
+            if not commands:
+                console.print("[dim]No pending commands to flush.[/dim]")
+                return
+            console.print(f"[yellow]Flushing {len(commands)} pending commands...[/yellow]")
+            for cmd in commands:
+                queue.mark_processing(cmd.id)
+                try:
+                    if hasattr(self, "_execute_instruction"):
+                        await self._execute_instruction(cmd.instruction, target=cmd.target)
+                        queue.mark_completed(cmd.id, "Replayed successfully")
+                        console.print(f"[green]  ✓ {cmd.instruction[:50]}[/green]")
+                    else:
+                        queue.mark_failed(cmd.id, "No executor available")
+                except Exception as exc:
+                    queue.mark_failed(cmd.id, str(exc))
+                    console.print(f"[red]  ✗ {cmd.instruction[:50]}: {exc}[/red]")
+            console.print("[green]Flush complete.[/green]")
+
+        else:
+            console.print("[yellow]Usage: /queue status|list|retry|clear|flush[/yellow]")

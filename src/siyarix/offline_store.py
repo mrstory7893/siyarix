@@ -26,7 +26,7 @@ def _get_async_executor() -> Any:
     return _ASYNC_EXECUTOR
 
 
-_SCHEMA_VERSION = 2
+_SCHEMA_VERSION = 4
 
 
 class OfflineStore:
@@ -110,6 +110,19 @@ class OfflineStore:
             CREATE INDEX IF NOT EXISTS idx_scans_target ON scans(target);
             CREATE INDEX IF NOT EXISTS idx_scans_created ON scans(completed_at);
             CREATE INDEX IF NOT EXISTS idx_plans_created ON plans(created_at);
+
+            CREATE TABLE IF NOT EXISTS command_cache (
+                cache_key TEXT PRIMARY KEY,
+                result_json TEXT NOT NULL,
+                tool TEXT DEFAULT '',
+                target TEXT DEFAULT '',
+                created_at TEXT DEFAULT (datetime('now')),
+                last_used TEXT DEFAULT (datetime('now')),
+                use_count INTEGER DEFAULT 1,
+                ttl_seconds INTEGER DEFAULT 86400
+            );
+            CREATE INDEX IF NOT EXISTS idx_cache_tool ON command_cache(tool);
+            CREATE INDEX IF NOT EXISTS idx_cache_last_used ON command_cache(last_used);
         """)
         self._migrate(conn)
         conn.commit()
@@ -135,6 +148,22 @@ class OfflineStore:
                 logger.debug("tool_version column already exists: %s", e)
             conn.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '3')")
             logger.info("OfflineStore migrated to schema v3")
+        if version < 4:
+            try:
+                conn.execute("""CREATE TABLE IF NOT EXISTS command_cache (
+                    cache_key TEXT PRIMARY KEY,
+                    result_json TEXT NOT NULL,
+                    tool TEXT DEFAULT '',
+                    target TEXT DEFAULT '',
+                    created_at TEXT DEFAULT (datetime('now')),
+                    last_used TEXT DEFAULT (datetime('now')),
+                    use_count INTEGER DEFAULT 1,
+                    ttl_seconds INTEGER DEFAULT 86400
+                )""")
+            except sqlite3.OperationalError as e:
+                logger.debug("command_cache table already exists: %s", e)
+            conn.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', '4')")
+            logger.info("OfflineStore migrated to schema v4")
 
     async def save_scan_async(
         self,
@@ -425,6 +454,52 @@ class OfflineStore:
             data.append(scan_dict)
         path.write_text(json.dumps(data, indent=2))
         return len(data)
+
+    def cache_get(self, cache_key: str) -> str | None:
+        conn = self._conn()
+        row = conn.execute(
+            "SELECT result_json FROM command_cache WHERE cache_key = ? AND "
+            "datetime('now') < datetime(created_at, '+' || ttl_seconds || ' seconds')",
+            (cache_key,),
+        ).fetchone()
+        if row:
+            conn.execute(
+                "UPDATE command_cache SET last_used = datetime('now'), use_count = use_count + 1 WHERE cache_key = ?",
+                (cache_key,),
+            )
+            return row["result_json"]
+        return None
+
+    def cache_set(self, cache_key: str, result_json: str, tool: str = "", target: str = "", ttl_seconds: int = 86400) -> None:
+        with self._lock:
+            with self._conn() as conn:
+                conn.execute(
+                    "INSERT OR REPLACE INTO command_cache (cache_key, result_json, tool, target, ttl_seconds) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (cache_key, result_json, tool, target, ttl_seconds),
+                )
+
+    def cache_invalidate(self, tool: str | None = None, target: str | None = None) -> int:
+        with self._lock:
+            with self._conn() as conn:
+                if tool:
+                    conn.execute("DELETE FROM command_cache WHERE tool = ?", (tool,))
+                elif target:
+                    conn.execute("DELETE FROM command_cache WHERE target = ?", (target,))
+                else:
+                    conn.execute("DELETE FROM command_cache")
+                return conn.total_changes
+
+    def cache_stats(self) -> dict[str, Any]:
+        conn = self._conn()
+        total = conn.execute("SELECT COUNT(*) as c FROM command_cache").fetchone()
+        expired = conn.execute(
+            "SELECT COUNT(*) as c FROM command_cache WHERE datetime('now') >= datetime(created_at, '+' || ttl_seconds || ' seconds')"
+        ).fetchone()
+        return {
+            "total_entries": total["c"] if total else 0,
+            "expired_entries": expired["c"] if expired else 0,
+        }
 
     def import_scans(self, path: Path) -> int:
         if not path.exists():
