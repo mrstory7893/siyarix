@@ -63,6 +63,10 @@ You can use Siyarix for any legitimate purpose — security testing, research, l
 - **Modifications**: Changes must be shared when distributed
 - **Bundling**: You can combine Siyarix with other AGPL-compatible software
 
+## Plugin exception
+
+Third-party plugins loaded dynamically via `~/.siyarix/plugins/` are exempt from AGPL requirements. They may be licensed under any terms (including proprietary). See the [Plugin Exception](plugin-exception.md) for the full text and conditions.
+
 ## Compatibility
 
 AGPL-3.0 is compatible with:
