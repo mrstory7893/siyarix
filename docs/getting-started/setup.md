@@ -2,19 +2,18 @@
 
 ## First-run wizard
 
-On first launch, Siyarix runs a bootstrap process that:
-
-1. Detects your platform (OS, shell, terminal, package manager)
-2. Checks Python version (requires 3.11+)
-3. Creates `~/.siyarix/` directory
-4. Writes a `.initialized` marker
-5. Discovers available security tools on your PATH
+On first launch, Siyarix runs the [interactive onboarding wizard](onboarding.md) that guides you through 12 steps — platform detection, requirements, tool discovery, provider selection, mode, persona, preferences, and more.
 
 ```bash
 siyarix
 ```
 
-If this is your first run, you will see a setup prompt.
+If this is your first run, the wizard starts automatically. You can also launch it explicitly:
+
+```bash
+siyarix init
+siyarix init --force   # re-run even if already configured
+```
 
 ## API keys
 
@@ -70,12 +69,14 @@ Settings are stored in `~/.siyarix/settings.toml` (TOML format, human-editable).
 
 | Setting | Default | Description |
 |---------|---------|-------------|
-| `model_provider` | `openrouter` | Preferred AI provider: `auto`, `openai`, `gemini`, `openrouter`, `anthropic`, `groq`, `together`, `ollama` |
+| `model_provider` | `auto` | Preferred AI provider: `auto`, `openai`, `gemini`, `openrouter`, `anthropic`, `groq`, `together`, `deepseek`, `xai`, `mistral`, `perplexity`, `cerebras`, `fireworks`, `ollama`, `lmstudio`, `llamacpp`, `vllm`, `localai` |
 | `default_output_format` | `table` | Output format: `table`, `json`, `yaml`, `csv` |
 | `default_parallel` | `3` | Max parallel tool executions |
 | `scan_timeout` | `300` | Seconds before a tool is killed |
 | `log_level` | `info` | Logging verbosity |
 | `color_theme` | `default` | Terminal theme: `system`, `default`, `dark`, `light`, `minimal`, `neon` |
+| `stealth_mode` | `false` | Enable stealth/evasion features |
+| `persona` | `auto` | Active behavior persona (`auto`, `redteam`, `blueteam`, `dfir`, etc.) |
 | `proxy` | `""` | HTTP proxy for outbound connections |
 | `stealth_mode` | `false` | Enable stealth/evasion features |
 | `persona` | `none` | Active behavior persona |

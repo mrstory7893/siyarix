@@ -27,23 +27,30 @@ Siyarix uses a layered configuration system: defaults, environment variables, se
 Each supported provider has a configurable model name:
 
 ```toml
-model_provider = "openrouter"
+model_provider = "auto"
 gemini_model = "gemini-2.0-flash"
 openai_model = "gpt-4o"
-openrouter_model = "nvidia/nemotron-3-super-120b-a12b:free"
-anthropic_model = "claude-3-opus-20240229"
+openrouter_model = "openai/gpt-4o"
+anthropic_model = "claude-3-5-sonnet-20241022"
+deepseek_model = "deepseek-chat"
 groq_model = "llama3-70b-8192"
 together_model = "mistralai/Mixtral-8x7B-Instruct-v0.1"
 ollama_url = "http://localhost:11434"
 ollama_model = "llama3.1"
 lmstudio_url = "http://localhost:1234"
+llamacpp_url = "http://localhost:8080"
+vllm_url = "http://localhost:8000"
+localai_url = "http://localhost:8080"
 ```
 
 ## Local-only providers (no API key needed)
 
-- **Ollama**: Run local models via `http://localhost:11434`
-- **LM Studio**: Run local models via `http://localhost:1234`
-- **Noop**: Built-in testing/offline provider (no external calls)
+- **Ollama**: Run local models via `http://localhost:11434` — `ollama pull llama3.1 && ollama serve`
+- **LM Studio**: Run local models via `http://localhost:1234` — enable API server in settings
+- **llama.cpp**: Efficient CPU inference via `http://localhost:8080` — `./server -m model.gguf`
+- **vLLM**: High-throughput GPU serving — `vllm serve model`
+- **LocalAI**: Drop-in OpenAI replacement via `http://localhost:8080` — `local-ai run`
+- **Registry**: Built-in heuristic planner (no external calls, always available)
 
 ## Proxy configuration
 

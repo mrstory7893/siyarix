@@ -41,9 +41,10 @@ pip install "siyarix[all]"
 | `groq` | Groq SDK |
 | `together` | Together AI SDK |
 | `ollama` | Ollama Python library |
-| `lmstudio` | LM Studio API support |
-| `cli` | Rich-enhanced CLI experience |
+| `autonomous` | All AI SDKs (openai + gemini + anthropic) |
+| `cli` | Rich-enhanced CLI experience + Textual TUI |
 | `siem` | Splunk/ELK SIEM forwarders |
+| `api` | FastAPI REST server with JWT auth |
 | `all` | All of the above |
 
 ## Platform-specific installs

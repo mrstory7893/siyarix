@@ -18,18 +18,23 @@ siyarix --help
 
 Command groups include:
 
-| Group | Purpose |
-|-------|---------|
-| `scan` | Network/service scanning |
-| `recon` | Reconnaissance and enumeration |
-| `exploit` | Exploitation chains |
-| `report` | Report generation |
+| Group / Command | Purpose |
+|----------------|---------|
+| `scan` | Network/service scanning against targets |
+| `run` | Natural language → execution engine |
+| `agent` | Goal-driven autonomous agent |
+| `discover` | Asset/service/vulnerability discovery |
+| `init` | Interactive setup wizard |
 | `config` | Configuration management |
-| `creds` | Credential management |
-| `chat` | Interactive AI chat session |
-| `security` | Security operations (incidents, playbooks) |
+| `auth` | API key management |
+| `security` | Security operations (incidents, playbooks, hunt, mitre) |
+| `report` | Report generation (HTML, JSON, Markdown, PDF) |
 | `health` | System health check |
 | `metrics` | Performance metrics |
+| `audit` | Audit trail management and verification |
+| `theme` | Terminal theme customization |
+| `workflow` | DAG workflow file execution |
+| `palette` | Interactive command palette |
 
 ## Run a health check
 
@@ -67,13 +72,16 @@ Lists all security tools discovered on your system (100+ supported tools).
 
 ## What happens on first run
 
-1. Bootstrap detects your platform and Python version
-2. `~/.siyarix/` directory is created
-3. Settings file is initialized with defaults
-4. Available tools on PATH are cataloged
-5. AI provider connections are validated (if API keys are set)
+The first time you run `siyarix`, the **onboarding wizard** starts automatically. See the [full guide](onboarding.md) for a detailed walkthrough of all 12 steps.
+
+```bash
+siyarix
+```
+
+If the terminal is non-interactive (CI/pipe), you'll need to run `siyarix init` explicitly.
 
 ## Next steps
 
+- [Onboarding Wizard](onboarding.md) — detailed setup walkthrough
 - [Configuration Guide](configuration.md)
 - [CLI Commands Reference](../user/cli-commands.md)
