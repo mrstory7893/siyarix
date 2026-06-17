@@ -1,6 +1,6 @@
 # CLI Commands Reference
 
-Siyarix is a CLI-first platform built with **Typer**. This reference covers all available commands and sub-command groups in v3.0.0.
+Welcome to the command center! Siyarix is a powerful CLI-first platform built on top of **Typer**. Whether you want to have an interactive chat, unleash an autonomous agent, or fire off a quick scan, this reference guide covers all the commands and sub-commands available in v3.0.0. Let's dive in!
 
 ---
 
