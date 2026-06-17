@@ -12,6 +12,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Prepare Wiki Structure
+        run: |
+          cp docs/index.md docs/Home.md
+          cp docs/DOCS_MAP.md docs/_Sidebar.md
+          
       - name: Sync docs folder to GitHub Wiki
         uses: Andrew-Chen-Wang/github-wiki-action@v4
         with:
