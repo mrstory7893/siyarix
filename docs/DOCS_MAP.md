@@ -1,6 +1,6 @@
 # Documentation Map
 
-## Navigation guide
+## Navigation Guide
 
 ```
 docs/
@@ -10,100 +10,108 @@ docs/
 ├── architecture/        → System design & internals
 ├── ai/                  → AI provider & agent docs
 ├── security/            → Ethics, safety, threat model
-├── legal/               → Licensing & governance
+└── legal/               → Licensing & governance
 ```
 
-## Who should read what
+---
 
-### New users
+## Who Should Read What
+
+### New Users
 
 Start here:
 
-1. `getting-started/installation.md` — install Siyarix
-2. `getting-started/setup.md` — configure API keys and settings
-3. `getting-started/first-run.md` — run your first commands
-4. `getting-started/configuration.md` — detailed configuration reference
-5. `user/cli-commands.md` — command reference
+1. [Installation](getting-started/installation.md) — install Siyarix on your platform
+2. [Onboarding Wizard](getting-started/onboarding.md) — interactive setup walkthrough
+3. [Setup & Configuration](getting-started/setup.md) — configure API keys and settings
+4. [First Run](getting-started/first-run.md) — run your first commands
+5. [Configuration Reference](getting-started/configuration.md) — detailed configuration guide
+6. [CLI Commands](user/cli-commands.md) — command reference
 
-### Daily users
+### Daily Users
 
-- `user/interactive-chat.md` — using the REPL and slash commands
-- `user/security-workflows.md` — common security workflows
-- `user/ai-workflows.md` — AI-powered operations
-- `user/reporting.md` — output formats, reports, audit logs
-- `user/cloud-scanning.md` — AWS, Azure, GCP, K8s, Docker scanning
-- `user/compliance-frameworks.md` — SOC2, ISO27001, NIST, GDPR, HIPAA, PCI-DSS
-- `user/threat-intelligence.md` — MITRE ATT&CK, MISP, STIX feeds
-- `user/playbooks.md` — reusable incident response workflows
-- `user/workflow-files.md` — YAML/JSON DAG workflow reference
-- `user/deception-and-canary-tokens.md` — honeypot detection, canary tokens
-- `user/importing-findings.md` — import Nessus, Burp, Metasploit results
-- `user/offline-registry.md` — offline response system and registry packs
-- `user/iac-scanning.md` — Terraform, CloudFormation, Helm, Dockerfile scanning
-- `user/mobile-scanning.md` — Android APK security analysis
-- `user/iot-scanning.md` — firmware analysis, serial port scanning
+- [Interactive Chat](user/interactive-chat.md) — using the REPL and slash commands
+- [Security Workflows](user/security-workflows.md) — common security testing workflows
+- [AI Workflows](user/ai-workflows.md) — AI-powered operations and autonomous agents
+- [Reporting & Output](user/reporting.md) — output formats, audit logs, metrics
+- [Cloud Scanning](user/cloud-scanning.md) — AWS, Azure, GCP, K8s, Docker scanning
+- [Compliance Frameworks](user/compliance-frameworks.md) — SOC2, ISO27001, NIST, GDPR, HIPAA, PCI-DSS
+- [Threat Intelligence](user/threat-intelligence.md) — MITRE ATT&CK, MISP, STIX feeds
+- [Playbooks](user/playbooks.md) — reusable incident response workflows
+- [Workflow Files](user/workflow-files.md) — YAML/JSON DAG workflow reference
+- [Deception & Canary Tokens](user/deception-and-canary-tokens.md) — honeypot detection, canary tokens
+- [Importing Findings](user/importing-findings.md) — import Nessus, Burp, Metasploit, STIX results
+- [Offline Registry](user/offline-registry.md) — offline response system and registry packs
+- [IaC Scanning](user/iac-scanning.md) — Terraform, CloudFormation, Helm, Dockerfile scanning
+- [Mobile Scanning](user/mobile-scanning.md) — Android APK security analysis
+- [IoT Scanning](user/iot-scanning.md) — firmware analysis, serial port scanning
 
 ### Developers
 
-- `developer/contribution-guide.md` — how to contribute
-- `developer/codebase-overview.md` — module structure
-- `developer/module-architecture.md` — key system internals
-- `developer/testing.md` — testing conventions
-- `developer/building.md` — build and packaging
+- [Contribution Guide](developer/contribution-guide.md) — how to contribute to Siyarix
+- [Codebase Overview](developer/codebase-overview.md) — module structure and key subsystems
+- [Module Architecture](developer/module-architecture.md) — execution engine, planner, gate, agents
+- [Testing](developer/testing.md) — test framework, writing tests, coverage targets
+- [Building & Packaging](developer/building.md) — build, package, publish
 
 ### Architects
 
-- `architecture/overview.md` — high-level system design
-- `architecture/ai-agent-pipeline.md` — AI processing pipeline
-- `architecture/provider-abstraction.md` — multi-provider design
-- `architecture/execution-engine.md` — plan execution
-- `architecture/memory-and-state.md` — persistence and caching
-- `architecture/security-model.md` — security architecture
-- `architecture/experience-intelligence.md` — context tracking, skill profiling, predictions
-- `architecture/interaction-modes.md` — 9 interaction modes reference
-- `architecture/intent-routing.md` — 4-stage semantic routing pipeline
+- [System Overview](architecture/overview.md) — high-level system design
+- [AI Agent Pipeline](architecture/ai-agent-pipeline.md) — AI processing pipeline
+- [Provider Abstraction](architecture/provider-abstraction.md) — 24-provider design
+- [Execution Engine](architecture/execution-engine.md) — plan execution and tool orchestration
+- [Memory & State](architecture/memory-and-state.md) — persistence and caching
+- [Security Model](architecture/security-model.md) — security architecture
+- [Experience Intelligence](architecture/experience-intelligence.md) — context tracking, skill profiling, predictions
+- [Interaction Modes](architecture/interaction-modes.md) — 9 interaction modes reference
+- [Intent Routing](architecture/intent-routing.md) — 4-stage semantic routing pipeline
 
-### AI engineers
+### AI Engineers
 
-- `ai/multi-provider-routing.md` — provider registration, failover, session-disabled providers
-- `ai/persona-system.md` — persona switching, system prompts, available personas
-- `ai/multi-wave-execution.md` — iterative execution, live streaming, command review
-- `ai/prompt-architecture.md` — prompt construction
-- `ai/agent-reasoning.md` — planning and reasoning pipeline
-- `ai/tool-execution.md` — tool lifecycle and parsing
-- `ai/safety-and-hallucination.md` — safety constraints
-- `ai/multi-model-ensemble.md` — parallel LLM voting strategies
+- [Multi-Provider Routing](ai/multi-provider-routing.md) — provider registration, failover, session-disabled providers
+- [Persona System](ai/persona-system.md) — persona switching, system prompts, available personas
+- [Multi-Wave Execution](ai/multi-wave-execution.md) — iterative execution, live streaming, command review
+- [Prompt Architecture](ai/prompt-architecture.md) — prompt construction and context management
+- [Agent Reasoning](ai/agent-reasoning.md) — planning and reasoning pipeline
+- [Tool Execution](ai/tool-execution.md) — tool lifecycle and parsing
+- [Safety & Hallucination](ai/safety-and-hallucination.md) — safety constraints and hallucination detection
+- [Multi-Model Ensemble](ai/multi-model-ensemble.md) — parallel LLM voting strategies
 
-### Security researchers
+### Security Researchers
 
-- `security/ethical-hacking-policy.md` — authorized use
-- `security/abuse-prevention.md` — safety controls
-- `security/threat-model.md` — security analysis
-- `security/vulnerability-reporting.md` — how to report issues
-- `security/operational-security.md` — OPSEC features
-- `security/hsm-integration.md` — YubiKey, PKCS#11, TPM support
+- [Ethical Hacking Policy](security/ethical-hacking-policy.md) — authorized use and boundaries
+- [Abuse Prevention](security/abuse-prevention.md) — safety controls and prevention layers
+- [Threat Model](security/threat-model.md) — security analysis and mitigations
+- [Vulnerability Reporting](security/vulnerability-reporting.md) — how to report issues
+- [Operational Security](security/operational-security.md) — OPSEC features and stealth
+- [HSM Integration](security/hsm-integration.md) — YubiKey, PKCS#11, TPM support
 
-### Legal & compliance
+### Legal & Compliance
 
-- `legal/agpl-license-guide.md` — AGPL-3.0 explained
-- `legal/note-file-explained.md` — NOTICE file purpose
-- `legal/disclaimer.md` — warranty and liability
-- `legal/trademark-policy.md` — trademark usage
-- `legal/responsible-ai-usage.md` — AI governance
+- [AGPL-3.0 License Guide](legal/agpl-license-guide.md) — what the license means
+- [Why AGPL?](legal/why-agpl.md) — rationale behind the license choice
+- [Plugin Exception](legal/plugin-exception.md) — AGPL exception for third-party plugins
+- [NOTICE File Explained](legal/note-file-explained.md) — NOTICE structure and purpose
+- [Disclaimer](legal/disclaimer.md) — warranty and liability
+- [Trademark Policy](legal/trademark-policy.md) — trademark usage guidelines
+- [Responsible AI Usage](legal/responsible-ai-usage.md) — AI governance and transparency
 
-## Documentation tree
+---
+
+## Documentation Tree
 
 ```
 docs/
 ├── getting-started/
 │   ├── installation.md          # pip, brew, winget, npm, source installs
+│   ├── onboarding.md            # Interactive setup wizard (12-step walkthrough)
 │   ├── setup.md                 # API keys, env vars, config, credential store
 │   ├── first-run.md             # Health check, scan, chat, first commands
 │   ├── configuration.md         # Settings reference, env var mapping
 │   └── troubleshooting.md       # Common issues and solutions
 │
 ├── user/
-│   ├── cli-commands.md          # Full command reference
+│   ├── cli-commands.md          # Full command reference (50+ commands)
 │   ├── interactive-chat.md      # REPL, slash commands, multi-turn chat
 │   ├── security-workflows.md    # Recon, vuln assessment, exploitation, IR
 │   ├── ai-workflows.md          # AI planning, multi-agent, failover
@@ -130,7 +138,7 @@ docs/
 ├── architecture/
 │   ├── overview.md              # High-level system design and data flow
 │   ├── ai-agent-pipeline.md     # Intent routing, planning, execution
-│   ├── provider-abstraction.md  # Provider interface, registry, failover
+│   ├── provider-abstraction.md  # 24-provider manager, interface, failover
 │   ├── execution-engine.md      # Step execution, dependency resolution
 │   ├── memory-and-state.md      # Knowledge graph, persistence, caching
 │   ├── security-model.md        # Permission gate, masking, audit
@@ -139,15 +147,15 @@ docs/
 │   └── intent-routing.md        # 4-stage semantic routing pipeline
 │
 ├── ai/
-│   ├── multi-provider-routing.md  # 10 providers, preference chains, CB
+│   ├── multi-provider-routing.md  # 24 providers, preference chains, CB
 │   ├── persona-system.md          # Persona switching, system prompts
 │   ├── multi-wave-execution.md    # Iterative execution, live streaming
 │   ├── prompt-architecture.md     # System context, safety constraints
 │   ├── agent-reasoning.md         # Goal decomposition, multi-agent
 │   ├── tool-execution.md          # Tool discovery, parsing, errors
 │   ├── safety-and-hallucination.md  # Response sensor, danger analysis
-    │   ├── multi-model-ensemble.md    # Parallel LLM voting strategies
-    │
+│   └── multi-model-ensemble.md    # Parallel LLM voting strategies
+│
 ├── security/
 │   ├── ethical-hacking-policy.md   # Authorized use, scope, compliance
 │   ├── abuse-prevention.md         # Danger analysis, emergency stop, OPSEC
@@ -158,15 +166,19 @@ docs/
 │
 └── legal/
     ├── agpl-license-guide.md       # AGPL-3.0-or-later explained
+    ├── why-agpl.md                 # Rationale for choosing AGPL
+    ├── plugin-exception.md         # AGPL exception for third-party plugins
     ├── note-file-explained.md      # NOTICE structure and purpose
     ├── disclaimer.md               # Warranty and liability disclaimer
     ├── trademark-policy.md         # Name/logo usage guidelines
     └── responsible-ai-usage.md     # AI governance and transparency
 ```
 
-## Section purposes
+---
 
-| Section | Purpose | Primary audience |
+## Section Purposes
+
+| Section | Purpose | Primary Audience |
 |---------|---------|-----------------|
 | `getting-started/` | First-time setup, configuration, troubleshooting | All users |
 | `user/` | Daily CLI usage, command reference, workflows | Operators |
@@ -176,14 +188,16 @@ docs/
 | `security/` | Ethics, safety, threat model, OPSEC | Security team |
 | `legal/` | Licensing, trademark, governance | Legal/compliance |
 
-## Scalability plan
+---
 
-The current structure supports expansion into these additional areas as the project grows:
+## Future Expansion
+
+The current structure supports expansion as the project grows:
 
 ```
 docs/
-├── plugins/       → When plugin system matures (sandboxing, lifecycle, SDK)
-├── api/           → If REST/gRPC API is added (auth, endpoints, SDK)
+├── plugins/       → Plugin system (sandboxing, lifecycle, SDK)
+├── api/           → REST/gRPC API (auth, endpoints, SDK)
 ├── operations/    → Monitoring, logging, performance tuning
 ├── governance/    → Additional governance beyond legal
 └── contributing/  → Expanded contributor guides
@@ -191,10 +205,12 @@ docs/
 
 Each new section can be added without breaking the existing structure.
 
+---
+
 ## Conventions
 
 - **Filenames**: lowercase with hyphens (`multi-provider-routing.md`)
 - **Cross-references**: relative paths (`../security/threat-model.md`)
-- **Code examples**: fenced with language tag (```bash, ```python)
+- **Code examples**: fenced with language tag (` ```bash `, ` ```python `)
 - **Tables**: Used for structured reference data
 - **Consistent terminology**: "provider" not "LLM", "tool" not "binary", "plan" not "script"

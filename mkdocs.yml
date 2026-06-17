@@ -1,7 +1,9 @@
 site_name: Siyarix
-site_description: CLI-based AI cybersecurity orchestration agent
+site_description: AI-Native Cybersecurity Orchestration Agent — 24 AI providers, 114+ tool parsers, 50+ CLI commands
+site_url: https://siyarix.dev
 repo_url: https://github.com/mufthakherul/siyarix
 repo_name: mufthakherul/siyarix
+copyright: Copyright &copy; 2026 MD MUFTHAKHERUL ISLAM MIRAZ
 
 theme:
   name: material
@@ -13,31 +15,60 @@ theme:
     - navigation.tabs
     - navigation.sections
     - navigation.top
+    - navigation.indexes
     - search.suggest
     - search.highlight
     - search.share
     - content.code.copy
     - content.action.edit
+    - content.tooltips
+  icon:
+    repo: fontawesome/brands/github
 
 markdown_extensions:
   - admonition
   - pymdownx.details
   - pymdownx.superfences
-  - pymdownx.tabbed
+  - pymdownx.tabbed:
+      alternate_style: true
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
   - pymdownx.snippets
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.critic
+  - pymdownx.caret
+  - pymdownx.tilde
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - attr_list
+  - md_in_html
   - tables
   - toc:
       permalink: true
+      title: On this page
+  - footnotes
+
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"/]+|(?!\b)(?=[A-Z][a-z])|\.(?!\d)'
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mufthakherul/siyarix
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/siyarix/
 
 nav:
   - Home: index.md
   - Getting Started:
       - Installation: getting-started/installation.md
+      - Onboarding: getting-started/onboarding.md
       - Setup: getting-started/setup.md
       - First Run: getting-started/first-run.md
       - Configuration: getting-started/configuration.md
@@ -93,10 +124,9 @@ nav:
       - HSM Integration: security/hsm-integration.md
   - Legal:
       - AGPL Guide: legal/agpl-license-guide.md
+      - Why AGPL?: legal/why-agpl.md
+      - Plugin Exception: legal/plugin-exception.md
       - NOTICE Explained: legal/note-file-explained.md
       - Disclaimer: legal/disclaimer.md
       - Trademark Policy: legal/trademark-policy.md
       - Responsible AI: legal/responsible-ai-usage.md
-
-plugins:
-  - search
