@@ -321,6 +321,25 @@ class OnboardingWizard:
 
         arch_label = _ARCH_MAP.get(machine, machine)
 
+        # Linux distro detection (Kali, Debian, Ubuntu, etc.)
+        linux_distro = ""
+        if system == "Linux":
+            try:
+                with open("/etc/os-release", encoding="utf-8") as f:
+                    for line in f:
+                        if line.startswith("ID="):
+                            linux_distro = line.split("=", 1)[1].strip().strip('"')
+                            break
+            except Exception:
+                try:
+                    with open("/etc/lsb-release", encoding="utf-8") as f:
+                        for line in f:
+                            if line.startswith("DISTRIB_ID="):
+                                linux_distro = line.split("=", 1)[1].strip().strip('"')
+                                break
+                except Exception:
+                    pass
+
         # WSL detection
         is_wsl = False
         if system == "Linux":
