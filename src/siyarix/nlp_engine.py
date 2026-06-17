@@ -24,6 +24,7 @@ class ParsedIntent:
     parameters: dict[str, Any] = field(default_factory=dict)
     confidence: float = 0.0
     tokens: list[str] = field(default_factory=list)
+    raw_text: str = ""
 
 
 class NaturalLanguageParser:
@@ -58,6 +59,11 @@ class NaturalLanguageParser:
         "sha1": r"\b[A-Fa-f0-9]{40}\b",
         "md5": r"\b[A-Fa-f0-9]{32}\b",
         "asn": r"\bAS\d{1,6}\b",
+        "windows_path": r"\b[a-zA-Z]:\\[^:\*\?\"<>\|\s]+\b",
+        "linux_path": r"(?<!\w)(?:/[a-zA-Z0-9_\-\.]+)+\b",
+        "github_repo": r"\b(?:https?://github\.com/)?(?:[a-zA-Z0-9_-]+/[a-zA-Z0-9_-]+)\b",
+        "ntlm": r"\b[A-Fa-f0-9]{32}:[A-Fa-f0-9]{32}\b",
+        "gcp_bucket": r"\b(?:[a-z0-9\-_]{3,63}\.storage\.googleapis\.com)\b",
     }
 
     # Suffixes for lightweight stemming
@@ -98,6 +104,18 @@ class NaturalLanguageParser:
         "fuzz": "fuzzing",
         "dos": "denial",
         "ddos": "denial",
+        "sam": "credentials",
+        "ntds": "credentials",
+        "lsass": "credentials",
+        "rce": "exploit",
+        "shell": "exploit",
+        "root": "escalation",
+        "system": "escalation",
+        "smb": "smb",
+        "rdp": "rdp",
+        "ssh": "ssh",
+        "ftp": "ftp",
+        "dns": "dns",
     }
 
     def __init__(self, custom_synonyms: dict[str, str] | None = None) -> None:
@@ -276,6 +294,25 @@ class NaturalLanguageParser:
         if wordlist_match:
             params["wordlist"] = wordlist_match.group(1)
 
+        # Concurrency / Threads extraction
+        threads_match = re.search(r"\b(?:threads|rate|connections|workers)\s*(\d+)\b", text_lower)
+        if threads_match:
+            params["threads"] = threads_match.group(1)
+
+        # Auth extraction (Username / Password)
+        user_match = re.search(r"\b(?:user|username)\s+([a-zA-Z0-9_.\-]+)\b", text_lower)
+        if user_match:
+            params["username"] = user_match.group(1)
+            
+        pass_match = re.search(r"\b(?:pass|password)\s+([a-zA-Z0-9_.\-!@#$%^&*]+)\b", text_lower)
+        if pass_match:
+            params["password"] = pass_match.group(1)
+
+        # Module / Plugin extraction
+        module_match = re.search(r"\b(?:module|plugin|script)\s+([a-zA-Z0-9_.\-]+)\b", text_lower)
+        if module_match:
+            params["module"] = module_match.group(1)
+
         return params
 
     def get_idf(self, token: str) -> float:
@@ -388,7 +425,7 @@ class NaturalLanguageParser:
 
     def parse(self, text: str) -> ParsedIntent:
         """Parse natural language into a structured intent representation."""
-        intent = ParsedIntent()
+        intent = ParsedIntent(raw_text=text)
 
         # 1. Target Extraction
         intent.target, intent.target_type = self.extract_entities(text)
@@ -416,4 +453,17 @@ class NaturalLanguageParser:
                 intent.confidence = tool_score
 
         return intent
+
+    def parse_multi(self, text: str) -> list[ParsedIntent]:
+        """Parse natural language into multiple structured intents if conjunctions exist."""
+        # Split text by unambiguous multi-step conjunctions
+        split_pattern = r"\b(?:and then|followed by|&&|,\s*then)\b"
+        parts = re.split(split_pattern, text, flags=re.IGNORECASE)
+        
+        intents = []
+        for part in parts:
+            part = part.strip()
+            if len(part) > 3:
+                intents.append(self.parse(part))
+        return intents
 
