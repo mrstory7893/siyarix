@@ -147,6 +147,9 @@ tests/.pytest_cache/
 tests/__pycache__/
 Project-Report/
 
+# Coverage artifacts
+*.py,cover
+
 # Scan artifacts
 siyarix_scan_*.json
 
