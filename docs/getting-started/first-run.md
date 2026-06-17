@@ -1,87 +1,78 @@
-# First Run
+# Your First Run with Siyarix
 
-This guide walks through your first Siyarix session.
+Welcome! You've installed Siyarix, and you're ready to get started. Before you dive into complex scans or autonomous agents, there's one important first step: **The Onboarding Wizard.**
 
-## Launch the CLI
+---
+
+## 🤝 The Mandatory First Step: Onboarding
+
+Siyarix is a sophisticated platform that works best when it's tailored to your environment and tools. To ensure everything is set up perfectly, Siyarix requires a one-time onboarding process.
+
+### How to Start It
+Simply launch Siyarix from your terminal:
 
 ```bash
 siyarix
 ```
 
-You will see the banner and available commands grouped by category.
+If it's your very first time, the **Interactive Onboarding Wizard** will spring to life automatically.
 
-## Check help
+### What to Expect
+The wizard is a friendly, 12-step guided experience that handles:
+- **Ethics Pledge**: A quick alignment on authorized, ethical security testing.
+- **System Check**: Detecting your OS, RAM, and available tools.
+- **Tool Discovery**: Siyarix scans your system to see which of the 100+ supported tools you already have installed.
+- **AI Brain Selection**: Choosing your preferred AI provider (OpenAI, Gemini, Anthropic, or even a local offline model like Ollama).
+- **Persona Setup**: Picking the "mindset" Siyarix should adopt (Red Team, Blue Team, etc.).
 
-```bash
-siyarix --help
-```
+For a deep dive into each step, check out the [Full Onboarding Guide](onboarding.md).
 
-Command groups include:
+---
 
-| Group / Command | Purpose |
-|----------------|---------|
-| `scan` | Network/service scanning against targets |
-| `run` | Natural language → execution engine |
-| `agent` | Goal-driven autonomous agent |
-| `discover` | Asset/service/vulnerability discovery |
-| `init` | Interactive setup wizard |
-| `config` | Configuration management |
-| `auth` | API key management |
-| `security` | Security operations (incidents, playbooks, hunt, mitre) |
-| `report` | Report generation (HTML, JSON, Markdown, PDF) |
-| `health` | System health check |
-| `metrics` | Performance metrics |
-| `audit` | Audit trail management and verification |
-| `theme` | Terminal theme customization |
-| `workflow` | DAG workflow file execution |
-| `palette` | Interactive command palette |
+## 🚀 Exploring After Setup
 
-## Run a health check
+Once you've completed the wizard, you're in the driver's seat! Here's how to start exploring:
+
+### 🩺 Run a Quick Health Check
+Make sure everything is running smoothly after the setup:
 
 ```bash
 siyarix health
 ```
 
-Reports component status, Python version, platform info, and system state.
-
-## Run a basic scan
+### ⚡ Execute a Basic Scan
+Let's see Siyarix in action by running a quick port scan against a domain:
 
 ```bash
 siyarix scan quick example.com
 ```
 
-This runs a quick port scan against the target using default tools.
-
-## Interactive chat mode
-
-Start an AI-powered interactive session:
+### 💬 Enter the Chat REPL
+Why stick to static commands? Launch the interactive, context-aware chat mode:
 
 ```bash
 siyarix chat
+# Or just run `siyarix` with no arguments after setup
 ```
 
-This opens the REPL with slash commands, auto-complete, and multi-turn conversation. Type `/help` inside the chat for available commands.
+---
 
-## Check discovered tools
+## 🆘 Getting Help Anytime
+
+If you're ever unsure about a command or option, just append `--help`:
 
 ```bash
-siyarix scan --list-tools
+siyarix --help
+# Or get help for a specific command:
+siyarix scan --help
 ```
 
-Lists all security tools discovered on your system (100+ supported tools).
+---
 
-## What happens on first run
+## What's Next?
 
-The first time you run `siyarix`, the **onboarding wizard** starts automatically. See the [full guide](onboarding.md) for a detailed walkthrough of all 12 steps.
+Now that your workspace is initialized and you've run your first commands, check out these resources to become a Siyarix pro:
 
-```bash
-siyarix
-```
-
-If the terminal is non-interactive (CI/pipe), you'll need to run `siyarix init` explicitly.
-
-## Next steps
-
-- [Onboarding Wizard](onboarding.md) — detailed setup walkthrough
-- [Configuration Guide](configuration.md)
-- [CLI Commands Reference](../user/cli-commands.md)
+- 👉 **[Interactive Chat](../user/interactive-chat.md)** — Master the AI-powered REPL.
+- 👉 **[Security Workflows](../user/security-workflows.md)** — See how Siyarix handles real-world scenarios.
+- 👉 **[CLI Commands Reference](../user/cli-commands.md)** — The complete command manual.

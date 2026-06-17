@@ -1,95 +1,84 @@
-# Onboarding Wizard
+# 🛠️ The Onboarding Wizard
 
-Siyarix includes a comprehensive interactive setup wizard that guides you through configuration, provider selection, tool discovery, and security hardening on first launch.
+Siyarix is a high-performance, AI-native platform. To give you the best experience, we've built a comprehensive, 12-step interactive setup wizard. It’s designed to handle all the "boring stuff"—configuration, tool discovery, and security hardening—so you can start hacking (authorized, of course!) in minutes.
 
-## Quick start
+---
+
+## 🚀 Quick Start
+
+Ready to begin? Just type the command:
 
 ```bash
 siyarix
 ```
 
-If the `~/.siyarix/.initialized` marker is absent, the wizard starts automatically. You can also launch it explicitly:
+If Siyarix detects that it hasn't been initialized yet, the wizard will launch automatically. You can also re-run it at any time to reconfigure your workspace:
 
 ```bash
 siyarix init
-siyarix init --force   # re-run even if already configured
+siyarix init --force   # Re-run even if already configured
 ```
 
-## Wizard steps
+---
 
-| Step | Section | Description |
-|------|---------|-------------|
-| 0 | Welcome & ethics pledge | ASCII logo, welcome panel, ethical use pledge (must type `c` to continue) |
-| 1 | Platform detection | OS, architecture, CPU, RAM, GPU, shell, terminal, package managers, proxy, WSL, container, virtual env, disk space |
-| 2 | Requirements check | Python >= 3.12, pip, git, curl, PATH issues, config directory writability |
-| 3 | Dependencies | Core Python packages (pydantic, rich, httpx, cryptography, etc.) with auto-install option |
-| 4 | Tool discovery | 9 essential security tools (nmap, openssl, dig, whois, tcpdump, tshark, etc.) with guided install |
-| 5 | Credential storage | Initialize encrypted credential store (AES-256-GCM / Fernet) |
-| 6 | Provider selection | Choose your AI provider (see below) |
-| 7 | Mode configuration | Autonomous, Integrated (default), Registry-only |
-| 8 | Persona & system message | Select behavior persona, view/customize system prompt |
-| 9 | Preferences | Theme, output format, notifications, log level, history retention, command review, stealth mode, auto-update |
-| 10 | Network diagnostics | Internet connectivity (1.1.1.1 / 8.8.8.8), DNS resolution, provider API connectivity |
-| 11 | Finalize | Summary review, health check, .env migration, shell completions, PATH setup, restart |
+## 📝 The 12 Steps to Success
 
-## Provider selection options
+The wizard is divided into logical sections to ensure your environment is perfectly tuned.
 
-At step 6, the wizard presents five paths:
+| Step | What Happens? | Why It Matters |
+|------|---------------|----------------|
+| **0** | **Welcome & Ethics** | You'll see our ASCII logo and sign the ethical use pledge. We take safety seriously! |
+| **1-2** | **System & Requirements** | Siyarix detects your OS, RAM, and Python version to ensure compatibility. |
+| **3** | **Dependencies** | Automatically installs any missing core Python packages. |
+| **4** | **Tool Discovery** | We scan your system for essential tools like `nmap`, `openssl`, and `dig`. |
+| **5** | **Credential Vault** | Initializes your encrypted storage (AES-256-GCM) for API keys. |
+| **6** | **AI Brain Selection** | Choose your AI provider (Cloud or Local). See below for details! |
+| **7** | **Mode Configuration** | Choose between Autonomous, Integrated, or Registry-only execution. |
+| **8** | **Persona Selection** | Pick a security "mindset" (Red Team, Blue Team, DFIR, etc.) for the AI. |
+| **9** | **User Preferences** | Customize your theme, output format, and log levels. |
+| **10** | **Network Diagnostics** | We test your internet and API connectivity to make sure everything is reachable. |
+| **11** | **Finalize** | Siyarix creates your directory structure, sets up PATH, and you're ready to go! |
 
-### 0 — Recommended (auto-detect)
+---
 
-Analyzes free RAM and suggests a local provider with a security-tuned LLM:
+## 🧠 Step 6: Choosing Your AI Brain
 
-| Tier | RAM | Example models |
-|------|-----|----------------|
-| Light | <= 4 GB | `drana-infinity-3b`, `qwen3.5:4b`, `gemma4-e4b-secops` |
-| Balanced | 4-8 GB | `drana-infinity-7b`, `qwen3.5-9b-red-team`, `mythos-sec:8b` |
-| Capable | 8-16 GB | `mythos-sec:8b`, `qwen3:14b`, `qwen3.5-9b-red-team` |
-| High-end | 16+ GB | `mythos-sec:24b`, `gemma4:26b`, `qwen3.5-9b-red-team` |
+This is the most important step. Siyarix gives you total flexibility:
 
-Supports **Ollama** (convenient, ~200 MB daemon) or **llama.cpp** (zero idle RAM, manual) — with model download, GGUF extraction from Ollama cache, and optional Ollama uninstall.
+### 🌟 Recommended (Smart Auto-Detect)
+Siyarix analyzes your available RAM and suggests the perfect local model.
+- **Light (<= 4GB RAM)**: Fast, lightweight models like `drana-infinity-3b`.
+- **Balanced (4-8GB RAM)**: Solid all-rounders like `drana-infinity-7b`.
+- **Capable (8-16GB RAM)**: High-performance reasoning with `mythos-sec:8b`.
+- **High-End (16GB+ RAM)**: Maximum intelligence with `mythos-sec:24b`.
 
-### 1 — Online provider
+### ☁️ Cloud Providers
+Connect to over 11 world-class cloud providers including **OpenAI**, **Anthropic**, **Google Gemini**, **Groq**, and **DeepSeek**.
 
-Choose from 11 cloud providers and enter an API key (stored encrypted):
+### 🏠 Local Offline Engines
+Run everything 100% locally using **Ollama**, **LM Studio**, **llama.cpp**, or **vLLM**.
 
-- OpenAI, Anthropic, Google Gemini, Groq, Together AI, OpenRouter, DeepSeek, xAI/Grok, Mistral AI, Perplexity, Azure OpenAI
+---
 
-### 2 — Offline provider
+## 📂 What Happens to My Files?
 
-Choose a local inference engine and configure endpoint URL + model name:
+After the wizard finishes, Siyarix creates a dedicated workspace in your home directory (`~/.siyarix/`). This keeps your logs, cache, and configurations organized and private.
 
-- Ollama, LM Studio, llama.cpp, vLLM, LocalAI
-
-### 3 — Custom provider
-
-Free-form: provider name, base URL, API key, and model name.
-
-### 4 — Skip
-
-Configure a provider later via `siyarix config set model_provider <name>` and `siyarix auth set-key <provider>`.
-
-## Post-wizard setup
-
-After completing the wizard, the following is in place:
-
-- **~/.siyarix/** directory with full subdirectory structure (17+ directories)
-- **~/.siyarix/.initialized** marker with version, timestamp, platform, and choices metadata
-- **~/.siyarix/settings.toml** with your selected preferences
-- **Encrypted credential store** with any API keys provided
-- **Shell completions** installed (bash, zsh, fish, PowerShell)
-- **Siyarix added to PATH** (via shell profile)
-- **Selected persona tools** installed for your persona (appsec, network_security, red_team, blue_team, dfir)
-
-## Unattended / CI setup
-
-For non-TTY environments, the wizard prints:
-
-```
-Siyarix needs initial setup. Run siyarix init to start the setup wizard.
+```text
+~/.siyarix/
+├── personas/           # Your AI personality definitions
+├── memory/             # The in-memory knowledge graph
+├── logs/audit/         # Your tamper-evident audit trail
+├── cache/tool_outputs/ # Lightning-fast results from previous scans
+├── templates/reports/  # Custom HTML/PDF report templates
+└── settings.toml       # Your central configuration file
 ```
 
-You can configure Siyarix programmatically:
+---
+
+## 🤖 Unattended / CI Setup
+
+If you're running Siyarix in a non-interactive environment (like a CI pipeline), the wizard won't start. Instead, you can configure everything via environment variables:
 
 ```bash
 export MODEL_PROVIDER=openai
@@ -98,37 +87,11 @@ siyarix config set model_provider openai
 siyarix auth set-key openai
 ```
 
-## Directory structure created
+---
 
-```
-~/.siyarix/
-├── personas/           # Personality definitions
-├── personas/custom/    # User-defined personas
-├── profiles/           # Active profile
-├── memory/             # Knowledge graph persistence
-├── logs/sessions/      # Session logs
-├── logs/audit/         # Tamper-evident audit trail
-├── cache/tool_outputs/ # Cached tool results
-├── cache/ai_plans/    # AI-generated plans
-├── cache/dns/          # DNS resolution cache
-├── cache/intel/        # Threat intelligence cache
-├── cache/scan_results/ # Scan result cache
-├── cache/user_data/    # User data cache
-├── templates/reports/  # Report templates
-├── templates/playbooks/ # Playbook templates
-├── playbooks/          # Custom playbooks
-├── achievements/       # User achievements
-├── sessions/           # Session snapshots
-├── masking/            # Data masking rules
-├── bin/                # Installed binaries (auto-added to PATH)
-├── models/             # Downloaded GGUF models
-├── .initialized        # Marker file
-├── settings.toml       # User settings
-└── config.yaml         # Config alias (→ settings.toml)
-```
+## What's Next?
 
-## Next steps
+Now that your workspace is primed and ready, it's time to run your first command!
 
-- [Configuration Guide](configuration.md) — detailed settings reference
-- [First Run](first-run.md) — run your first commands
-- [CLI Commands](../user/cli-commands.md) — full command reference
+- 👉 **[First Run](first-run.md)** — Launch your first scan.
+- 👉 **[CLI Commands Reference](../user/cli-commands.md)** — The complete command manual.
