@@ -1,78 +1,65 @@
-# Your First Run with Siyarix
+# First Run
 
-Welcome! You've installed Siyarix, and you're ready to get started. Before you dive into complex scans or autonomous agents, there's one important first step: **The Onboarding Wizard.**
+Your first Siyarix session walks through onboarding, health verification, and executing a live command.
 
----
-
-## 🤝 The Mandatory First Step: Onboarding
-
-Siyarix is a sophisticated platform that works best when it's tailored to your environment and tools. To ensure everything is set up perfectly, Siyarix requires a one-time onboarding process.
-
-### How to Start It
-Simply launch Siyarix from your terminal:
+## Step 1: Launch and onboard
 
 ```bash
 siyarix
 ```
 
-If it's your very first time, the **Interactive Onboarding Wizard** will spring to life automatically.
+If Siyarix has not been initialized, the 12-step onboarding wizard launches automatically. Follow the prompts to configure your AI provider, credentials, and preferences.
 
-### What to Expect
-The wizard is a friendly, 12-step guided experience that handles:
-- **Ethics Pledge**: A quick alignment on authorized, ethical security testing.
-- **System Check**: Detecting your OS, RAM, and available tools.
-- **Tool Discovery**: Siyarix scans your system to see which of the 100+ supported tools you already have installed.
-- **AI Brain Selection**: Choosing your preferred AI provider (OpenAI, Gemini, Anthropic, or even a local offline model like Ollama).
-- **Persona Setup**: Picking the "mindset" Siyarix should adopt (Red Team, Blue Team, etc.).
+See the [Onboarding Wizard](onboarding.md) for a detailed walkthrough of each step.
 
-For a deep dive into each step, check out the [Full Onboarding Guide](onboarding.md).
+## Step 2: Verify health
 
----
-
-## 🚀 Exploring After Setup
-
-Once you've completed the wizard, you're in the driver's seat! Here's how to start exploring:
-
-### 🩺 Run a Quick Health Check
-Make sure everything is running smoothly after the setup:
+Ensure everything is operational:
 
 ```bash
 siyarix health
 ```
 
-### ⚡ Execute a Basic Scan
-Let's see Siyarix in action by running a quick port scan against a domain:
+This checks Python version, installed tools, credential store status, provider connectivity, and disk space.
+
+## Step 3: Run a scan
+
+Execute a quick port scan against a domain:
 
 ```bash
 siyarix scan quick example.com
 ```
 
-### 💬 Enter the Chat REPL
-Why stick to static commands? Launch the interactive, context-aware chat mode:
+Siyarix will plan the operation, route it through the permission gate, execute the tools, parse the output, and display structured results.
+
+## Step 4: Enter the REPL
+
+Launch the interactive REPL for multi-turn conversations:
 
 ```bash
-siyarix chat
-# Or just run `siyarix` with no arguments after setup
+siyarix
 ```
 
----
+From the REPL you can run slash commands (`/scan`, `/run`, `/persona`), switch providers mid-session, and chain multiple operations.
 
-## 🆘 Getting Help Anytime
-
-If you're ever unsure about a command or option, just append `--help`:
+## Step 5: Natural language execution
 
 ```bash
-siyarix --help
-# Or get help for a specific command:
-siyarix scan --help
+siyarix run "enumerate services on 10.0.0.1"
 ```
 
----
+Siyarix interprets the request, selects appropriate tools, builds an execution plan, and presents the results.
 
-## What's Next?
+## Getting help
 
-Now that your workspace is initialized and you've run your first commands, check out these resources to become a Siyarix pro:
+```bash
+siyarix --help              # Top-level help
+siyarix scan --help         # Subcommand help
+siyarix                     # /help lists all slash commands in REPL
+```
 
-- 👉 **[Interactive Chat](../user/interactive-chat.md)** — Master the AI-powered REPL.
-- 👉 **[Security Workflows](../user/security-workflows.md)** — See how Siyarix handles real-world scenarios.
-- 👉 **[CLI Commands Reference](../user/cli-commands.md)** — The complete command manual.
+## What's next
+
+- [Interactive Chat](../user/interactive-chat.md) — Master the REPL
+- [Security Workflows](../user/security-workflows.md) — Real-world scenarios
+- [CLI Commands](../user/cli-commands.md) — Full command reference

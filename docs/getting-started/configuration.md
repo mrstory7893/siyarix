@@ -1,13 +1,13 @@
 # Configuration Guide
 
-Siyarix uses a layered configuration system: defaults, environment variables, settings file, and CLI flags.
+Siyarix uses a layered configuration system with four tiers (lowest to highest priority): code defaults, settings file, environment variables, and CLI flags.
 
-## Configuration layers (lowest to highest priority)
+## Configuration layers
 
-1. **Code defaults** (`config.py` `DEFAULTS` dict)
-2. **Settings file** (`~/.siyarix/settings.toml`)
-3. **Environment variables** (prefixed with `SIYARIX_`)
-4. **CLI flags** (per-command)
+1. **Code defaults** — Defined in `config.py` `DEFAULTS` dict
+2. **Settings file** — `~/.siyarix/settings.toml`
+3. **Environment variables** — Prefixed with `SIYARIX_`
+4. **CLI flags** — Per-command overrides
 
 ## Environment variables
 
@@ -15,22 +15,21 @@ Siyarix uses a layered configuration system: defaults, environment variables, se
 |----------|------------|-------------|
 | `SIYARIX_CONFIG` | `_config_path` | Path to custom config file |
 | `SIYARIX_HOME` | `_home_dir` | Override `~/.siyarix/` directory |
-| `SIYARIX_DEBUG` | `log_level` | Enable debug logging (set to `debug`) |
+| `SIYARIX_DEBUG` | `log_level` | Enable debug logging |
 | `SIYARIX_PROVIDER` | `model_provider` | AI provider override |
 | `SIYARIX_TIMEOUT` | `scan_timeout` | Tool timeout in seconds |
 | `SIYARIX_LOG_LEVEL` | `log_level` | Logging level |
 | `SIYARIX_NO_TELEMETRY` | `_no_telemetry` | Disable telemetry |
-| `SIYARIX_SAFE_MODE` | `_safe_mode` | Enable safe mode (no destructive actions) |
+| `SIYARIX_SAFE_MODE` | `_safe_mode` | Restrict to reconnaissance only |
 
-## AI provider model settings
+## AI provider models
 
-Each supported provider has a configurable model name:
+Each provider has a configurable model name in `settings.toml`:
 
 ```toml
 model_provider = "auto"
-gemini_model = "gemini-2.0-flash"
 openai_model = "gpt-4o"
-openrouter_model = "openai/gpt-4o"
+gemini_model = "gemini-2.0-flash"
 anthropic_model = "claude-3-5-sonnet-20241022"
 deepseek_model = "deepseek-chat"
 groq_model = "llama3-70b-8192"
@@ -43,14 +42,16 @@ vllm_url = "http://localhost:8000"
 localai_url = "http://localhost:8080"
 ```
 
-## Local-only providers (no API key needed)
+## Local-only providers
 
-- **Ollama**: Run local models via `http://localhost:11434` — `ollama pull llama3.1 && ollama serve`
-- **LM Studio**: Run local models via `http://localhost:1234` — enable API server in settings
-- **llama.cpp**: Efficient CPU inference via `http://localhost:8080` — `./server -m model.gguf`
-- **vLLM**: High-throughput GPU serving — `vllm serve model`
-- **LocalAI**: Drop-in OpenAI replacement via `http://localhost:8080` — `local-ai run`
-- **Registry**: Built-in heuristic planner (no external calls, always available)
+| Provider | Endpoint | Setup |
+|----------|----------|-------|
+| Ollama | `http://localhost:11434` | `ollama pull llama3.1 && ollama serve` |
+| LM Studio | `http://localhost:1234` | Enable API server in settings |
+| llama.cpp | `http://localhost:8080` | `./server -m model.gguf` |
+| vLLM | `http://localhost:8000` | `vllm serve model` |
+| LocalAI | `http://localhost:8080` | `local-ai run` |
+| Registry | Built-in | Heuristic planner, no external calls |
 
 ## Proxy configuration
 
@@ -77,20 +78,16 @@ color_theme = "dark"
 # Options: system, default, dark, light, minimal, neon
 ```
 
-Preview themes:
-
-```bash
-siyarix themes
-```
+Preview themes: `siyarix themes`
 
 ## Config commands
 
 ```bash
-siyarix config list          # Show all settings
-siyarix config get <key>     # Get a single value
+siyarix config list           # Show all settings
+siyarix config get <key>      # Get a single value
 siyarix config set <key> <value>  # Set a value
-siyarix config reset          # Reset to defaults
-siyarix config edit           # Open in $EDITOR
+siyarix config reset           # Reset to defaults
+siyarix config edit            # Open in $EDITOR
 ```
 
 ## Credential management
@@ -99,7 +96,7 @@ siyarix config edit           # Open in $EDITOR
 siyarix creds list                    # List stored credentials
 siyarix creds set <provider> <key>    # Store a credential
 siyarix creds get <provider> <key>    # Retrieve (masked)
-siyarix creds delete <provider> <key> # Remove a credential
+siyarix creds delete <provider> <key> # Remove
 siyarix creds rotate                  # Rotate encryption key
 ```
 

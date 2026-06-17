@@ -1,130 +1,88 @@
 # Installation Guide
 
-Welcome! Let's get Siyarix installed on your machine so you can start orchestrating your security tasks with AI. Siyarix is built with modern Python and designed to run seamlessly across all major platforms.
+Siyarix v3.0.0 requires **Python 3.11 or later** and supports Linux, macOS, Windows (PowerShell 5.1+), and HarmonyOS. Minimum 512 MB RAM (4 GB+ recommended for AI operations), ~500 MB disk for tool dependencies.
 
----
-
-## What You Need
-
-Before we start, make sure your system meets these basic requirements:
-
-- **Python**: version 3.11 or later.
-- **Operating System**: Windows, macOS, or Linux (including WSL2).
-- **Memory**: At least 512 MB (though we recommend 4 GB+ to handle heavy AI operations smoothly).
-- **Storage**: About 500 MB for various tool dependencies.
-
----
-
-## The Fastest Way: PyPI
-
-If you already have Python set up, the easiest way to install Siyarix is via `pip`:
+## PyPI (recommended)
 
 ```bash
 pip install siyarix
 ```
 
-### Power Up with Extras
+### Optional extras
 
-Siyarix is highly modular. You can install optional packages depending on which AI providers and features you plan to use:
-
-```bash
-# Bring your favorite AI providers
-pip install "siyarix[openai,gemini,anthropic]"
-
-# Supercharge the terminal experience (Rich + Textual TUI)
-pip install "siyarix[cli]"
-
-# Hook up to your SIEM (Splunk, ELK)
-pip install "siyarix[siem]"
-
-# Or, just install absolutely everything!
-pip install "siyarix[all]"
-```
-
-**Here’s the full list of available extras:**
-
-| Tag | What You Get |
-|-----|--------------|
-| `openai` | OpenAI Python SDK |
+| Extra | Provides |
+|-------|----------|
+| `openai` | OpenAI SDK |
 | `gemini` | Google Generative AI SDK |
 | `anthropic` | Anthropic SDK |
 | `groq` | Groq SDK |
 | `together` | Together AI SDK |
-| `ollama` | Ollama Python library for local models |
-| `autonomous` | The big three: OpenAI, Gemini, and Anthropic |
-| `cli` | Rich-enhanced CLI experience + Textual TUI |
-| `siem` | Splunk/ELK SIEM forwarders |
+| `ollama` | Ollama Python library |
+| `autonomous` | OpenAI + Gemini + Anthropic |
+| `cli` | Rich + Textual TUI |
+| `siem` | Splunk/ELK forwarders |
 | `api` | FastAPI REST server with JWT auth |
-| `all` | The whole kitchen sink! |
+| `all` | All extras |
 
----
+```bash
+pip install "siyarix[openai,gemini,anthropic]"
+pip install "siyarix[cli]"
+pip install "siyarix[all]"
+```
 
-## Native Package Managers
+## Package managers
 
-Prefer using your OS's package manager? We’ve got you covered.
-
-### 🍏 macOS (Homebrew)
-
+**macOS (Homebrew)**
 ```bash
 brew install mufthakherul/siyarix/siyarix
 ```
 
-### 🪟 Windows (Winget)
-
+**Windows (Winget)**
 ```bash
 winget install Mufthakherul.Siyarix
 ```
 
-### 🌐 Node.js (npx launcher)
+**Windows (Chocolatey)**
+```bash
+choco install siyarix
+```
 
-If you live in the JS ecosystem, you can run Siyarix instantly without installing it globally:
-
+**Node.js (npx)**
 ```bash
 npx @mufthakherul/siyarix --help
 ```
 
----
+**Debian/Ubuntu**
+```bash
+sudo dpkg -i siyarix_3.0.0-1_all.deb
+```
 
-## Building from Source
+**Docker**
+```bash
+docker pull siyarix:latest
+docker run siyarix:latest --help
+```
 
-Are you a developer looking to contribute, or just someone who loves the cutting edge? Here’s how to build Siyarix straight from the source:
+## Build from source
 
 ```bash
-# 1. Grab the code
 git clone https://github.com/mufthakherul/siyarix.git
 cd siyarix
-
-# 2. Set up a pristine virtual environment
 python -m venv .venv
-
-# 3. Activate the environment
-# On macOS / Linux:
-source .venv/bin/activate
-# On Windows:
-# .\.venv\Scripts\Activate.ps1
-
-# 4. Install Siyarix in editable mode with all the bells and whistles
+# source .venv/bin/activate  (Linux/macOS)
+# .\.venv\Scripts\Activate.ps1  (Windows)
 pip install -e ".[all,cli,siem]"
 ```
 
----
-
-## Let's Make Sure It Works
-
-Once installed, let’s verify everything is ready to go:
+## Verify installation
 
 ```bash
 siyarix --version
 siyarix --help
 ```
 
-If you see the awesome Siyarix banner and help menu, you’re in business! 🎉
+## Next steps
 
----
-
-## What's Next?
-
-Now that Siyarix is installed, let's configure your AI keys and customize your environment.
-
-- 👉 **[Setup & Configuration](setup.md)** — Launch the interactive wizard and get your API keys ready.
-- 👉 **[First Run](first-run.md)** — Fire off your first AI-orchestrated command!
+- [Onboarding Wizard](onboarding.md) — Interactive 12-step setup
+- [Setup & Configuration](setup.md) — API keys, credentials, settings
+- [First Run](first-run.md) — Your first session
