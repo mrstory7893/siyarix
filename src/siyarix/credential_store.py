@@ -25,7 +25,7 @@ from siyarix.config import get_config_dir
 HAS_AESGCM = False
 
 try:
-    from cryptography.fernet import Fernet
+    from cryptography.fernet import Fernet, InvalidToken
     from cryptography.hazmat.primitives import hashes
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
     from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
@@ -507,8 +507,14 @@ class CredentialStore:
                         )
                         self._credentials[cred.cred_id] = cred
                     legacy_loaded = True
+            except InvalidToken:
+                logger.debug("Legacy credential file uses a different key; treating as empty")
+                try:
+                    self._creds_file.rename(self._creds_file.with_name("credentials.enc.obsolete"))
+                except Exception:
+                    pass
             except Exception as exc:
-                logger.exception("Failed to load legacy credentials: %s", exc)
+                logger.error("Failed to load legacy credentials: %s", exc)
 
         if self._creds_dir.exists():
             for filepath in self._creds_dir.glob("*.enc"):
