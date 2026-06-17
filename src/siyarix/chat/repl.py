@@ -1,8 +1,10 @@
 from __future__ import annotations
 import asyncio
+import atexit
 import json
 import logging
 import os
+import signal
 import sys
 import time
 import warnings
@@ -27,6 +29,32 @@ from .engine import LLMEngineMixin
 from .console import console
 
 logger = logging.getLogger(__name__)
+
+
+def _restore_tty() -> None:
+    """Restore TTY to cooked mode if put in raw mode by prompt_toolkit."""
+    try:
+        import termios
+        fd = sys.stdin.fileno()
+        attrs = termios.tcgetattr(fd)
+        if attrs[3] & (termios.ECHO | termios.ICANON) == 0:
+            attrs[3] |= termios.ECHO | termios.ICANON
+            termios.tcsetattr(fd, termios.TCSANOW, attrs)
+    except Exception:
+        pass
+
+
+atexit.register(_restore_tty)
+
+# Restore TTY on SIGTERM/SIGHUP too
+def _signal_restore_tty(*_: Any) -> None:
+    _restore_tty()
+
+for _sig in (signal.SIGTERM, signal.SIGHUP):
+    try:
+        signal.signal(_sig, _signal_restore_tty)
+    except Exception:
+        pass
 
 
 class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
