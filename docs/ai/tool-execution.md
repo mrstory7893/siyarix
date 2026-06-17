@@ -29,15 +29,21 @@ For each tool:
 
 | Category | Tools |
 |----------|-------|
-| Port scanning | nmap, masscan, unicornscan |
-| Web scanning | nikto, nuclei, wpscan, zaproxy |
-| Exploitation | metasploit, impacket, sqlmap |
-| Enumeration | gobuster, ffuf, subfinder, amass |
-| Password | hydra, john, hashcat |
-| Network | bettercap, ettercap, aircrack-ng |
-| Cloud | cloud scanner (built-in) |
-| IoT | IoT scanner (built-in) |
-| Mobile | mobile scanner (built-in) |
+| Port scanning | nmap, masscan, unicornscan, rustscan, naabu, zmap, zgrab |
+| Web scanning | nikto, nuclei, wpscan, zaproxy, whatweb, aquatone, gowitness |
+| Exploitation | metasploit, impacket, sqlmap, searchsploit |
+| Enumeration | gobuster, ffuf, subfinder, amass, assetfinder, findomain, httpx, katana, hakrawler, gospider, waybackurls, gau, wfuzz, dirb, dirsearch, feroxbuster, kiterunner, arjun, paramspider |
+| Vulnerability | nuclei, trivy, grype, semgrep, nikto, wpscan, scoutsuite, prowler, lynis |
+| Secrets | gitleaks, trufflehog, jwt_tool |
+| Password | hydra, john, hashcat, hash_identifier |
+| Network | bettercap, ettercap, aircrack-ng, responder, crackmapexec, bloodhound, certipy, kerbrute, enum4linux, smbclient, smbmap, evil-winrm, ldapsearch, impacket |
+| DNS | dnsrecon, dnsenum, massdns, shuffledns, dnsx, subfinder, dig |
+| TLS | sslscan, sslyze, testssl, ssh_audit |
+| Cloud | cloud scanner (built-in AWS/Azure/GCP/K8s/Docker) |
+| IoT | IoT scanner (built-in — firmware, serial) |
+| Mobile | mobile scanner (built-in — APK analysis) |
+| OSINT | theHarvester, shodan, whois, recon-ng |
+| Forensics | volatility, yara, exiftool |
 
 ## Tool selection
 
@@ -91,7 +97,7 @@ findings = parser.parse(nmap_xml_output)
 # Returns: [Finding(port=22, service="ssh"), ...]
 ```
 
-Supported parsers (18+):
+Supported parsers (114+, partial list):
 
 | Parser | Tool | Input format |
 |--------|------|-------------|
@@ -105,14 +111,19 @@ Supported parsers (18+):
 | `nikto_parser.py` | Nikto | Text/JSON |
 | `burpsuite_parser.py` | Burp Suite | XML |
 | `sqlmap_parser.py` | SQLMap | Text |
-| `john_parser.py` | John | Text |
-| `hashcat_parser.py` | Hashcat | Text |
-| `shodan_parser.py` | Shodan | JSON |
+| `zaproxy_parser.py` | ZAP | JSON/XML |
 | `wpscan_parser.py` | WPScan | JSON |
+| `shodan_parser.py` | Shodan | JSON |
 | `subfinder_parser.py` | Subfinder | Text/JSON |
 | `amass_parser.py` | Amass | Text/JSON |
 | `impacket_parser.py` | Impacket | Text |
 | `bettercap_parser.py` | Bettercap | JSON |
+| `trivy_parser.py` | Trivy | JSON |
+| `grype_parser.py` | Grype | JSON |
+| `semgrep_parser.py` | Semgrep | JSON |
+| `gitleaks_parser.py` | Gitleaks | JSON |
+| `trufflehog_parser.py` | TruffleHog | JSON |
+| ... and 90+ more | Various | Various formats |
 
 ## Finding extraction
 

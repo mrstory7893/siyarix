@@ -1,6 +1,6 @@
 # Safety & Hallucination Handling
 
-Siyarix implements multiple safeguards to prevent AI hallucination, dangerous command generation, and output fabrication.
+Siyarix implements multiple safeguards to prevent AI hallucination, dangerous command generation, and output fabrication — including a two-stage permission gate, 38 dangerous-command patterns, multi-model ensemble hallucination detection, and tamper-evident audit logging.
 
 ## Command safety (`security_hardening.py`)
 
@@ -25,7 +25,15 @@ Siyarix implements multiple safeguards to prevent AI hallucination, dangerous co
 | `FLAG` | Command flagged for user confirmation |
 | `DENY` | Command blocked, logged, not executed |
 
-### Input validation (`security_hardening.py::InputValidator`)
+### Multi-Model Hallucination Detection
+
+The `MultiModelEnsemble` detects potential hallucinations by measuring confidence variance across providers:
+
+- **Low variance** across providers → high agreement → low hallucination risk
+- **High variance** across providers → disagreement → high hallucination risk
+- Risk score is included in `EnsembleResult.hallucination_risk`
+
+### Input validation (`InputValidator`)
 
 Pre-execution validation:
 
@@ -34,7 +42,7 @@ Pre-execution validation:
 - Validate target format (IP, CIDR, hostname, URL)
 - Shell injection pattern detection (`;`, `|`, `` ` ``, `$()`)
 
-## Data redaction (`security_hardening.py::SecretRedactor`)
+## Data redaction (`SecretRedactor`)
 
 24 regex patterns automatically redact secrets from output:
 
@@ -85,10 +93,11 @@ Operational security during assessment:
 
 The system enforces ethical boundaries:
 
-- No commands targeting systems without explicit authorization
+- All commands must target systems with explicit authorization
 - No denial-of-service commands (flood, stress testing)
 - No social engineering tool generation
-- All operations must comply with local laws
+- All operations must comply with local laws and regulations
+- Users must review AI-generated plans before execution
 
 ## Audit trail
 

@@ -1,6 +1,6 @@
 # Multi-Provider Routing
 
-Siyarix routes requests across 10 AI providers with automatic failover, circuit breakers, and heuristic fallback.
+Siyarix routes requests across 24 AI provider profiles with automatic failover, circuit breakers, session-disabled tracking, and heuristic fallback.
 
 ## Routing architecture
 
@@ -45,19 +45,16 @@ Registration supports both class-based (factory creates per-request) and instanc
 
 ## Preference chain
 
-`engine/providers.py` defines ordered fallback chains per provider type:
+When `model_provider` is set to a specific provider (e.g. `gemini`), the system falls through a predefined chain:
 
-```python
-PREFERENCE_MAP = {
-    "gemini":   ["gemini", "openai", "anthropic", "groq", "together",
-                 "ollama", "lmstudio", "cloud", "noop"],
-    "openai":   ["openai", "gemini", "anthropic", "groq", "together",
-                 "ollama", "lmstudio", "cloud", "noop"],
-    "anthropic":["anthropic", "openai", "gemini", "groq", "together",
-                 "ollama", "lmstudio", "cloud", "noop"],
-    "auto":     "...preference determined by availability..."
-}
 ```
+gemini → openai → anthropic → groq → together → openrouter → deepseek → xai →
+mistral → perplexity → cerebras → fireworks → zai → minimax → moonshot →
+nvidia → huggingface → azure → opencode_go → ollama → lmstudio → llamacpp →
+vllm → localai → registry (heuristic)
+```
+
+When `model_provider = "auto"`, providers are scanned in priority order based on API key presence and availability.
 
 ## Circuit breaker
 
@@ -95,29 +92,39 @@ When `model_provider = "auto"`, providers are tried in this priority order:
 2. Gemini (`GEMINI_API_KEY` / `GOOGLE_API_KEY`)
 3. OpenRouter (`OPENROUTER_API_KEY`)
 4. Anthropic (`ANTHROPIC_API_KEY`)
-5. Groq (`GROQ_API_KEY`)
-6. Together (`TOGETHER_API_KEY`)
-7. Ollama (no key needed — local endpoint)
-8. Noop (offline fallback — always succeeds)
+5. DeepSeek (`DEEPSEEK_API_KEY`)
+6. xAI/Grok (`XAI_API_KEY`)
+7. Mistral (`MISTRAL_API_KEY`)
+8. Groq (`GROQ_API_KEY`)
+9. Together (`TOGETHER_API_KEY`)
+10. Perplexity (`PERPLEXITY_API_KEY`)
+11. Hugging Face (`HUGGINGFACE_API_KEY`)
+12. Azure (`AZURE_API_KEY`)
+13. Ollama (no key needed — local)
+14. LM Studio (no key needed — local)
+15. Registry (heuristic — always succeeds)
 
 ```
 Request (model_provider = "auto")
   │
-  ├── Try openai
-  │     ├── Success → done
+  ├── Try openai ──── Success → done
   │     └── Fail → next
   │
-  ├── Try gemini
-  │     ├── Success → done
+  ├── Try gemini ──── Success → done
   │     └── Fail → next
   │
-  ├── Try openrouter
-  │     ├── Success → done
+  ├── Try openrouter ── Success → done
   │     └── Fail → next
   │
-  ├── ... (anthropic, groq, together, ollama)
+  ├── ... (anthropic, deepseek, xai, mistral, groq, together, etc.)
   │
-  └── No provider available → offline/local planner
+  ├── Try ollama ──── Success → done (local, no API key)
+  │     └── Fail → next
+  │
+  ├── Try lmstudio ── Success → done (local, no API key)
+  │     └── Fail → next
+  │
+  └── No provider available → registry (heuristic planner)
 ```
 
 ## Session-disabled providers
