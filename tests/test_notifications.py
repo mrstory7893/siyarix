@@ -163,7 +163,7 @@ class TestNotificationDispatcher:
                 mock_client.post.return_value.raise_for_status = MagicMock()
                 await nd.dispatch("test message")
                 mock_client.post.assert_called_once_with(
-                    url, json={"text": "test message"}
+                    url, json={"text": "test message"}, timeout=10.0
                 )
 
     @pytest.mark.asyncio
@@ -178,7 +178,7 @@ class TestNotificationDispatcher:
                 mock_client.post.return_value.raise_for_status = MagicMock()
                 await nd.dispatch("test message")
                 mock_client.post.assert_called_once_with(
-                    url, json={"content": "test message"}
+                    url, json={"content": "test message"}, timeout=10.0
                 )
 
     @pytest.mark.asyncio
@@ -193,7 +193,7 @@ class TestNotificationDispatcher:
                 mock_client.post.return_value.raise_for_status = MagicMock()
                 await nd.dispatch("test message")
                 mock_client.post.assert_called_once_with(
-                    url, json={"content": "test message"}
+                    url, json={"content": "test message"}, timeout=10.0
                 )
 
     @pytest.mark.asyncio
