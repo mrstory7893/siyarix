@@ -407,8 +407,11 @@ class TestUseThreadFallback:
     async def test_windows_proactor_loop(
         self, mock_get_loop: MagicMock
     ) -> None:
-        mock_get_loop.return_value = asyncio.ProactorEventLoop()
-        mock_get_loop.return_value.close()
+        # On Linux we can't create a ProactorEventLoop; simulate via mock
+        import asyncio
+        mock_loop = MagicMock(spec=asyncio.AbstractEventLoop)
+        mock_get_loop.return_value = mock_loop
+        # ProactorEventLoop is not a SelectorEventLoop, so fallback should be False
         assert _use_thread_fallback() is False
 
     @patch("siyarix.subprocess_utils.os.name", "posix")
