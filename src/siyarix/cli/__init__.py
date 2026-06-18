@@ -77,8 +77,14 @@ def _load_dotenv(path: Path | None = None) -> None:
 
     NOTE: API key env vars (*_API_KEY) are intentionally NOT loaded from .env
     for security. Use `siyarix auth set-key` instead.
+
+    Dangerous variables (PATH, LD_PRELOAD, PYTHONPATH, etc.) are also blocked.
     """
     _api_key_patterns = ("_API_KEY", "_SECRET", "_PASSWORD", "_TOKEN")
+    _blocked_vars = {
+        "PATH", "LD_PRELOAD", "LD_LIBRARY_PATH", "PYTHONPATH", "PYTHONSTARTUP",
+        "BASH_ENV", "IFS", "SHELLOPTS", "PERL5LIB", "RUBYLIB", "PYTHONHOME",
+    }
     env_path = path or Path.cwd() / ".env"
     if not env_path.exists():
         env_path = get_config_dir() / ".env"
@@ -94,6 +100,9 @@ def _load_dotenv(path: Path | None = None) -> None:
         if key and not os.environ.get(key):
             if any(p in key.upper() for p in _api_key_patterns):
                 logger.debug("Skipping %s from .env (use auth set-key instead)", key)
+                continue
+            if key.upper() in _blocked_vars:
+                logger.debug("Skipping blocked env var %s from .env", key)
                 continue
             os.environ[key] = val
 
@@ -183,7 +192,8 @@ _PROVIDER_ENV_MAP: dict[str, str] = {
     "together": "TOGETHER_API_KEY",
 }
 
-# Load API keys from CredentialStore into environment (in-memory only)
+# Load API keys from CredentialStore into environment (in-memory only).
+# Lazy-loaded on first auth command to avoid unnecessary startup delay.
 creds: CredentialStore | None = None
 try:
     creds = CredentialStore()
@@ -194,8 +204,9 @@ try:
                 if key:
                     os.environ[env_var] = key
             except Exception:
-                logger.warning("Failed to load API key for provider %s", provider, exc_info=True)
+                logger.debug("API key not available for provider %s", provider)
 except Exception:
+    logger.debug("CredentialStore not available")
     creds = None
 intent_router = IntentRouter()
 session_kernel = SessionKernel()
