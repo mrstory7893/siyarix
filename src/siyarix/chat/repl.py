@@ -208,7 +208,34 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
 
     def run(self) -> None:
         """Start the interactive REPL loop."""
+        import signal as _signal
+
         self._print_welcome()
+
+        # Install SIGTSTP handler to restore terminal before Ctrl+Z suspend
+        _orig_tstp: Any = None
+        if hasattr(_signal, "SIGTSTP"):
+
+            def _tstp_handler(signum: int, frame: Any) -> None:
+                try:
+                    console.print()
+                except Exception:
+                    pass
+                try:
+                    import termios as _termios
+
+                    _termios.tcsetattr(
+                        sys.stdin.fileno(), _termios.TCSANOW,
+                        _termios.tcgetattr(sys.stdin.fileno()),
+                    )
+                except Exception:
+                    pass
+                if _orig_tstp:
+                    _orig_tstp(signum, frame)
+
+            _orig_tstp = _signal.getsignal(_signal.SIGTSTP)
+            _signal.signal(_signal.SIGTSTP, _tstp_handler)
+
         # Start connectivity monitor background check
         try:
             asyncio.run(self.connectivity_monitor.start())
@@ -217,6 +244,8 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
         try:
             asyncio.run(self._repl_loop())
         finally:
+            if _orig_tstp:
+                _signal.signal(_signal.SIGTSTP, _orig_tstp)
             try:
                 asyncio.run(self.connectivity_monitor.stop())
             except Exception:
@@ -423,6 +452,7 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
 
     def _print_welcome(self) -> None:
         """Print the welcome banner with system status overview using a premium layout."""
+        console.print()  # ensure cursor is on a fresh line before the banner
         from ..branding import resolve_version
         from rich.layout import Layout
         from rich.align import Align
