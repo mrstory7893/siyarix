@@ -52,6 +52,21 @@ def _resolve_alias(name: str) -> str:
     return ""
 
 
+def _is_safe_tool(binary_path: str) -> bool:
+    """Check if the binary is a safe shell script (not one that invokes sudo)."""
+    try:
+        with open(binary_path, "rb") as f:
+            header = f.read(512)
+        if not header.startswith(b"#!"):
+            return True
+        if b"sudo" in header:
+            logger.debug("Skipping %s: shell script wrapper calls sudo", binary_path)
+            return False
+    except OSError:
+        pass
+    return True
+
+
 def detect_version(name: str, binary_path: str | None = None) -> str:
     meta = get_tool_metadata(name)
     if not meta:
@@ -63,7 +78,12 @@ def detect_version(name: str, binary_path: str | None = None) -> str:
         return ""
 
     binary = meta.get("binary", name)
-    cmd = [binary_path or binary]
+    path = binary_path or binary
+
+    if not _is_safe_tool(path):
+        return ""
+
+    cmd = [path]
     cmd.extend(version_args)
 
     try:
