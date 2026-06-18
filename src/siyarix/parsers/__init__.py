@@ -178,7 +178,7 @@ class ParserRegistry:
         Discovers both ``BaseParser`` subclasses and any class whose name
         ends with ``Parser`` and implements a ``parse`` method.
         """
-        for name, obj in globals().items():
+        for name, obj in list(globals().items()):
             if not isinstance(obj, type):
                 continue
             if name in ("BaseParser", "Parser"):
