@@ -153,6 +153,10 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
 
         if profile.sdk_dependency:
             try:
+                # Validate the module name is a known SDK dependency
+                _SAFE_SDKS = {"openai", "anthropic", "google-genai", "mistralai", "cohere", "together"}
+                if profile.sdk_dependency not in _SAFE_SDKS:
+                    logger.warning("Unknown SDK dependency '%s' for provider '%s'", profile.sdk_dependency, provider)
                 __import__(profile.sdk_dependency)
             except ImportError:
                 msg = f"Provider '{provider}' requires SDK: pip install {profile.sdk_dependency}"
@@ -576,7 +580,9 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
             pkg_ok = True
             if profile.sdk_dependency:
                 try:
-                    __import__(profile.sdk_dependency)
+                    _SAFE_SDKS = {"openai", "anthropic", "google-genai", "mistralai", "cohere", "together"}
+                    if profile.sdk_dependency in _SAFE_SDKS or "." not in profile.sdk_dependency:
+                        __import__(profile.sdk_dependency)
                 except Exception:
                     pkg_ok = False
 
