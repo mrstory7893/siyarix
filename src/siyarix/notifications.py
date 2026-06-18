@@ -45,8 +45,8 @@ class NotificationDispatcher:
             payload = {"text": message}
 
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.post(self.webhook_url, json=payload)
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(self.webhook_url, json=payload, timeout=10.0)
                 response.raise_for_status()
                 logger.info("Notification dispatched successfully.")
         except Exception as e:
