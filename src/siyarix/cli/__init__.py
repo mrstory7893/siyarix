@@ -1801,30 +1801,6 @@ def playbook_validate(
 
 
 # ---------------------------------------------------------------------------
-# Serve command
-# ---------------------------------------------------------------------------
-@app.command()
-def serve(
-    host: str = typer.Option("127.0.0.1", "--host", "-h", help="Host to bind"),
-    port: int = typer.Option(8080, "--port", "-p", help="Port to bind"),
-    reload: bool = typer.Option(False, "--reload", help="Enable auto-reload for development"),
-) -> None:
-    """Start the Siyarix REST API and WebSocket server."""
-    try:
-        import uvicorn
-        from siyarix.api.server import app as api_app
-    except ImportError:
-        console.print("[red]API dependencies not installed. Run: pip install siyarix\\[api][/red]")
-        sys.exit(1)
-
-    console.print(f"[green]Starting Siyarix API server on http://{host}:{port}...[/green]")
-    if reload:
-        uvicorn.run("siyarix.api.server:app", host=host, port=port, reload=True)
-    else:
-        uvicorn.run(api_app, host=host, port=port)
-
-
-# ---------------------------------------------------------------------------
 # Version command
 # ---------------------------------------------------------------------------
 @app.command()
