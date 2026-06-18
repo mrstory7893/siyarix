@@ -6,6 +6,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import secrets
 import time
 from typing import Any
 
@@ -31,14 +32,27 @@ security = HTTPBearer()
 
 # Store active sessions and their core instances
 _sessions: dict[str, AgentCore] = {}
+_api_key: str | None = None
+
+
+def get_api_key() -> str:
+    global _api_key
+    if _api_key is None:
+        key = os.getenv("SIYARIX_API_KEY")
+        if not key:
+            key = secrets.token_urlsafe(32)
+            logger.warning(
+                "SIYARIX_API_KEY not set — generated ephemeral key: %s "
+                "(set SIYARIX_API_KEY env var to persist between restarts)",
+                key,
+            )
+        _api_key = key
+    return _api_key
 
 
 def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> str:
-    """Verify JWT token."""
-    api_key = os.getenv("SIYARIX_API_KEY")
-    if not api_key:
-        # Allow any valid JWT when no key is configured
-        return credentials.credentials
+    """Verify bearer token against configured API key."""
+    api_key = get_api_key()
     if credentials.credentials != api_key:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -74,7 +88,8 @@ async def start_scan(req: ScanRequest, token: str = Depends(verify_token)) -> di
         try:
             from siyarix.core import AgentGoal
 
-            goal = AgentGoal(description=f"Scan target: {req.target}")
+            target_safe = req.target.strip()[:512].replace("\n", " ").replace("\r", " ")
+            goal = AgentGoal(description=f"Perform security scan on target: {target_safe}", target=target_safe)
             await core.execute_goal(goal)
         finally:
             await core.shutdown()

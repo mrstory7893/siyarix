@@ -197,8 +197,28 @@ class ExecutionEngine:
         return planner.smart_plan(instruction, tools)
 
     async def execute(self, goal: str, plan: Any = None, **kwargs: Any) -> EngineResult:
-        from .core import AgentCore, AgentMode, AgentGoal
+        from .core import AgentCore, AgentMode, AgentGoal, AgentResult
         from .models import StepResult
+
+        # Handle dry_run: return early with plan preview
+        dry_run = kwargs.get("dry_run", False)
+        if dry_run:
+            planner = await self.plan(goal)
+            plan_preview = {
+                "goal": goal,
+                "plan_id": planner.id if planner else "",
+                "steps": [
+                    {"tool": s.tool, "description": s.description, "command": s.command}
+                    for s in (planner.steps if planner else [])
+                ],
+            }
+            result = AgentResult(goal=goal, success=True, findings=[plan_preview])
+            return EngineResult(
+                success=True,
+                summary=f"Dry-run: {len(plan_preview['steps'])} steps planned",
+                all_findings=[plan_preview],
+                plan_id=plan_preview["plan_id"],
+            )
 
         mode_map = {
             ExecutionMode.REGISTRY: AgentMode.REGISTRY,
@@ -270,7 +290,9 @@ class ExecutionEngine:
 
     async def resume(self, plan_id: str, interactive: bool = False) -> EngineResult:
         """Resume execution of a previously saved plan."""
-        return await self.execute(f"Resume plan: {plan_id}")
+        # Sanitize plan_id to prevent prompt injection
+        safe_id = (plan_id or "").strip()[:128].replace("\n", " ").replace("\r", " ")
+        return await self.execute(f"Continue previous security plan (ID: {safe_id})")
 
 
 class IntentRoute:
