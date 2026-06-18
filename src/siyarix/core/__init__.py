@@ -96,6 +96,7 @@ class AgentCore:
         self,
         mode: AgentMode = AgentMode.REGISTRY,
         registry: ToolRegistry | None = None,
+        db_path: str | Path | None = None,
     ) -> None:
         self._mode = mode
         self._status = AgentStatus.IDLE
@@ -115,7 +116,7 @@ class AgentCore:
         self._workflow_engine = WorkflowEngine()
         self._event_bus = get_event_bus()
         self._learning = ContinuousLearning(self._memory)
-        self._store = OfflineStore()
+        self._store = OfflineStore(db_path=db_path)
         self._metrics = get_metrics()
 
         try:
@@ -214,8 +215,11 @@ class AgentCore:
                 pass
 
         if self._kg_path.exists():
-            self._knowledge_graph.load_json(str(self._kg_path))
-            logger.info("Loaded knowledge graph: %d nodes", len(self._knowledge_graph._nodes))
+            try:
+                self._knowledge_graph.load_json(str(self._kg_path))
+                logger.info("Loaded knowledge graph: %d nodes", len(self._knowledge_graph._nodes))
+            except Exception:
+                logger.debug("Failed to load knowledge graph")
 
         if os.getenv("SIYARIX_STEALTH") == "1":
             try:
@@ -233,8 +237,9 @@ class AgentCore:
             try:
                 res = await self.execute_subagent(role, goal_desc)
                 return {"status": "success", "findings": len(res.findings)}
-            except Exception as e:
-                return {"status": "error", "error": str(e)}
+            except Exception:
+                logger.exception("Subagent execution failed")
+                return {"status": "error", "error": "Subagent execution failed"}
 
         self._executor_registry.register_executor("_subagent", _subagent_handler)
 
@@ -246,6 +251,7 @@ class AgentCore:
         self._knowledge_graph.save_json(str(self._kg_path))
         if hasattr(self._providers, "_state") and hasattr(self._providers._state, "save"):
             self._providers._state.save()
+        self._store.close()
         logger.info("Shutdown complete.")
 
     async def initialize(self) -> None:
