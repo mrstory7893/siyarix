@@ -3,11 +3,13 @@
 """
 Interactive review loop for LLM-generated shell commands.
 Provides EDIT / RUN / STEP / CANCEL prompts before execution.
+Auto-approves in non-TTY/CI mode to prevent blocking.
 """
 
 from __future__ import annotations
 
 import logging
+import sys
 from dataclasses import dataclass
 
 from rich.console import Console
@@ -28,12 +30,22 @@ class ReviewDecision:
 
 @dataclass
 class ReviewResult:
-    decision: str  # edit | run | step | cancel
+    decision: str
     edited_command: str = ""
 
 
+def _is_interactive() -> bool:
+    return sys.stdin.isatty() and sys.stdout.isatty()
+
+
 def review_command(original: str, tool: str, reason: str) -> ReviewResult:
-    """Interactive review loop for potentially dangerous commands."""
+    """Interactive review loop for potentially dangerous commands.
+    Auto-approves in non-TTY/CI mode.
+    """
+    if not _is_interactive():
+        logger.info("Non-TTY mode: auto-approving command: %s", original[:80])
+        return ReviewResult(decision=ReviewDecision.RUN, edited_command=original)
+
     from rich.console import Group
     from rich.text import Text
 
@@ -73,7 +85,13 @@ def review_command(original: str, tool: str, reason: str) -> ReviewResult:
 
 
 def review_and_confirm(original: str, tool: str, reason: str) -> str | None:
-    """Simplify: returns edited command or None if cancelled."""
+    """Simplify: returns edited command or None if cancelled.
+    Auto-approves in non-TTY/CI mode to prevent blocking.
+    """
+    if not _is_interactive():
+        logger.info("Non-TTY mode: auto-approving command for tool=%s", tool)
+        return original
+
     result = review_command(original, tool, reason)
     if result.decision == ReviewDecision.CANCEL:
         return None
