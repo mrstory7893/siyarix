@@ -584,7 +584,12 @@ class CredentialStore:
                     )
                     self._credentials[cred.cred_id] = cred
                 except Exception as exc:
-                    logger.exception("Failed to load credential %s: %s", filepath, exc)
+                    logger.debug("Failed to load credential %s: %s", filepath, exc)
+                    # Remove corrupted credential files to prevent repeated errors
+                    try:
+                        filepath.unlink(missing_ok=True)
+                    except Exception:
+                        pass
 
         if legacy_loaded:
             self._save()
