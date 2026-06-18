@@ -64,6 +64,7 @@ from ..security_commands import security_app
 
 from ..output import OutputEngine
 from ..validators import validate_target
+from ..async_utils import run_async
 
 logger = logging.getLogger(__name__)
 
@@ -948,7 +949,7 @@ def discover(
         instruction += " with deep OS and vulnerability detection"
 
     engine = _get_engine("integrated")
-    result = asyncio.run(engine.execute(instruction, interactive=True))
+    result = run_async(engine.execute(instruction, interactive=True))
 
     if export and result.all_findings:
         import json
@@ -995,7 +996,7 @@ def run(
                 raise typer.Exit(1)
         engine = _get_engine(mode)
         console.print(f"[cyan]Resuming plan: {resolved_id}[/cyan]")
-        asyncio.run(engine.resume(resolved_id, interactive=True))
+        run_async(engine.resume(resolved_id, interactive=True))
         return
 
     instruction = command
@@ -1055,7 +1056,7 @@ def run(
                 "error": getattr(res, "error_message", "") if not res.success else "",
             }
 
-        pipe_res = asyncio.run(pipeline.execute(steps, step_executor))
+        pipe_res = run_async(pipeline.execute(steps, step_executor))
         result = PipelineExecutionResult(
             success=pipe_res.success, all_findings=pipe_res.all_findings
         )
@@ -1069,7 +1070,7 @@ def run(
                 logger.warning("Failed to persist scan results", exc_info=True)
     else:
         engine = _get_engine(route.mode)
-        result = asyncio.run(
+        result = run_async(
             engine.execute(instruction, interactive=True, dry_run=dry_run, persist=save)
         )
 
@@ -1154,7 +1155,7 @@ def agent(
         finally:
             await agent.shutdown()
 
-    asyncio.run(_run_agent())
+    run_async(_run_agent())
 
 
 # ---------------------------------------------------------------------------
@@ -1167,7 +1168,7 @@ def health_check(
     output: str = typer.Option("table", "--output", "-o", help="Output: table|json"),
 ) -> None:
     """Run system health checks."""
-    status = asyncio.run(get_health().check_all())
+    status = run_async(get_health().check_all())
     if output == "json":
         console.print(json.dumps(status.to_dict(), indent=2))
         return
@@ -1242,10 +1243,10 @@ def ci_gate(
         from ..offline_store import OfflineStore
     except ModuleNotFoundError:
         console.print("[yellow]Offline store not available — skipping finding check[/yellow]")
-        health = asyncio.run(get_health().check_all())
+        health = run_async(get_health().check_all())
     else:
         store = OfflineStore()
-        health = asyncio.run(get_health().check_all())
+        health = run_async(get_health().check_all())
         critical = store.search_findings(severity="critical", limit=1)
 
         if health.state.value == "unhealthy":
