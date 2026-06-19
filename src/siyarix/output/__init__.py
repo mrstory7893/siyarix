@@ -73,10 +73,12 @@ except ImportError:
 class OutputFormat(StrEnum):
     TABLE = "table"
     JSON = "json"
+    JSONL = "jsonl"
     YAML = "yaml"
     CSV = "csv"
     HTML = "html"
     XML = "xml"
+    MARKDOWN = "markdown"
     RAW = "raw"
     QUIET = "quiet"
 
@@ -266,6 +268,8 @@ class OutputEngine:
     def _export_data(self, data: list[dict]) -> None:
         if self.format == OutputFormat.JSON:
             self.print_json(data)
+        elif self.format == OutputFormat.JSONL:
+            self._export_jsonl(data)
         elif self.format == OutputFormat.YAML:
             self.print_yaml(data)
         elif self.format == OutputFormat.CSV:
@@ -274,6 +278,8 @@ class OutputEngine:
             self._export_html(data)
         elif self.format == OutputFormat.XML:
             self._export_xml(data)
+        elif self.format == OutputFormat.MARKDOWN:
+            self._export_markdown(data)
         else:
             self._raw_print(str(data))
 
@@ -317,6 +323,17 @@ class OutputEngine:
             fmt = OutputFormat.RAW
         if fmt == OutputFormat.JSON:
             path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        elif fmt == OutputFormat.JSONL and isinstance(data, list):
+            path.write_text("\n".join(json.dumps(row, ensure_ascii=False) for row in data), encoding="utf-8")
+        elif fmt == OutputFormat.MARKDOWN:
+            md_lines = []
+            for i, row in enumerate(data if isinstance(data, list) else [data]):
+                md_lines.append(f"## Finding {i + 1}\n")
+                for key, value in (row.items() if isinstance(row, dict) else {}):
+                    label = key.replace("_", " ").title()
+                    md_lines.append(f"- **{label}:** {value}")
+                md_lines.append("")
+            path.write_text("\n".join(md_lines), encoding="utf-8")
         elif fmt == OutputFormat.YAML and YAML_AVAILABLE:
             path.write_text(yaml.dump(data), encoding="utf-8")
         elif fmt == OutputFormat.CSV and isinstance(data, list):
@@ -330,6 +347,42 @@ class OutputEngine:
             self.print_success(f"Exported to {filepath}")
         else:
             self._raw_print(f"Exported to {filepath}")
+
+    def _export_jsonl(self, data: list[dict]) -> None:
+        if not data:
+            return
+        lines = [json.dumps(row, ensure_ascii=False) for row in data]
+        output_text = "\n".join(lines)
+        if RICH_AVAILABLE:
+            from rich.syntax import Syntax
+            syntax = Syntax(output_text, "json", theme="monokai")
+            if self.console is not None:
+                self.console.print(syntax)
+            else:
+                self._raw_print(output_text)
+        else:
+            self._raw_print(output_text)
+
+    def _export_markdown(self, data: list[dict]) -> None:
+        if not data:
+            return
+        lines = []
+        for i, row in enumerate(data):
+            lines.append(f"## Finding {i + 1}\n")
+            for key, value in row.items():
+                label = key.replace("_", " ").title()
+                lines.append(f"- **{label}:** {value}")
+            lines.append("")
+        output_text = "\n".join(lines)
+        if RICH_AVAILABLE:
+            from rich.syntax import Syntax
+            syntax = Syntax(output_text, "markdown", theme="monokai")
+            if self.console is not None:
+                self.console.print(syntax)
+            else:
+                self._raw_print(output_text)
+        else:
+            self._raw_print(output_text)
 
     def _raw_print(self, text: str) -> None:
         if self.console is not None:
