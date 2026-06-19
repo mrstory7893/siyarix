@@ -289,9 +289,6 @@ class TestCoreInit:
             mock_sub.shutdown.assert_awaited_once()
 
 
-# ═══════════════════════════════════════════════════════════════════
-# core/learning.py (77% - missing 47-55, 59-72, 80-82, 132-129, 147-148)
-# ═══════════════════════════════════════════════════════════════════
 class TestCoreExecution:
     """Cover remaining core/__init__.py uncovered lines."""
 
@@ -524,7 +521,6 @@ class TestCoreErrorHandling:
                             with patch.object(core._context, "add_history"):
                                 with patch.object(core._providers, "select_provider", return_value=("openai", "gpt-4")):
                                     with patch.object(core._providers, "complete"):
-                                        with patch.object(core._learning, "query_similar_experiences", AsyncMock(return_value=[])):
                                             result = await core._execute_autonomous(goal, None, time.time(), AgentResult(goal="test"))
                                             assert result.success
 

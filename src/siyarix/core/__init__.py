@@ -28,7 +28,6 @@ from ..knowledge_graph import KnowledgeGraph
 from ..stealth import StealthEngine
 from ..config import get_config_dir
 from .swarm import SwarmRouter, SwarmTask
-from .learning import ContinuousLearning, Experience
 from ..offline_store import OfflineStore
 from ..metrics import get_metrics
 
@@ -42,8 +41,7 @@ __all__ = [
     "AgentResult",
     "SwarmRouter",
     "SwarmTask",
-    "ContinuousLearning",
-    "Experience",
+
 ]
 
 
@@ -115,7 +113,6 @@ class AgentCore:
         self._providers = ProviderManager.get_instance()
         self._workflow_engine = WorkflowEngine()
         self._event_bus = get_event_bus()
-        self._learning = ContinuousLearning(self._memory)
         self._store = OfflineStore(db_path=db_path)
         self._metrics = get_metrics()
 
@@ -378,11 +375,9 @@ class AgentCore:
         self._status = AgentStatus.COMPLETED if result.success else AgentStatus.FAILED
         self._history.append(result)
         
-        # Record metrics, learning, and offline store
+        # Record metrics and offline store
         self._metrics.record_scan(duration=result.duration_ms / 1000.0, successful=result.success, findings_count=len(result.findings))
         await self._store.save_scan_async(target=goal.target or goal.description, findings=result.findings, mode=self._mode.value, plan_id=plan.id if plan else "")
-        await self._learning.record_experience(Experience(target=goal.target or goal.description, action="registry_plan", result=result.summary, success=result.success))
-        
         return result
 
     async def _execute_autonomous(
@@ -415,12 +410,7 @@ class AgentCore:
                     for t in self._registry.list_tools()
                 ]
                 
-                # Fetch past experiences to guide planning
-                past_experiences = await self._learning.query_similar_experiences("generate_plan", goal.target or goal.description, limit=3)
                 context_history = self._context.get_history()
-                if past_experiences:
-                    exp_summary = "Past Experiences:\n" + "\n".join(f"- Action: {e.action}, Success: {e.success}, Result: {e.result}" for e in past_experiences)
-                    context_history.append({"role": "system", "content": exp_summary})
                 
                 plan = await self._planner_autonomous.plan(
                     goal.description,
@@ -460,11 +450,9 @@ class AgentCore:
         self._status = AgentStatus.COMPLETED if result.success else AgentStatus.FAILED
         self._history.append(result)
 
-        # Record metrics, learning, and offline store
+        # Record metrics and offline store
         self._metrics.record_scan(duration=result.duration_ms / 1000.0, successful=result.success, findings_count=len(result.findings))
         await self._store.save_scan_async(target=goal.target or goal.description, findings=result.findings, mode=self._mode.value, plan_id=plan.id if plan else "")
-        await self._learning.record_experience(Experience(target=goal.target or goal.description, action="autonomous_plan", result=result.summary, success=result.success))
-
         return result
 
     async def _execute_hybrid(
@@ -542,11 +530,9 @@ class AgentCore:
         self._status = AgentStatus.COMPLETED if result.success else AgentStatus.FAILED
         self._history.append(result)
 
-        # Record metrics, learning, and offline store
+        # Record metrics and offline store
         self._metrics.record_scan(duration=result.duration_ms / 1000.0, successful=result.success, findings_count=len(result.findings))
         await self._store.save_scan_async(target=goal.target or goal.description, findings=result.findings, mode=self._mode.value, plan_id=plan.id if plan else "")
-        await self._learning.record_experience(Experience(target=goal.target or goal.description, action="interactive_plan", result=result.summary, success=result.success))
-
         return result
 
     def _generate_summary(self, plan: ExecutionPlan) -> str:
