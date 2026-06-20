@@ -372,13 +372,13 @@ class TestExecutorToolErrors:
 
     def test_log_safety_approved(self):
         executor = BaseExecutor()
-        with patch("siyarix.executor.audit") as mock_audit:
+        with patch("siyarix.executor.log_event") as mock_audit:
             executor._log_safety("nmap", "nmap -sV", "approved", "ok")
             mock_audit.assert_called_once()
 
     def test_log_safety_blocked(self):
         executor = BaseExecutor()
-        with patch("siyarix.executor.audit") as mock_audit:
+        with patch("siyarix.executor.log_event") as mock_audit:
             executor._log_safety("nmap", "nmap -sV", "blocked", "bad")
             mock_audit.assert_called_once()
 

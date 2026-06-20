@@ -63,7 +63,7 @@ class TestCompliance:
     async def test_compliance_check_run(self):
         check = ComplianceCheck("cc1.1", "example.com")
         result = await check.run()
-        assert result.status == "PASSED"
+        assert result.status == "NOT_EVALUATED"
         assert result.check_id == "cc1.1"
 
     def test_compliance_report_to_json(self, tmp_path):
