@@ -412,8 +412,14 @@ class ReportEngine:
             "<!DOCTYPE html><html lang='en'>",
             "<head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1'>",
             f"<title>{report.config.title}</title>",
+            "" if getattr(report.config, "offline", False) else
             "<link href='https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&family=Fira+Code&display=swap' rel='stylesheet'>",
-            f"<style>{css}</style>",
+            "<style>"
+            + ("body{font-family:system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}"
+               "code,pre{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace}"
+               if getattr(report.config, "offline", False)
+               else "")
+            + css + "</style>",
             f"<script>{js}</script>",
             "</head><body><div class='dashboard'>",
         ]
