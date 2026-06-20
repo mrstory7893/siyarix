@@ -81,7 +81,14 @@ class PermissionGate:
         self._calls = [t for t in self._calls if now - t < self.rate_limit_period]
 
         if context and context.get("restricted_payload"):
-            if any(bad in command for bad in ("rm -rf", "mkfs", "dd if=")):
+            import re as _re
+            _RESTRICTED_PATTERNS = [
+                r"\brm\b[\s]+(?:-[a-zA-Z]*[rf][a-zA-Z]*[\s]*)*(?:-[a-zA-Z]*[rf])",
+                r"\brm\b\s+--(?:recursive|force)",
+                r"\bmkfs\b",
+                r"\bdd\b\s+if=",
+            ]
+            if any(_re.search(p, command) for p in _RESTRICTED_PATTERNS):
                 return GateResult(
                     False,
                     GateStage.FORBIDDEN,

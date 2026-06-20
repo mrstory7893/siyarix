@@ -499,7 +499,7 @@ class AuditLogger:
         return self.get_statistics()
 
     def cleanup_old_events(self) -> None:
-        """Remove events older than retention period"""
+        """Remove events older than retention period and rewrite the audit file."""
         cutoff = datetime.now(timezone.utc) - timedelta(days=self._retention_days)
         retained_events = []
         for e in self._events:
@@ -513,7 +513,16 @@ class AuditLogger:
                     0, self._count_by_severity.get(e.severity, 0) - 1
                 )
         self._events = retained_events
-        self._save_events()
+        # Rewrite the full JSONL file with retained events (not just unflushed)
+        try:
+            self._config_dir.mkdir(parents=True, exist_ok=True)
+            lines = [json.dumps(e.to_dict()) + "\n" for e in self._events]
+            with self._audit_db.open("w", encoding="utf-8") as f:
+                f.writelines(lines)
+            self._unflushed_events.clear()
+            self._dirty = False
+        except Exception as exc:
+            logger.error("Failed to rewrite audit log after cleanup: %s", exc)
 
 
 # Module-level instance initialized lazily via __getattr__ to avoid import side effects

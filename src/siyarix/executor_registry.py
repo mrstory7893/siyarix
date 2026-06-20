@@ -199,18 +199,19 @@ class RegistryExecutor(BaseExecutor):
             return {"status": "error", "error": "Tool call budget exhausted"}
 
         args_key = str(sorted(step.args.items()))
-        guardrail = self._tracker.record(step.tool, args_key, False)
-        if guardrail and "BLOCKED" in guardrail:
-            return {"status": "error", "error": guardrail}
 
         try:
             result = await self._registry.execute(step.tool, **step.args)
-        except ToolNotFoundError:
-            result = {"status": "error", "error": str(ToolNotFoundError), "tool": step.tool}
+        except ToolNotFoundError as e:
+            self._tracker.record(step.tool, args_key, False)
+            result = {"status": "error", "error": str(e), "tool": step.tool}
         except ToolExecutionError as e:
+            self._tracker.record(step.tool, args_key, False)
             result = {"status": "error", "error": str(e), "tool": step.tool}
         except PermissionDeniedError:
             raise
+        else:
+            self._tracker.record(step.tool, args_key, result.get("status") != "error")
         result = await self._apply_dlp(result)
         if result.get("status") == "error":
             result = await self._handle_tool_error(step, result)

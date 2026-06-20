@@ -17,6 +17,12 @@ from siyarix.workflow import WorkflowEngine
 logger = logging.getLogger(__name__)
 
 
+_ENV_ALLOWLIST: frozenset[str] = frozenset({
+    "SIYARIX_", "HOME", "USER", "SHELL", "LANG", "TZ",
+    "PATH", "TERM", "HOSTNAME", "PWD", "LOGNAME",
+})
+
+
 class PlaybookEngine:
     """Parses and executes YAML playbooks."""
 
@@ -39,7 +45,11 @@ class PlaybookEngine:
         def replace(match: re.Match) -> str:
             var_name = match.group(1).strip()
             if var_name.startswith("env."):
-                return os.environ.get(var_name[4:], "")
+                env_key = var_name[4:]
+                if not any(env_key.startswith(p) for p in _ENV_ALLOWLIST):
+                    logger.warning("Blocked access to restricted env var: %s", env_key)
+                    return "[REDACTED]"
+                return os.environ.get(env_key, "")
             return context.get(var_name, match.group(0))
 
         return re.sub(r"\{\{(.*?)\}\}", replace, text)

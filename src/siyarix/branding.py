@@ -27,6 +27,10 @@ _THEME_ALIASES: dict[str, str] = {
     "red": "bloodmoon",
     "blue": "arctic",
     "gold": "goldenrod",
+    "dark": "cyber-noir",
+    "light": "arctic",
+    "neon": "synthwave",
+    "minimal": "eclipse",
     "system": "cyber-noir",
 }
 
@@ -334,6 +338,9 @@ def _sample_command(theme: str) -> str:
 def print_theme_preview(console: Console, theme: str) -> None:
     """Render a compact appearance preview for the selected theme."""
     safe_theme = resolve_theme(theme)
+    raw_input = theme.strip().lower() if theme else ""
+    if raw_input and raw_input != safe_theme and raw_input in _THEME_ALIASES:
+        console.print(f"  [dim]ℹ Theme '{raw_input}' resolved to '{safe_theme}' (alias)[/dim]")
     styles = _SEVERITY_STYLES[safe_theme]
     border = styles.get("border", "cyan")
     accent = styles.get("accent", "bright_cyan")
@@ -358,7 +365,7 @@ def print_theme_preview(console: Console, theme: str) -> None:
     table = Table(title="UI Surface Samples", header_style=f"bold {primary}", border_style=border)
     table.add_column("Surface", style=primary)
     table.add_column("Example", style="white")
-    table.add_row("Banner", "SIYARIX CLI v2.0")
+    table.add_row("Banner", f"SIYARIX CLI v{resolve_version()}")
     table.add_row("Prompt", "siyarix> scan 10.0.0.5")
     table.add_row("Command", _sample_command(safe_theme))
     table.add_row("Info", severity_label(safe_theme, "info"))
