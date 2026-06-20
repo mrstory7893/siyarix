@@ -16,6 +16,7 @@ Features:
 from __future__ import annotations
 
 import csv
+import html as _html
 import io
 import getpass as _getpass
 import json
@@ -288,12 +289,12 @@ class OutputEngine:
             return
         html = "<table border='1'>\n<thead><tr>\n"
         for col in data[0]:
-            html += f"  <th>{col}</th>\n"
+            html += f"  <th>{_html.escape(str(col))}</th>\n"
         html += "</tr></thead>\n<tbody>\n"
         for row in data:
             html += "<tr>\n"
             for col in data[0]:
-                html += f"  <td>{row.get(col, '')}</td>\n"
+                html += f"  <td>{_html.escape(str(row.get(col, '')))}</td>\n"
             html += "</tr>\n"
         html += "</tbody>\n</table>"
         if RICH_AVAILABLE and self.console is not None:
@@ -302,11 +303,14 @@ class OutputEngine:
             self._raw_print(html)
 
     def _export_xml(self, data: list[dict]) -> None:
+        from xml.sax.saxutils import escape as _xml_escape
         xml = "<?xml version='1.0' encoding='UTF-8'?>\n<data>\n"
         for i, row in enumerate(data):
             xml += f"  <item id='{i}'>\n"
             for key, value in row.items():
-                xml += f"    <{key}>{value}</{key}>\n"
+                safe_key = _xml_escape(str(key))
+                safe_val = _xml_escape(str(value))
+                xml += f"    <{safe_key}>{safe_val}</{safe_key}>\n"
             xml += "  </item>\n"
         xml += "</data>"
         if RICH_AVAILABLE and self.console is not None:
@@ -337,10 +341,13 @@ class OutputEngine:
         elif fmt == OutputFormat.YAML and YAML_AVAILABLE:
             path.write_text(yaml.dump(data), encoding="utf-8")
         elif fmt == OutputFormat.CSV and isinstance(data, list):
-            with path.open("w", newline="", encoding="utf-8") as f:
-                writer = csv.DictWriter(f, fieldnames=data[0].keys())
-                writer.writeheader()
-                writer.writerows(data)
+            if not data:
+                path.write_text("", encoding="utf-8")
+            else:
+                with path.open("w", newline="", encoding="utf-8") as f:
+                    writer = csv.DictWriter(f, fieldnames=data[0].keys())
+                    writer.writeheader()
+                    writer.writerows(data)
         else:
             path.write_text(str(data), encoding="utf-8")
         if RICH_AVAILABLE:

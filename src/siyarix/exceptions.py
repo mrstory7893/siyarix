@@ -26,6 +26,7 @@ __all__ = [
     "LLMProviderError",
     "ConfigError",
     "CredentialError",
+    "AuditIntegrityError",
     "exit_code_for",
 ]
 
@@ -137,10 +138,17 @@ class CredentialError(SiyarixException):
     pass
 
 
+class AuditIntegrityError(SiyarixException):
+    """Audit chain integrity compromised — tamper-evident hash mismatch (exit code 5)."""
+
+    pass
+
+
 # Exit codes as documented in Chapter 3.3.
 # Dict provides O(1) lookup by exact type; the fallback path walks the MRO
 # so subclass specificity is preserved without a linear scan.
 _EXIT_CODE_MAP: dict[type[SiyarixException], int] = {
+    AuditIntegrityError: 5,
     PermissionDeniedError: 2,
     ToolNotFoundError: 3,
     LLMProviderError: 4,
@@ -163,6 +171,7 @@ def exit_code_for(exc: SiyarixException) -> int:
     2 — Permission denied / safety block.
     3 — Tool not found.
     4 — LLM provider error or timeout.
+    5 — Audit integrity failure (tamper-evident chain compromised).
 
     Complexity is O(1) for exact-type hits and O(depth-of-MRO) for
     subclasses that are not explicitly listed.

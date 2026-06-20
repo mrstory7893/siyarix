@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from .events import get_event_bus
-from .audit_log import audit, AuditEventType, AuditSeverity
+from .audit_log import log_event, AuditEventType, AuditSeverity
 from .exceptions import PermissionDeniedError
 from .permission_gate import PermissionGate
 from .models import ExecutionPlan, PlanStep
@@ -341,18 +341,22 @@ class BaseExecutor:
             _sl = _get_session_logger()
             _sl.add_safety_event("executor", command, f"{action}:{reason}")
             if action in ("approved", "risk_accepted"):
-                audit(
-                    AuditEventType.SECURITY_APPROVAL,
-                    AuditSeverity.HIGH,
-                    "Manual execution approval granted",
-                    {"tool": tool, "command": command, "reason": reason},
+                log_event(
+                    event_type=AuditEventType.SECURITY_APPROVAL,
+                    severity=AuditSeverity.HIGH,
+                    user="executor",
+                    action="Manual execution approval granted",
+                    result="granted",
+                    details={"tool": tool, "command": command, "reason": reason},
                 )
             elif action in ("cancelled", "risk_rejected", "blocked"):
-                audit(
-                    AuditEventType.SECURITY_DENIAL,
-                    AuditSeverity.MEDIUM,
-                    "Execution denied",
-                    {"tool": tool, "command": command, "reason": reason, "action": action},
+                log_event(
+                    event_type=AuditEventType.SECURITY_DENIAL,
+                    severity=AuditSeverity.MEDIUM,
+                    user="executor",
+                    action="Execution denied",
+                    result="denied",
+                    details={"tool": tool, "command": command, "reason": reason, "action": action},
                 )
         except Exception:
             logger.debug(
