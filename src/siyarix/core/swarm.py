@@ -1,6 +1,12 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 """Swarm Orchestration Architecture for Siyarix.
 
+.. warning::
+    **EXPERIMENTAL / STUB** — This module contains placeholder implementations
+    that return mock data. It is NOT production-ready and should not be relied
+    upon for actual multi-agent orchestration. Planned for full implementation
+    in a future release.
+
 This module implements a Multi-Agent Swarm architecture to parallelize
 and specialize the offensive security workflow.
 """

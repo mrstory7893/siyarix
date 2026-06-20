@@ -4,6 +4,14 @@
 Interactive review loop for LLM-generated shell commands.
 Provides EDIT / RUN / STEP / CANCEL prompts before execution.
 Auto-approves in non-TTY/CI mode to prevent blocking.
+
+Integration points
+------------------
+- ``executor.py``              — ``_get_review_and_confirm()`` imports ``review_and_confirm``
+- ``executor_autonomous.py``   — ``_review_commands()`` imports ``review_and_confirm``
+- ``registry.py``              — permission-gate review imports ``review_and_confirm``
+- ``chat/handlers.py``         — ``/review`` slash command toggles the ``command_review`` setting
+                                  which gates whether the executor calls this module.
 """
 
 from __future__ import annotations

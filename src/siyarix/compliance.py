@@ -57,12 +57,12 @@ class ComplianceCheck:
         self.target = target
 
     async def run(self) -> ComplianceResult:
-        # Stub check implementation
+        # Stub check implementation — no real evaluation performed yet
         return ComplianceResult(
             check_id=self.check_id,
-            status="PASSED",
+            status="NOT_EVALUATED",
             evidence_data={"target": self.target},
-            message="Check passed successfully.",
+            message="Stub check — not yet evaluated against live controls.",
         )
 
 
@@ -73,6 +73,9 @@ class ComplianceEngine:
         "SOC2": ["cc1.1", "cc6.1", "cc6.2"],
         "NIST": ["AC-2", "AC-3", "AU-2"],
         "GDPR": ["Art. 32", "Art. 33"],
+        "PCI-DSS": ["Req-1.1", "Req-6.1", "Req-10.1"],
+        "ISO-27001": ["A.5.1", "A.8.1", "A.12.1"],
+        "HIPAA": ["164.308(a)(1)", "164.312(a)(1)"],
     }
 
     def __init__(self, base_dir: Path | None = None) -> None:

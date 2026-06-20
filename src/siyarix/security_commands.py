@@ -47,6 +47,7 @@ def list_incidents(
       siyarix security incidents --severity critical --limit 5
       siyarix security incidents --status open --output json
     """
+    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
     # Sample data — replace with real API call when backend is available
     incidents: List[Dict[str, Any]] = [
         {
@@ -216,6 +217,7 @@ def list_vulnerabilities(
     output: str = typer.Option("table", "--output", "-o", help="Output: table|json"),
 ) -> None:
     """List vulnerabilities with CVSS scores and patch status."""
+    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
     vulns: List[Dict[str, Any]] = [
         {
             "id": "CVE-2024-0001",
@@ -359,6 +361,7 @@ def run_hunt(
     target: str = typer.Option("", "--target", "-t", help="Override target"),
 ) -> None:
     """Execute a threat hunt query against the environment."""
+    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
     hunt_summary = (
         f"[bold]Query ID:[/bold]  {query_id}\n"
         f"[bold]Target:[/bold]    {target or 'all endpoints'}\n"
@@ -444,6 +447,7 @@ def list_queries(
 @security_app.command(name="mitre-coverage")
 def mitre_coverage() -> None:
     """Show MITRE ATT&CK technique coverage."""
+    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
     table = Table(
         title="MITRE ATT&CK Coverage",
         show_header=True,
@@ -481,6 +485,7 @@ def mitre_coverage() -> None:
 @security_app.command(name="dashboard")
 def show_dashboard() -> None:
     """Show the security operations dashboard with live metrics."""
+    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
     from rich.columns import Columns
 
     # Score panel
@@ -545,6 +550,7 @@ def show_dashboard() -> None:
 @security_app.command(name="playbooks")
 def list_playbooks() -> None:
     """List available incident response playbooks."""
+    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
     table = Table(
         title="Incident Response Playbooks",
         show_header=True,

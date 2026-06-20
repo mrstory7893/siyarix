@@ -193,14 +193,19 @@ PERSONAS: dict[str, dict[str, Any]] = {
 }
 
 
+def _normalize_persona_key(name: str) -> str:
+    return name.lower().replace(" ", "").replace("-", "").replace("_", "")
+
+
 def get_persona(name: str) -> dict[str, Any] | None:
     """Return the persona dict for *name*, or ``None`` if not found."""
     p = PERSONAS.get(name)
     if p:
         return p
-    # Fallback: search by lowercase name
+    # Fallback: search by normalized name (strips spaces, hyphens, underscores)
+    norm = _normalize_persona_key(name)
     for key, val in PERSONAS.items():
-        if key.lower() == name.lower():
+        if _normalize_persona_key(key) == norm:
             return val
     return None
 
