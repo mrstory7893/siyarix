@@ -1002,7 +1002,7 @@ class TestResolveApiKey:
     def test_from_credential_store(self):
         mock_store = MagicMock()
         mock_store.retrieve.return_value = "sk-store"
-        with patch("siyarix.credential_store.CredentialStore", return_value=mock_store):
+        with patch("siyarix.credential_store.get_creds", return_value=mock_store):
             with patch("siyarix.providers.manager.get_provider_env_var", return_value="OPENAI_API_KEY"):
                 result = resolve_api_key("openai")
                 assert result == "sk-store"
@@ -1010,7 +1010,7 @@ class TestResolveApiKey:
     def test_from_env_var(self):
         mock_store = MagicMock()
         mock_store.retrieve.return_value = None
-        with patch("siyarix.credential_store.CredentialStore", return_value=mock_store):
+        with patch("siyarix.credential_store.get_creds", return_value=mock_store):
             with patch("siyarix.providers.manager.get_provider_env_var", return_value="OPENAI_API_KEY"):
                 with patch.dict(os.environ, {"OPENAI_API_KEY": "sk-env"}, clear=True):
                     result = resolve_api_key("openai")
@@ -1019,7 +1019,7 @@ class TestResolveApiKey:
     def test_from_env_var_explicit_name(self):
         mock_store = MagicMock()
         mock_store.retrieve.return_value = None
-        with patch("siyarix.credential_store.CredentialStore", return_value=mock_store):
+        with patch("siyarix.credential_store.get_creds", return_value=mock_store):
             with patch.dict(os.environ, {"CUSTOM_KEY": "sk-custom"}, clear=True):
                 result = resolve_api_key("openai", env_var="CUSTOM_KEY")
                 assert result == "sk-custom"
@@ -1027,7 +1027,7 @@ class TestResolveApiKey:
     def test_no_credential_no_env(self):
         mock_store = MagicMock()
         mock_store.retrieve.return_value = None
-        with patch("siyarix.credential_store.CredentialStore", return_value=mock_store):
+        with patch("siyarix.credential_store.get_creds", return_value=mock_store):
             with patch("siyarix.providers.manager.get_provider_env_var", return_value="OPENAI_API_KEY"):
                 with patch.dict(os.environ, {}, clear=True):
                     result = resolve_api_key("openai")

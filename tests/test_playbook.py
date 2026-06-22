@@ -79,8 +79,8 @@ def test_resolve_vars_simple(playbook_engine: PlaybookEngine) -> None:
 
 
 def test_resolve_vars_env_var(playbook_engine: PlaybookEngine) -> None:
-    with patch.dict(os.environ, {"MY_VAR": "env_value"}, clear=True):
-        result = playbook_engine._resolve_vars("{{ env.MY_VAR }}", {})
+    with patch.dict(os.environ, {"SIYARIX_MY_VAR": "env_value"}, clear=True):
+        result = playbook_engine._resolve_vars("{{ env.SIYARIX_MY_VAR }}", {})
     assert result == "env_value"
 
 
@@ -90,7 +90,7 @@ def test_resolve_vars_missing_var(playbook_engine: PlaybookEngine) -> None:
 
 
 def test_resolve_vars_missing_env(playbook_engine: PlaybookEngine) -> None:
-    result = playbook_engine._resolve_vars("{{ env.NONEXISTENT }}", {})
+    result = playbook_engine._resolve_vars("{{ env.SIYARIX_NONEXISTENT }}", {})
     assert result == ""
 
 

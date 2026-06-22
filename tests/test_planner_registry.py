@@ -465,7 +465,7 @@ class TestDecomposeGoal:
     def test_step0_nmap_all_ports(self, planner: RegistryPlanner):
         intent = ParsedIntent(
             target="10.0.0.1", target_type="ipv4",
-            template_name=None, tool_name="nmap", confidence=3.0,
+            template_name=None, tool_name="nmap", confidence=4.0,
             parameters={"ports": "all", "speed": "fast"}, tokens=[],
         )
         planner._nlp.parse = MagicMock(return_value=intent)
@@ -476,7 +476,7 @@ class TestDecomposeGoal:
     def test_step0_nmap_specific_ports(self, planner: RegistryPlanner):
         intent = ParsedIntent(
             target="10.0.0.1", target_type="ipv4",
-            template_name=None, tool_name="nmap", confidence=3.0,
+            template_name=None, tool_name="nmap", confidence=4.0,
             parameters={"ports": "22,80,443"}, tokens=[],
         )
         planner._nlp.parse = MagicMock(return_value=intent)
@@ -520,7 +520,7 @@ class TestDecomposeGoal:
     def test_step0_nmap_verbose(self, planner: RegistryPlanner):
         intent = ParsedIntent(
             target="10.0.0.1", target_type="ipv4",
-            template_name=None, tool_name="nmap", confidence=3.0,
+            template_name=None, tool_name="nmap", confidence=4.0,
             parameters={"verbose": True}, tokens=[],
         )
         planner._nlp.parse = MagicMock(return_value=intent)
@@ -531,7 +531,7 @@ class TestDecomposeGoal:
     def test_step0_nmap_timeout(self, planner: RegistryPlanner):
         intent = ParsedIntent(
             target="10.0.0.1", target_type="ipv4",
-            template_name=None, tool_name="nmap", confidence=3.0,
+            template_name=None, tool_name="nmap", confidence=4.0,
             parameters={"timeout": "30m"}, tokens=[],
         )
         planner._nlp.parse = MagicMock(return_value=intent)
@@ -542,7 +542,7 @@ class TestDecomposeGoal:
     def test_step0_nmap_xml_format(self, planner: RegistryPlanner):
         intent = ParsedIntent(
             target="10.0.0.1", target_type="ipv4",
-            template_name=None, tool_name="nmap", confidence=3.0,
+            template_name=None, tool_name="nmap", confidence=4.0,
             parameters={"format": "xml"}, tokens=[],
         )
         planner._nlp.parse = MagicMock(return_value=intent)
@@ -553,7 +553,7 @@ class TestDecomposeGoal:
     def test_step0_nuclei_severity(self, planner: RegistryPlanner):
         intent = ParsedIntent(
             target="example.com", target_type="domain",
-            template_name=None, tool_name="nuclei", confidence=3.0,
+            template_name=None, tool_name="nuclei", confidence=4.0,
             parameters={"severity": "critical", "format": "json"}, tokens=[],
         )
         planner._nlp.parse = MagicMock(return_value=intent)
@@ -564,7 +564,7 @@ class TestDecomposeGoal:
     def test_step0_nuclei_json_timeout(self, planner: RegistryPlanner):
         intent = ParsedIntent(
             target="example.com", target_type="domain",
-            template_name=None, tool_name="nuclei", confidence=3.0,
+            template_name=None, tool_name="nuclei", confidence=4.0,
             parameters={"timeout": "5s", "format": "json"}, tokens=[],
         )
         planner._nlp.parse = MagicMock(return_value=intent)
@@ -576,7 +576,7 @@ class TestDecomposeGoal:
     def test_step0_ffuf_gobuster_params(self, planner: RegistryPlanner):
         intent = ParsedIntent(
             target="example.com", target_type="domain",
-            template_name=None, tool_name="ffuf", confidence=3.0,
+            template_name=None, tool_name="ffuf", confidence=4.0,
             parameters={"timeout": "10s", "format": "json"}, tokens=[],
         )
         planner._nlp.parse = MagicMock(return_value=intent)

@@ -560,9 +560,9 @@ class TestExecutorErrorHandling:
 
     def test_log_safety_cancelled_audit(self):
         executor = BaseExecutor()
-        with patch("siyarix.executor.audit") as mock_audit:
+        with patch("siyarix.executor.log_event") as mock_log_event:
             executor._log_safety("nmap", "cmd", "cancelled", "user said no")
-            mock_audit.assert_called_once()
+            mock_log_event.assert_called_once()
 
 
 # ═══════════════════════════════════════════════════════════════════

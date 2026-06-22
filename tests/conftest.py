@@ -103,6 +103,9 @@ def temp_config_file(temp_dir: Path) -> Path:
 
 @pytest.fixture(autouse=True)
 def clean_env(tmp_path_factory: pytest.TempPathFactory) -> Generator[None, None, None]:
+    from siyarix.config import SettingsStore
+    SettingsStore._instance = None
+
     siyarix_vars = [k for k in os.environ if k.startswith("SIYARIX_")]
     backup = {k: os.environ[k] for k in siyarix_vars}
     for k in siyarix_vars:
@@ -119,6 +122,7 @@ def clean_env(tmp_path_factory: pytest.TempPathFactory) -> Generator[None, None,
     for k in [k for k in os.environ if k.startswith("SIYARIX_")]:
         del os.environ[k]
     os.environ.update(backup)
+    SettingsStore._instance = None
 
 
 @pytest.fixture

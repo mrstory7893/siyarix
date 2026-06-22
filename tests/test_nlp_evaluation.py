@@ -158,7 +158,7 @@ def main():
         ("log4j scan on https://example.com", ["nuclei"], 1),
         ("heartbleed check on https://example.com", ["nmap"], 1),
         ("find exposed jenkins instances on 10.0.0.0/24", ["nmap"], 1),
-        ("check for open elasticsearch databases on 10.0.0.0/24", ["nmap"], 1),
+        ("check for open elasticsearch databases on 10.0.0.0/24", ["curl"], 1),
         ("dnsscan and zone transfer attempt on example.com", ["dig"], 1),
         ("full passive recon on example.com", ["whatweb", "subfinder", "dig", "whois", "openssl"], 5),
     ]

@@ -17,7 +17,7 @@ class TestInternalTools:
         handler = make_graph_analyzer_handler()
         with patch("siyarix.knowledge_graph.KnowledgeGraph") as MockKG:
             kg = MagicMock()
-            kg.shortest_path.return_value = [MagicMock(label="node1")]
+            kg.shortest_path.return_value = ["node1"]
             MockKG.return_value = kg
             result = await handler(action="shortest_path", args={"source": "a", "target": "b"})
             assert result["status"] == "success"
@@ -38,7 +38,7 @@ class TestInternalTools:
         handler = make_graph_analyzer_handler()
         with patch("siyarix.knowledge_graph.KnowledgeGraph") as MockKG:
             kg = MagicMock()
-            kg.blast_radius.return_value = [MagicMock(label="affected")]
+            kg.blast_radius.return_value = ["affected"]
             MockKG.return_value = kg
             result = await handler(action="blast_radius", args={"node_id": "n1"})
             assert result["status"] == "success"
@@ -48,9 +48,9 @@ class TestInternalTools:
         handler = make_graph_analyzer_handler()
         with patch("siyarix.knowledge_graph.KnowledgeGraph") as MockKG:
             kg = MagicMock()
-            kg.find_crown_jewel_paths.return_value = [[MagicMock(label="jewel")]]
+            kg.find_crown_jewel_paths.return_value = {"jewel": ["jewel"]}
             MockKG.return_value = kg
-            result = await handler(action="find_crown_jewel_paths", args={})
+            result = await handler(action="find_crown_jewel_paths", args={"node_id": "n1"})
             assert result["status"] == "success"
 
     @pytest.mark.asyncio
@@ -116,12 +116,10 @@ class TestInternalToolsGraph:
         handler = make_graph_analyzer_handler()
         with patch("siyarix.knowledge_graph.KnowledgeGraph") as MockKG:
             mock_kg = MagicMock()
-            mock_kg.find_crown_jewel_paths.return_value = [[MagicMock(), MagicMock()]]
-            mock_kg.find_crown_jewel_paths.return_value[0][0].label = "host1"
-            mock_kg.find_crown_jewel_paths.return_value[0][1].label = "host2"
+            mock_kg.find_crown_jewel_paths.return_value = {"jewel": ["host1", "host2"]}
             MockKG.return_value = mock_kg
             with patch.object(Path, "exists", return_value=True):
-                result = asyncio.run(handler(action="find_crown_jewel_paths", args={}))
+                result = asyncio.run(handler(action="find_crown_jewel_paths", args={"node_id": "n1"}))
                 assert "paths" in result["output"]
 
     def test_threat_intel_handler_mitre_lookup_empty(self):
@@ -155,12 +153,10 @@ class TestInternalToolsCore:
         handler = make_graph_analyzer_handler()
         with patch("siyarix.knowledge_graph.KnowledgeGraph") as MockKG:
             mock_kg = MagicMock()
-            mock_kg.find_crown_jewel_paths.return_value = [[MagicMock(), MagicMock()]]
-            mock_kg.find_crown_jewel_paths.return_value[0][0].label = "host1"
-            mock_kg.find_crown_jewel_paths.return_value[0][1].label = "host2"
+            mock_kg.find_crown_jewel_paths.return_value = {"jewel": ["host1", "host2"]}
             MockKG.return_value = mock_kg
             with patch.object(Path, "exists", return_value=True):
-                result = asyncio.run(handler(action="find_crown_jewel_paths", args={}))
+                result = asyncio.run(handler(action="find_crown_jewel_paths", args={"node_id": "n1"}))
                 assert "paths" in result["output"]
 
     def test_threat_intel_handler_mitre_lookup_empty(self):
