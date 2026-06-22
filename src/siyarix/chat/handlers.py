@@ -3,7 +3,6 @@ import asyncio
 import json
 import logging
 import os
-import sys
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -128,6 +127,7 @@ class CommandHandlersMixin:
             "/stealth": self._cmd_stealth,
             "/audit": self._cmd_audit,
             "/queue": self._cmd_queue,
+            "/skills": self._cmd_skills,
         }
 
         handler = handlers.get(command)
@@ -1410,6 +1410,80 @@ class CommandHandlersMixin:
             )
         elif tokens[0] == "disable":
             opsec_manager.disable()
+
+    def _cmd_skills(self, args: str) -> None:
+        """Handle /skills command to manage the Continuous Learning System."""
+        from ..learning_system import get_learning_system
+        import json
+        from pathlib import Path
+        from rich.table import Table
+        from rich import box
+
+        cls = get_learning_system()
+        tokens = args.split(maxsplit=1)
+        subcmd = tokens[0].lower() if tokens else ""
+        subargs = tokens[1] if len(tokens) > 1 else ""
+
+        if not subcmd or subcmd in ("stats", "list", "ls", "status"):
+            stats = cls.stats()
+            console.print(
+                Panel(
+                    f"[bold cyan]📚 Learned Skills Stats[/bold cyan]\n"
+                    f"Total Skills: {stats.get('total_skills', 0)}\n"
+                    f"High Confidence: {stats.get('high_confidence', 0)}\n"
+                    f"Storage: {stats.get('db_path', 'unknown')}",
+                    border_style="cyan"
+                )
+            )
+            # List top 10 skills by confidence
+            if stats.get('total_skills', 0) > 0:
+                skills = sorted(cls._skills.values(), key=lambda s: s.confidence, reverse=True)
+                table = Table(title="Top Learned Skills", box=box.SIMPLE)
+                table.add_column("Intent / Pattern", style="cyan", max_width=40)
+                table.add_column("Steps", justify="right")
+                table.add_column("Conf.", justify="right", style="green")
+                table.add_column("Uses", justify="right")
+                for s in skills[:10]:
+                    table.add_row(
+                        s.intent_pattern,
+                        str(len(s.steps)),
+                        f"{s.confidence:.0%}",
+                        str(s.usage_count)
+                    )
+                console.print(table)
+                if len(skills) > 10:
+                    console.print(f"[dim]... and {len(skills) - 10} more skills.[/dim]")
+
+        elif subcmd == "add":
+            if not subargs:
+                console.print("[yellow]Usage: /skills add <workflow description...>[/yellow]")
+                return
+            from .onboarding import OnboardingWizard
+            added = OnboardingWizard._parse_and_add_manual_skills(cls, subargs)
+            if added:
+                console.print(f"[green]✓ Successfully added {added} new skill(s)![/green]")
+            else:
+                console.print("[yellow]⚠ Could not parse any valid skills from input. Use format: 1. step_a; step_b.[/yellow]")
+
+        elif subcmd == "export":
+            if not subargs:
+                console.print("[yellow]Usage: /skills export <filepath.json>[/yellow]")
+                return
+            export_path = Path(subargs).expanduser().resolve()
+            try:
+                data = cls.export_skills()
+                export_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+                console.print(f"[green]✓ Exported {len(data['skills'])} skills to {export_path}[/green]")
+            except Exception as exc:
+                console.print(f"[red]✗ Export failed: {exc}[/red]")
+
+        else:
+            console.print(
+                "[yellow]Unknown /skills sub-command.[/yellow]\n"
+                "[dim]Usage: /skills [stats|list]\n"
+                "       /skills add 1. step_a; step_b.\n"
+                "       /skills export /path/to/export.json[/dim]"
+            )
             console.print("[green]OPSEC deactivated[/green]")
 
     async def _cmd_siem(self, args: str) -> None:

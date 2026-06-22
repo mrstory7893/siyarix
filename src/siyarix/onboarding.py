@@ -251,6 +251,7 @@ class OnboardingWizard:
         self._step_install_persona_tools()
         self._step_preferences()
         await self._step_network_diagnostics()
+        self._step_learning_setup()  # Learning System setup — new step
         await self._finalize()
         return True
 
@@ -1829,6 +1830,208 @@ class OnboardingWizard:
         self._pause()
 
     # ── Step 11: Finalize ───────────────────────────────────────────────
+
+    # ── Step 11: Learning System Setup ─────────────────────────────────
+
+    def _step_learning_setup(self) -> None:  # noqa: PLR0912
+        """Initialise the Continuous Learning Store and optionally import/add skills."""
+        from rich.table import Table as RichTable
+
+        self._clear_screen()
+        self._console.print(
+            Panel(
+                "[bold cyan]📚 Continuous Learning System[/bold cyan]\n\n"
+                "Siyarix learns from every action you take — building a private, anonymised\n"
+                "skill library that makes your future commands faster and smarter.\n\n"
+                "[dim]• Real targets are [bold]never[/bold] stored — only [cyan]{target}[/cyan] placeholders.\n"
+                "• Skills can be exported and shared with the Siyarix team to improve the tool.\n"
+                "• You can import community skill packs or add your own workflows manually.[/dim]",
+                border_style="cyan",
+                box=box.ROUNDED,
+            )
+        )
+        self._console.print()
+
+        # Initialise the learning store silently
+        try:
+            from .learning_system import get_learning_system
+            cls = get_learning_system()
+            stats = cls.stats()
+            existing = stats.get("total_skills", 0)
+            db_path = stats.get("db_path", "")
+            if existing > 0:
+                self._console.print(
+                    f"[green]✓ Learning store found:[/green] {existing} skill(s) already stored"
+                    f"  [dim]({db_path})[/dim]"
+                )
+            else:
+                self._console.print(
+                    f"[green]✓ Learning store initialised[/green]  [dim]({db_path})[/dim]"
+                )
+            self._choices["learning_store_ok"] = True
+        except Exception as exc:
+            self._console.print(f"[yellow]⚠ Learning store not available: {exc}[/yellow]")
+            self._choices["learning_store_ok"] = False
+            return
+
+        self._console.print()
+
+        # ── Option A: import from file ──────────────────────────────────
+        if Confirm.ask(
+            "Import a skill pack from a JSON file? [dim](community packs / previous exports)[/dim]",
+            default=False,
+        ):
+            import_path_str = Prompt.ask(
+                "  Path to skill pack JSON file",
+                default="",
+            ).strip()
+            if import_path_str:
+                import_path = Path(import_path_str).expanduser().resolve()
+                if import_path.exists():
+                    try:
+                        data = json.loads(import_path.read_text(encoding="utf-8"))
+                        imported = cls.import_skills(data)
+                        self._console.print(
+                            f"  [green]✓ Imported {imported} new skill(s) from {import_path.name}[/green]"
+                        )
+                        self._choices["learning_skills_imported"] = imported
+                    except Exception as exc:
+                        self._console.print(f"  [red]✗ Import failed: {exc}[/red]")
+                else:
+                    self._console.print(f"  [yellow]File not found: {import_path}[/yellow]")
+
+        self._console.print()
+
+        # ── Option B: add skills manually ──────────────────────────────
+        if Confirm.ask(
+            "Add custom skills manually? [dim](describe multi-step workflows in plain text)[/dim]",
+            default=False,
+        ):
+            self._console.print(
+                Panel(
+                    "Enter your skill workflows below. Each skill is a numbered entry.\n"
+                    "Separate steps within a skill with semicolons.\n\n"
+                    "[bold]Format:[/bold]\n"
+                    "  [cyan]1. nmap -sT {target}; gobuster dir -u {target} -w wordlist.txt; nuclei -u {target}.[/cyan]\n"
+                    "  [cyan]2. subfinder -d {target}; httpx -l subs.txt; nuclei -l alive.txt.[/cyan]\n\n"
+                    "[dim]Use [bold]{target}[/bold] as the placeholder for any real target.\n"
+                    "Type [bold]DONE[/bold] on a new line when finished.[/dim]",
+                    border_style="dim",
+                    box=box.ROUNDED,
+                )
+            )
+
+            lines: list[str] = []
+            self._console.print("[dim]Paste or type your skills (type DONE to finish):[/dim]")
+            while True:
+                try:
+                    line = input("  > ")
+                except (EOFError, KeyboardInterrupt):
+                    break
+                if line.strip().upper() == "DONE":
+                    break
+                lines.append(line)
+
+            raw_text = "\n".join(lines).strip()
+            if raw_text:
+                added = self._parse_and_add_manual_skills(cls, raw_text)
+                if added:
+                    self._console.print(
+                        f"  [green]✓ Added {added} skill(s) to the learning store[/green]"
+                    )
+                else:
+                    self._console.print("  [yellow]No valid skills parsed from input.[/yellow]")
+
+        self._console.print()
+
+        # ── Summary table ───────────────────────────────────────────────
+        final_stats = cls.stats()
+        t = RichTable(box=box.SIMPLE, show_header=False)
+        t.add_column("Key", style="cyan")
+        t.add_column("Value")
+        t.add_row("Total skills", str(final_stats.get("total_skills", 0)))
+        t.add_row("High confidence", str(final_stats.get("high_confidence", 0)))
+        t.add_row("Storage", str(final_stats.get("db_path", "")))
+        self._console.print(t)
+        self._console.print()
+        self._console.print(
+            "[dim]Use [cyan]/skills[/cyan] in chat to manage, export, or browse learned skills.[/dim]"
+        )
+        self._console.print()
+        Prompt.ask("[dim]Press Enter to continue[/dim]", default="")
+
+    @staticmethod
+    def _parse_and_add_manual_skills(
+        cls: Any, raw_text: str
+    ) -> int:
+        """Parse numbered skill entries from free-form text and add them to the CLS.
+
+        Supports the format::
+
+            1. step_a; step_b; step_c.
+            2. step_x; step_y.
+
+        Each numbered entry becomes one :class:`~siyarix.learning_system.LearnedSkill`.
+        Steps within an entry are separated by semicolons.
+        """
+        from .learning_system import LearnedSkill, LearnedStep
+        import time
+        import uuid
+        import re
+
+        # Match numbered entries: "1. ... ." or "1) ... ."
+        entries = re.findall(r"(?:^|\n)\s*\d+[.):]\s*(.+?)(?=\n\s*\d+[.):)|$)", raw_text, re.DOTALL)
+        if not entries:
+            # Fallback: treat the whole block as one skill
+            entries = [raw_text]
+
+        added = 0
+        for entry in entries:
+            entry = entry.strip().rstrip(".")
+            if not entry:
+                continue
+            # Split into steps by semicolons
+            raw_steps = [s.strip() for s in entry.split(";") if s.strip()]
+            if not raw_steps:
+                continue
+
+            # Build an intent_pattern from the first step's words (anonymised)
+            intent = raw_steps[0][:80]
+            tokens = [w.lower() for w in re.split(r"[\s\-_]+", intent) if len(w) > 1]
+
+            steps: list[LearnedStep] = []
+            for raw_step in raw_steps:
+                # Extract tool name (first word)
+                parts = raw_step.split()
+                tool = parts[0] if parts else ""
+                steps.append(
+                    LearnedStep(
+                        tool=tool,
+                        command_template=raw_step,
+                        description=raw_step[:120],
+                        args={},
+                    )
+                )
+
+            skill = LearnedSkill(
+                skill_id=str(uuid.uuid4()),
+                intent_pattern=intent,
+                steps=steps,
+                confidence=0.5,  # Manual skills start at 50% confidence
+                usage_count=1,
+                success_count=1,
+                tokens=tokens,
+                synonyms={},
+                created_at=time.time(),
+                last_used=time.time(),
+                source="user",
+                notes="Added during onboarding",
+            )
+            cls._skills[skill.skill_id] = skill
+            cls._save_skill(skill)
+            added += 1
+
+        return added
 
     async def _finalize(self) -> None:
         self._clear_screen()

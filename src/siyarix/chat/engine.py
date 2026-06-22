@@ -298,6 +298,31 @@ class LLMEngineMixin:
                 duration_ms=result.duration_ms,
                 goal=instruction,
             )
+
+            # ── CLS: observe and learn from offline execution ──────────────
+            try:
+                from ..learning_system import get_learning_system
+                _cls = get_learning_system()
+                _real_target = self._session.target or target
+                _matched_skill = _cls.observe_offline_plan(
+                    goal=instruction,
+                    plan=plan,
+                    result=result,
+                    target=_real_target,
+                    duration_ms=float(result.duration_ms or 0),
+                )
+                _insight = _cls.generate_offline_summary(instruction, result, _matched_skill)
+                if _insight:
+                    console.print(
+                        Panel(
+                            _insight,
+                            title="[bold cyan]📚 Learning Insights[/bold cyan]",
+                            border_style="cyan",
+                            padding=(0, 1),
+                        )
+                    )
+            except Exception as _exc:
+                logger.debug("CLS offline observation failed: %s", _exc)
         else:
             self._print_results(result, elapsed)
 
@@ -694,7 +719,67 @@ class LLMEngineMixin:
                 return False
 
         # ── Planning ─────────────────────────────────────────────────────
+        all_outputs: list[str] = []
         if llm_connected:
+            # ── CLS high-confidence skill pre-execution (integrated mode) ──
+            # If a skill with ≥ 90% confidence matches, execute its cached steps first
+            # then feed all outputs to the LLM as rich base context — saving one LLM call.
+            _real_target = target or self._session.target or ""
+            try:
+                if self._mode == "integrated":
+                    from ..learning_system import get_learning_system
+                    _cls = get_learning_system()
+                    _hi_skill = _cls.find_high_confidence_skill(
+                        instruction_with_target, _real_target, threshold=0.90
+                    )
+                    if _hi_skill:
+                        console.print(
+                            f"[bold cyan]📚 Learning:[/bold cyan] Replaying skill "
+                            f"'[cyan]{_hi_skill.intent_pattern[:55]}[/cyan]' "
+                            f"([green]{_hi_skill.confidence:.0%}[/green] confidence)\u2026"
+                        )
+                        _prerun_steps = _cls.instantiate_skill(_hi_skill, _real_target)
+                        if _prerun_steps:
+                            from ..models import ExecutionPlan as _EP, PlanType, PlanStep
+                            _prerun_plan = _EP(
+                                goal=instruction_with_target,
+                                steps=[
+                                    PlanStep(
+                                        id=f"cls_pre_{_i:03d}",
+                                        description=_s.get("description", f"Step {_i+1}"),
+                                        tool=_s.get("tool", ""),
+                                        command=_s.get("command", ""),
+                                        args=_s.get("args", {}),
+                                    )
+                                    for _i, _s in enumerate(_prerun_steps)
+                                ],
+                                plan_type=PlanType.SEQUENTIAL,
+                                context={"source": "cls_prerun"},
+                            )
+                            agent.executor_autonomous.command_review = self._settings.get(
+                                "command_review", True
+                            )
+                            _prerun_executed = await agent.executor_autonomous.execute_plan(
+                                _prerun_plan, live_display=True
+                            )
+                            console.print()
+                            _prerun_outputs: list[str] = []
+                            for _ps in _prerun_executed.steps:
+                                _pr = _ps.result or {}
+                                _pout = (_pr.get("output") or "").strip()[:2000]
+                                _plabel = f"$ {_ps.command}" if _ps.command else _ps.tool
+                                _prerun_outputs.append(f"• {_plabel}:\n{_pout}\n")
+                            all_outputs.insert(
+                                0,
+                                f"[Learned skill pre-execution: '{_hi_skill.intent_pattern[:60]}', "
+                                f"confidence {_hi_skill.confidence:.0%}]\n"
+                                + "\n".join(_prerun_outputs)
+                                + "\nThese results were produced automatically from a cached skill. "
+                                "If additional investigation is needed, proceed. Otherwise summarise.",
+                            )
+            except Exception as _exc:
+                logger.debug("CLS pre-run failed: %s", _exc)
+
             with console.status("[bold cyan]LLM analysing request...[/bold cyan]", spinner="dots"):
                 try:
                     self._llm_calls += 1
@@ -768,7 +853,6 @@ class LLMEngineMixin:
 
         # ── Multi-wave execution loop ─────────────────────────────────────
         max_waves = self._settings.get("max_waves") or 12
-        all_outputs: list[str] = []
         plan: Any = llm_plan
 
         for wave in range(max_waves):
@@ -884,6 +968,29 @@ class LLMEngineMixin:
 
         # ── Bottom stats line ────────────────────────────────────────────
         total_duration = time.time() - total_start
+
+        # ── CLS: observe and learn from the completed LLM action sequence ──
+        try:
+            from ..learning_system import get_learning_system
+            _cls_real_target = target or self._session.target or ""
+            _cls_result = plan  # last plan after execution carries step results
+            _learned_skill = get_learning_system().observe_llm_action(
+                goal=instruction_with_target,
+                plan=llm_plan,
+                result=_cls_result,
+                target=_cls_real_target,
+                wave_count=wave + 1,
+                duration_ms=total_duration * 1000,
+            )
+            if _learned_skill:
+                logger.debug(
+                    "CLS: LLM action learned — skill '%s' confidence=%.2f",
+                    _learned_skill.intent_pattern[:50],
+                    _learned_skill.confidence,
+                )
+        except Exception as _exc:
+            logger.debug("CLS LLM observation failed: %s", _exc)
+
         persona_name = self._settings.get("persona") or "none"
         stats_parts = [
             f"Time: {total_duration:.1f}s",

@@ -199,7 +199,6 @@ class NaturalLanguageParser:
         "cloudformation": "cloud",
         "k8s": "kubernetes",
         "pod": "kubernetes",
-        "container": "docker",
         "compose": "docker",
         "dockerfile": "docker",
         "esxi": "vmware",
@@ -233,9 +232,6 @@ class NaturalLanguageParser:
         "oauth": "auth",
         "saml": "auth",
         "jwt": "auth",
-        "ldap": "activedirectory",
-        "ntlm": "ntlm",
-        "kerberos": "activedirectory",
         # Recon & OSINT tools
         "shodan": "shodan",
         "censys": "censys",
@@ -339,7 +335,6 @@ class NaturalLanguageParser:
         "dcomexec": "activedirectory",
         "secretsdump": "activedirectory",
         "ticketer": "activedirectory",
-        "ticketer": "activedirectory",
         "goldenticket": "activedirectory",
         "silver_ticket": "activedirectory",
         "diamond_ticket": "activedirectory",
@@ -351,8 +346,6 @@ class NaturalLanguageParser:
         "lapspassword": "activedirectory",
         "laps": "activedirectory",
         "krbtgt": "activedirectory",
-        "ntds": "activedirectory",
-        "sam": "activedirectory",
         "ntds_dit": "activedirectory",
         "domain_backup": "activedirectory",
         "domain_exfiltration": "activedirectory",
@@ -439,6 +432,33 @@ class NaturalLanguageParser:
             text = f"{name.replace('_', ' ')} {desc}".lower()
             self._template_corpus[name] = self.tokenize(text)
         self._recalculate_idf()
+
+    # ── CLS injection API ───────────────────────────────────────────────
+
+    def inject_learned_synonyms(self, synonyms: dict[str, str]) -> None:
+        """Merge CLS-learned keyword→tool mappings into the active synonym map.
+
+        New synonyms take precedence only if the key is not already defined
+        by the hard-coded :attr:`DEFAULT_SYNONYMS` table so that the core NLP
+        vocabulary is never overwritten by learned data.
+        """
+        for keyword, canonical in synonyms.items():
+            if keyword and canonical and keyword not in self.DEFAULT_SYNONYMS:
+                self.synonyms[keyword] = canonical
+
+    def inject_learned_corpus(
+        self, skill_id: str, intent_pattern: str, tokens: list[str]
+    ) -> None:
+        """Add a CLS-learned skill pattern as a corpus document for intent scoring.
+
+        The pattern is stored under a ``__cls_<skill_id>`` key so it does not
+        conflict with tool or template entries. IDF weights are recalculated
+        after insertion to keep scoring accurate.
+        """
+        if tokens:
+            corpus_key = f"__cls_{skill_id[:8]}"
+            self._template_corpus[corpus_key] = tokens
+            self._recalculate_idf()
 
     def stem_word(self, word: str) -> str:
         """Lightweight Porter-style suffix stripping."""
