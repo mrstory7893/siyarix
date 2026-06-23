@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import json
 import logging
 import time
 from pathlib import Path
-from .types import FailoverReason
+
 from ..events import Event, EventType, emit_sync
+from .types import FailoverReason
 
 logger = logging.getLogger(__name__)
 
@@ -154,9 +156,21 @@ class ProviderStateManager:
         Filters out disabled/cooldown providers and orders the result so that
         preferred providers come first, followed by the rest alphabetically.
         """
+        if preferred is not None and len(preferred) == 0:
+            return []
         available = [
             p
-            for p in (preferred or [])
+            for p in (preferred or list(self._disabled.keys()))
             if p not in self._disabled or time.time() >= self._disabled[p]
         ]
-        return available
+        if preferred is None:
+            return sorted(available)
+        preferred_set = set(preferred)
+        preferred_available = [p for p in available if p in preferred_set]
+        remaining = sorted(p for p in available if p not in preferred_set)
+        return preferred_available + remaining
+
+
+__all__ = [
+    "ProviderStateManager",
+]

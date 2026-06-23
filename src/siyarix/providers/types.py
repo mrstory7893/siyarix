@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import enum
 import time
 from dataclasses import dataclass, field
@@ -103,6 +104,18 @@ class ProviderProfile:
             self.supports_structured_output = any(m.supports_structured_output for m in self.models)
             self.supports_vision = any(m.supports_vision for m in self.models)
             self.supports_tools = any(m.supports_tools for m in self.models)
+            self.supports_function_calling = any(m.supports_function_calling for m in self.models)
 
     def get_model_names(self) -> list[str]:
         return [m.name for m in self.models]
+
+
+__all__ = [
+    "FailoverReason",
+    "ClassifiedError",
+    "ProviderCredential",
+    "CostTier",
+    "ProviderType",
+    "ModelInfo",
+    "ProviderProfile",
+]

@@ -1,6 +1,7 @@
 from __future__ import annotations
-from ..types import ProviderProfile, CostTier, ProviderType
+
 from ..manager import ProviderManager
+from ..types import CostTier, ProviderProfile, ProviderType
 
 
 def register_profile(manager: ProviderManager) -> None:
@@ -19,5 +20,6 @@ def register_profile(manager: ProviderManager) -> None:
             priority=0,
             cost_tier=CostTier.FREE,
             provider_type=ProviderType.LOCAL,
+            docs_url="",
         )
     )

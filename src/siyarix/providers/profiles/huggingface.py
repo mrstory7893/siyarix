@@ -1,6 +1,7 @@
 from __future__ import annotations
-from ..types import ProviderProfile, CostTier
+
 from ..manager import ProviderManager
+from ..types import CostTier, ProviderProfile
 
 
 def register_profile(manager: ProviderManager) -> None:

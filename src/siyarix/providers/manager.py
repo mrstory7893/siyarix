@@ -1,22 +1,25 @@
 from __future__ import annotations
+
 import os
+import threading
 import time
 from typing import Any
-from .types import (
-    ProviderProfile,
-    ProviderCredential,
-    FailoverReason,
-    ClassifiedError,
-    ProviderType,
-    CostTier,
-)
-from ..model_aliases import normalize_model_id
+
 from ..config import SettingsStore
+from ..model_aliases import normalize_model_id
+from .types import (
+    ClassifiedError,
+    CostTier,
+    FailoverReason,
+    ProviderCredential,
+    ProviderProfile,
+    ProviderType,
+)
 
 
 class ProviderManager:
     _instance: ProviderManager | None = None
-    _instance_lock: Any = None
+    _instance_lock: threading.Lock | None = None
 
     @classmethod
     def get_instance(cls) -> ProviderManager:
@@ -37,8 +40,8 @@ class ProviderManager:
         self._profiles: dict[str, ProviderProfile] = {}
         self._credentials: dict[str, list[ProviderCredential]] = {}
         self._error_counts: dict[str, int] = {}
-        from .state import ProviderStateManager
         from ..config import get_config_dir
+        from .state import ProviderStateManager
 
         self._state_manager = ProviderStateManager(str(get_config_dir() / "provider_state.json"))
         self._init_default_profiles()
@@ -77,7 +80,9 @@ class ProviderManager:
 
     def get_models(self, provider: str) -> list[str]:
         profile = self._profiles.get(provider)
-        return profile.get_model_names() if profile else []
+        if profile is None:
+            return []
+        return profile.get_model_names()
 
     def add_credential(self, credential: ProviderCredential) -> None:
         self._credentials.setdefault(credential.provider, []).append(credential)
@@ -129,11 +134,7 @@ class ProviderManager:
             return FailoverReason.TIMEOUT
         if status == 404:
             return FailoverReason.MODEL_NOT_FOUND
-        if status == 503:
-            return FailoverReason.SERVER_ERROR
-        if status in (500, 502, 504):
-            return FailoverReason.SERVER_ERROR
-        if status == 529:
+        if status in (500, 502, 503, 504, 529):
             return FailoverReason.SERVER_ERROR
         if status in (400, 422):
             return FailoverReason.AUTH
@@ -289,7 +290,9 @@ class ProviderManager:
 
         api_key = resolve_api_key(provider) or ""
         profile = self.get_profile(provider)
-        base_url = profile.base_url if profile else None
+        if profile is None:
+            raise ValueError(f"Unknown provider: {provider}")
+        base_url = profile.base_url or None
         settings = SettingsStore()
         adapter = make_openai_adapter(provider, api_key, base_url, settings, provider_manager=self)
         return await adapter(
@@ -313,6 +316,8 @@ class ProviderManager:
 
         valid = []
         for r in responses:
+            if isinstance(r, Exception):
+                continue
             if isinstance(r, dict) and "content" in r:
                 valid.append(r["content"])
             elif hasattr(r, "content"):
@@ -355,3 +360,10 @@ def get_provider_env_var(provider: str) -> str:
     if profile and profile.api_key_env:
         return profile.api_key_env
     return f"{provider.upper()}_API_KEY"
+
+
+__all__ = [
+    "ProviderManager",
+    "resolve_api_key",
+    "get_provider_env_var",
+]

@@ -1,43 +1,47 @@
+from __future__ import annotations
+
+import logging
 import os
 import shutil
 import subprocess
+
+import httpx
+
+logger = logging.getLogger(__name__)
+
 
 def ensure_ollama_running() -> None:
     """Start Ollama in background if configured and not already running."""
     try:
         from ..config import SettingsStore
-        
+
         settings = SettingsStore()
         provider = settings.get("model_provider") or ""
         should_start = settings.get("_start_ollama_on_launch", False) or provider == "ollama"
         if not should_start:
             return
-            
+
         ollama_url = settings.get("ollama_url") or "http://localhost:11434"
-        import httpx
-        
+
         try:
             r = httpx.get(f"{ollama_url}/api/tags", timeout=3)
             if r.status_code < 500:
                 return
         except Exception:
-            from rich.console import Console
-            Console().print(f"[yellow]⚠ Ollama not reachable at {ollama_url} (launching background service)[/yellow]")
-            
+            logger.debug("Ollama not reachable at %s (launching background service)", ollama_url)
+
         if shutil.which("ollama"):
+            kwargs: dict = {
+                "stdout": subprocess.DEVNULL,
+                "stderr": subprocess.DEVNULL,
+            }
             if os.name == "nt":
-                subprocess.Popen(
-                    ["ollama", "serve"],
-                    creationflags=subprocess.CREATE_NO_WINDOW,  # type: ignore[attr-defined]
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
-            else:
-                subprocess.Popen(
-                    ["ollama", "serve"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                )
+                kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW  # type: ignore[attr-defined]
+            subprocess.Popen(["ollama", "serve"], **kwargs)
     except Exception as e:
-        import logging
-        logging.getLogger(__name__).debug("Failed to lazy-start ollama: %s", e)
+        logger.debug("Failed to lazy-start ollama: %s", e)
+
+
+__all__ = [
+    "ensure_ollama_running",
+]

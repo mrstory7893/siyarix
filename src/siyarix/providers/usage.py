@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 import json
 import logging
-from pathlib import Path
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
+
 from .types import CostTier
 
 logger = logging.getLogger(__name__)
@@ -44,8 +46,9 @@ class UsageRecord:
         }
 
     @classmethod
-    def from_dict(cls, d: dict) -> UsageRecord:
-        return cls(**{k: v for k, v in d.items() if k in cls.__dataclass_fields__})
+    def from_dict(cls, d: dict[str, Any]) -> UsageRecord:
+        valid_keys = cls.__dataclass_fields__
+        return cls(**{k: v for k, v in d.items() if k in valid_keys})
 
 
 @dataclass
@@ -117,3 +120,10 @@ class UsageTracker:
         except (FileNotFoundError, json.JSONDecodeError):
             pass
         return tracker
+
+
+__all__ = [
+    "UsageRecord",
+    "UsageTotals",
+    "UsageTracker",
+]
