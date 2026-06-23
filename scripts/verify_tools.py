@@ -1,6 +1,12 @@
 import json
 
-t = json.load(open(r"D:\Miraz_Work\siyarix\src\siyarix\data\cyber_tools.json"))
+import os
+
+json_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "src", "siyarix", "data", "cyber_tools.json"
+)
+t = json.load(open(json_path))
 
 print(f"Total tools: {len(t)}")
 print()

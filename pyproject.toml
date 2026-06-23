@@ -11,6 +11,8 @@ license = { text = "AGPL-3.0-or-later" }
 keywords = ["cybersecurity", "agent", "siyarix", "ai", "pentest", "automation", "nmap", "scanner", "autonomous", "orchestration"]
 classifiers = [
   "Development Status :: 5 - Production/Stable",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
   "Intended Audience :: Information Technology",
   "Intended Audience :: System Administrators",
   "License :: OSI Approved :: GNU Affero General Public License v3",
@@ -21,8 +23,10 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Topic :: Security",
+  "Topic :: Security :: Vulnerability Management",
   "Topic :: System :: Networking",
   "Topic :: System :: Systems Administration",
+  "Topic :: Software Development :: Libraries :: Application Frameworks",
   "Typing :: Typed",
 ]
 dependencies = [
@@ -69,8 +73,13 @@ api = [
 anthropic = [
   "anthropic>=0.40.0",
 ]
+security = [
+  "bandit>=1.7.9",
+  "safety>=3.2.0",
+  "pip-audit>=2.7.0",
+]
 all = [
-  "siyarix[cli,siem,autonomous]",
+  "siyarix[cli,siem,autonomous,api,security]",
 ]
 dev = [
   "pytest>=8.0",
@@ -83,6 +92,9 @@ dev = [
   "build>=1.2",
   "twine>=5.0",
   "click>=8.0",
+  "bandit>=1.7.9",
+  "safety>=3.2.0",
+  "pip-audit>=2.7.0",
 ]
 
 [project.scripts]
@@ -103,6 +115,10 @@ target-version = "py311"
 ignore = ["S603", "S607"]
 per-file-ignores = {"tests/*" = ["E741"]}
 
+[tool.bandit]
+exclude_dirs = ["tests", ".venv"]
+skips = ["B101", "B303", "B311", "B404", "B603", "B607"]
+
 [tool.mypy]
 python_version = "3.11"
 check_untyped_defs = true
@@ -112,6 +128,9 @@ ignore_missing_imports = false
 warn_unused_ignores = true
 strict_optional = true
 
+
+[tool.ruff.format]
+docstring-code-format = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -137,4 +156,3 @@ branch = true
 
 [tool.vulture]
 paths = ['src/siyarix', 'tests', '.vulture_whitelist.py']
-

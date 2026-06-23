@@ -4,13 +4,25 @@ class Siyarix < Formula
   desc "Siyarix — AI Cybersecurity Orchestration Agent"
   homepage "https://github.com/mufthakherul/siyarix"
   url "https://github.com/mufthakherul/siyarix/archive/refs/tags/v3.0.0.tar.gz"
-  sha256 "SKIP_AUTO"  # Auto-populated by `brew audit --strict --online`
   license "AGPL-3.0-or-later"
 
   depends_on "python@3.12"
 
+  livecheck do
+    url :stable
+    strategy :github_latest
+  end
+
   def install
     virtualenv_install_with_resources :using => "python@3.12"
+  end
+
+  def caveats
+    <<~EOS
+      Siyarix requires API keys for AI providers. Configure via:
+        siyarix auth set openai --key YOUR_KEY
+      or set the OPENAI_API_KEY environment variable.
+    EOS
   end
 
   test do

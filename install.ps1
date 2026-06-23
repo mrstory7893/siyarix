@@ -3,9 +3,11 @@
 # Siyarix Universal Installer for Windows
 #   One-liner: irm https://siyarix.dev/install.ps1 | iex
 #
-# Supports: Windows 10/11, Windows Server
-# Package managers: pip, winget, chocolatey
+# Supports: Windows 10/11, Windows Server, Windows Server Core
+# Package managers: pipx, pip, winget, chocolatey
 # =============================================================================
+
+$ErrorActionPreference = 'Stop'
 $__script_version = "3.0.0"
 
 function Write-Banner {
@@ -94,9 +96,53 @@ function Install-ViaPipx {
   }
 }
 
+# --- Admin / Elevated Check ---
+function Test-Admin {
+  try {
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = New-Object Security.Principal.WindowsPrincipal($identity)
+    return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+  } catch {
+    return $false
+  }
+}
+
 # --- Main ---
 function Main {
   Write-Banner
+
+  # Admin check (elevation not required for user-install but warn if winget/choco will be used)
+  $isAdmin = Test-Admin
+  if (-not $isAdmin) {
+    Write-Warn "Not running as Administrator."
+    Write-Warn "Winget and Chocolatey installers may require elevation."
+    Write-Warn "Re-run from an elevated PowerShell if those methods fail.`n"
+  }
+
+  # Parse arguments
+  $version = $__script_version
+  $dryRun = $false
+  for ($i = 0; $i -lt $args.Count; $i++) {
+    switch ($args[$i]) {
+      '--version' { $version = $args[++$i] }
+      '--dry-run' { $dryRun = $true }
+      '--help' {
+        Write-Host "Usage: irm https://siyarix.dev/install.ps1 | iex"
+        Write-Host ""
+        Write-Host "Options:"
+        Write-Host "  --version VERSION    Version to install"
+        Write-Host "  --dry-run            Simulate installation"
+        Write-Host "  --help               Show this help"
+        return 0
+      }
+    }
+  }
+
+  if ($dryRun) {
+    Write-Info "Dry-run mode enabled"
+    Write-Info "Would install Siyarix v$version"
+    return 0
+  }
 
   # Already installed?
   try {
@@ -115,21 +161,32 @@ function Main {
   }
   Write-Ok "Python found: $(python --version 2>&1)"
 
+  # Check for pip
+  try {
+    $pipVer = pip --version 2>&1
+    Write-Ok "pip found: $($pipVer -split ' ' | Select-Object -First 2 -Join ' ')"
+  } catch {
+    Write-Warn "pip not found. The pip installer will attempt to bootstrap it."
+  }
+
   # Try installers in order of preference
   $installers = @(
     { Install-ViaPipx }.GetNewClosure(),
     { Install-ViaPip }.GetNewClosure(),
     { Install-ViaWinget }.GetNewClosure(),
-    { Install-ViaChoco }.GetNewClosure(),
-    { Install-ViaNpm }.GetNewClosure()
+    { Install-ViaChoco }.GetNewClosure()
   )
 
   $installed = $false
+  $lastError = ""
   foreach ($installer in $installers) {
     try {
       $result = & $installer
       if ($result) { $installed = $true; break }
-    } catch { continue }
+    } catch {
+      $lastError = $_.Exception.Message
+      continue
+    }
   }
 
   if ($installed) {
@@ -137,8 +194,11 @@ function Main {
     Write-Info "Run 'siyarix --help' to get started"
     return 0
   } else {
-    Write-Err "Installation failed. Try manually:"
+    Write-Err "Installation failed: $lastError"
+    Write-Err ""
+    Write-Err "Try manually:"
     Write-Err "  python -m pip install siyarix"
+    Write-Err "  or pipx install siyarix"
     return 1
   }
 }

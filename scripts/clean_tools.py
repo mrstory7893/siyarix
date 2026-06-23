@@ -3,7 +3,10 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-json_path = r"D:\Miraz_Work\siyarix\src\siyarix\data\cyber_tools.json"
+json_path = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "src", "siyarix", "data", "cyber_tools.json"
+)
 
 with open(json_path, "r", encoding="utf-8") as f:
     tools = json.load(f)

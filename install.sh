@@ -11,6 +11,8 @@ set -euo pipefail
 SIYARIX_VERSION="${SIYARIX_VERSION:-3.0.0}"
 PYTHON_MIN_MAJOR=3
 PYTHON_MIN_MINOR=11
+INSTALL_METHOD=""
+DRY_RUN="${SIYARIX_DRY_RUN:-0}"
 
 banner() {
   cat << 'EOF'
@@ -29,6 +31,31 @@ ok()    { echo -e "\033[32m  ✓\033[0m $*"; }
 warn()  { echo -e "\033[33m  !\033[0m $*"; }
 err()   { echo -e "\033[31m  ✗\033[0m $*" >&2; }
 
+run() {
+  if [ "$DRY_RUN" = "1" ]; then
+    info "[DRY-RUN] Would run: $*"
+    return 0
+  fi
+  "$@"
+}
+
+cleanup() {
+  local exit_code=$?
+  if [ $exit_code -ne 0 ] && [ -n "$INSTALL_METHOD" ]; then
+    warn "Installation failed during ${INSTALL_METHOD} phase."
+    warn "Attempting rollback..."
+    case "$INSTALL_METHOD" in
+      pip|pipx)
+        run python3 -m pip uninstall siyarix -y 2>/dev/null || true
+        ;;
+      brew)
+        run brew uninstall siyarix 2>/dev/null || true
+        ;;
+    esac
+  fi
+}
+trap cleanup EXIT
+
 check_python() {
   for cmd in python3 python; do
     if command -v "$cmd" &>/dev/null; then
@@ -46,78 +73,64 @@ check_python() {
 }
 
 install_via_pip() {
+  INSTALL_METHOD="pip"
   info "Installing via pip..."
   if command -v pipx &>/dev/null; then
-    pipx install siyarix 2>/dev/null && return 0
+    INSTALL_METHOD="pipx"
+    run pipx install siyarix 2>/dev/null && return 0
   fi
-  python3 -m pip install --upgrade siyarix 2>/dev/null ||
-    python3 -m pip install --user siyarix 2>/dev/null ||
-    pip install siyarix 2>/dev/null
+  INSTALL_METHOD="pip"
+  run python3 -m pip install --upgrade siyarix 2>/dev/null ||
+    run python3 -m pip install --user siyarix 2>/dev/null ||
+    run pip install siyarix 2>/dev/null
 }
 
 install_via_brew() {
+  INSTALL_METHOD="brew"
   info "Installing via Homebrew..."
-  if [ -f "packages/homebrew/siyarix.rb" ]; then
-    brew install --formula packages/homebrew/siyarix.rb
-  else
-    brew install siyarix 2>/dev/null || warn "Homebrew formula not yet in core tap"
-  fi
+  run brew install siyarix 2>/dev/null || warn "Homebrew formula not yet in core tap"
 }
 
 install_via_apt() {
+  INSTALL_METHOD="apt"
   info "Installing via apt (Kali/Debian/Ubuntu)..."
   local repo_url="${SIYARIX_APT_REPO:-https://siyarix.dev/apt}"
   local key_url="${SIYARIX_APT_KEY:-${repo_url}/KEY.gpg}"
 
-  # Try direct install from repo
   if curl -fsSL "${repo_url}/dists/stable/main/binary-amd64/Packages.gz" &>/dev/null; then
-    curl -fsSL "${key_url}" | gpg --dearmor -o /usr/share/keyrings/siyarix.gpg 2>/dev/null || true
+    run curl -fsSL "${key_url}" | run gpg --dearmor -o /usr/share/keyrings/siyarix.gpg 2>/dev/null || true
     echo "deb [signed-by=/usr/share/keyrings/siyarix.gpg] ${repo_url} stable main" \
       > /etc/apt/sources.list.d/siyarix.list 2>/dev/null || true
-    apt-get update -qq 2>/dev/null
-    apt-get install -y siyarix 2>/dev/null && return 0
+    run apt-get update -qq 2>/dev/null
+    run apt-get install -y siyarix 2>/dev/null && return 0
   fi
 
-  # Fallback: pip
   warn "APT repo not reachable, falling back to pip"
   install_via_pip
 }
 
 install_via_dnf() {
+  INSTALL_METHOD="dnf"
   info "Installing via dnf/yum..."
   if command -v dnf &>/dev/null; then
-    dnf install -y siyarix 2>/dev/null && return 0
+    run dnf install -y siyarix 2>/dev/null && return 0
   fi
   install_via_pip
 }
 
 install_via_pacman() {
+  INSTALL_METHOD="pacman"
   info "Installing via pacman..."
   if pacman -Si siyarix &>/dev/null; then
-    pacman -S --noconfirm siyarix 2>/dev/null && return 0
+    run pacman -S --noconfirm siyarix 2>/dev/null && return 0
   fi
   install_via_pip
 }
 
 install_via_snap() {
+  INSTALL_METHOD="snap"
   info "Installing via snap..."
-  snap install siyarix 2>/dev/null && return 0 || true
-  install_via_pip
-}
-
-install_via_ohpm() {
-  if command -v ohpm &>/dev/null; then
-    info "Installing via ohpm (OpenHarmony)..."
-    ohpm install @mufthakherul/siyarix@"^${SIYARIX_VERSION}" 2>/dev/null
-  fi
-  install_via_pip
-}
-
-install_via_hpm() {
-  if command -v hpm &>/dev/null; then
-    info "Installing via hpm (HarmonyOS)..."
-    hpm install -g @mufthakherul/siyarix 2>/dev/null
-  fi
+  run snap install siyarix 2>/dev/null && return 0 || true
   install_via_pip
 }
 
@@ -141,12 +154,50 @@ detect_os() {
 main() {
   banner
 
+  # Parse CLI arguments
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --help|-h)
+        echo "Usage: curl -fsSL https://siyarix.dev/install.sh | bash [-- [options]]"
+        echo ""
+        echo "Options:"
+        echo "  --version VERSION    Version to install (or set SIYARIX_VERSION)"
+        echo "  --dry-run            Simulate installation without changes"
+        echo "  --help, -h           Show this help message"
+        echo ""
+        echo "Environment variables:"
+        echo "  SIYARIX_VERSION    Version to install (default: 3.0.0)"
+        echo "  SIYARIX_DRY_RUN    Set to 1 for dry-run (default: 0)"
+        echo "  SIYARIX_APT_REPO   Custom APT repository URL"
+        echo "  SIYARIX_APT_KEY    Custom APT repository GPG key URL"
+        exit 0
+        ;;
+      --dry-run)
+        DRY_RUN=1
+        info "Dry-run mode enabled"
+        shift
+        ;;
+      --version)
+        if [ -z "${2:-}" ]; then
+          err "--version requires a version argument"
+          exit 1
+        fi
+        SIYARIX_VERSION="$2"
+        shift 2
+        ;;
+      *)
+        err "Unknown option: $1. Use --help for usage."
+        exit 1
+        ;;
+    esac
+  done
+
   # Check if already installed
   if command -v siyarix &>/dev/null; then
     local ver
     ver=$(siyarix --version 2>/dev/null || echo "installed")
     ok "Siyarix already installed: ${ver}"
-    info "Run 'siyarix upgrade' or 'pip install --upgrade siyarix' to update"
+    info "Run 'pip install --upgrade siyarix' to update"
     return 0
   fi
 
@@ -157,6 +208,12 @@ main() {
     exit 1
   fi
   ok "Python found: $($PYTHON --version 2>&1)"
+
+  # Check for required tools
+  if ! command -v curl &>/dev/null && ! command -v wget &>/dev/null; then
+    err "curl or wget is required for download operations."
+    exit 1
+  fi
 
   OS="$(detect_os)"
   info "Detected OS: ${OS} (${OS_ID:-unknown})"
@@ -174,7 +231,6 @@ main() {
           install_via_pacman
           ;;
         *)
-          # Try snap first, fallback to pip
           install_via_snap
           ;;
       esac

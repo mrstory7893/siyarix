@@ -1,7 +1,7 @@
 # Security Policy
 
-**Effective Date:** June 2026  
-**Version:** 3.0.0  
+**Effective Date:** June 2026
+**Version:** 3.0.0
 **Applies to:** Siyarix v3.0.x and all earlier supported versions
 
 Siyarix is built by security professionals for security professionals. The platform handles sensitive operations, API credentials, target data, and privileged command execution. The security of the platform itself is our highest priority. We deeply value the role of the security community in keeping Siyarix robust and trustworthy.
@@ -66,10 +66,13 @@ To help us respond quickly and effectively, please include:
 - Audit log manipulation or cryptographic chain integrity failures
 - Authentication or authorization bypass in the REST API
 - Plugin sandbox escape or file system traversal
+- SSRF vulnerabilities in provider URL handling
+- Path traversal in filename/file operations
+- Session management weaknesses (timeout bypass, session fixation)
 
 ### Out-of-Scope (Tracked Elsewhere)
 
-- Publicly known CVEs in upstream dependencies (tracked via automated Dependabot and pip-audit)
+- Publicly known CVEs in upstream dependencies (tracked via automated Dependabot, pip-audit, and safety)
 - Theoretical attacks requiring physical access or local administrative privileges
 - UI/UX issues without direct security impact
 - Self-inflicted denial of service (user running destructive commands on their own systems)
@@ -98,16 +101,23 @@ Siyarix is hardened by design with the following security layers:
 
 | Feature | Description |
 |---------|-------------|
-| **Encrypted Credential Store** | All API keys, tokens, and secrets encrypted with AES-256-GCM using a locally derived master key |
+| **Encrypted Credential Store** | All API keys, tokens, and secrets encrypted with AES-256-GCM using a locally derived master key; supports KMS envelope encryption, OS keyring integration, and secure memory wiping |
 | **Safety Resolver** | Two-stage AI-powered and heuristic danger analysis for every generated command before execution |
-| **Permission Gate** | Risk-tiered classification (SAFE, LOW, MEDIUM, HIGH, CRITICAL) with configurable action policies |
-| **Masking Engine** | Bidirectional redaction of IPs, domains, credentials, and custom patterns before data leaves the host |
-| **Tamper-Evident Audit Log** | Every action recorded in a SHA-256 cryptographically chained trail with `verify` command |
+| **Permission Gate** | Risk-tiered classification (SAFE, LOW, MEDIUM, HIGH, CRITICAL) with configurable action policies, rate limiting, resource limits, and session timeout enforcement |
+| **Input Validation** | Comprehensive injection detection (shell, SQL, path traversal, null byte, format string) with SSRF protection for URLs |
+| **Masking Engine** | Bidirectional redaction of IPs, domains, credentials, API keys (OpenAI, Anthropic, AWS, GCP, Azure, GitHub, GitLab, Slack, Stripe, etc.), and custom patterns before data leaves the host |
+| **DLP Engine** | Pattern-based detection and prevention of sensitive data leakage with file scanning capabilities |
+| **Tamper-Evident Audit Log** | Every action recorded in a SHA-256 cryptographically chained trail with `verify` command for chain integrity validation |
 | **Event Bus Security** | Internal event system with access controls for inter-component communication |
 | **Plugin Sandbox** | Plugins loaded from dedicated restricted user directory (`~/.siyarix/plugins/`) |
-| **DLP Engine** | Pattern-based detection and prevention of sensitive data leakage |
-| **Stealth Engine** | TOR routing support and honeypot detection for operational security |
-| **Metrics Isolation** | Performance and usage metrics collected without exposing operational data |
+| **Seccomp Profile** | Built-in seccomp-BPF profile generator for Docker/container sandboxing with blocked syscalls for kernel exploitation |
+| **Container Security Check** | Runtime detection of insecure container configurations (missing seccomp, privileged mode, dangerous capabilities) |
+| **File Integrity Monitoring** | SHA-256 based integrity tracking for configuration files with modification detection |
+| **Session Timeout Management** | Configurable idle timeout enforcement with auto-revocation of inactive sessions |
+| **Rate Limiting** | Token-bucket rate limiter for tool execution prevention of abuse |
+| **Dependency Vulnerability Scanning** | Integration with pip-audit and safety for automated CVE detection |
+| **Stealth Engine** | TOR routing support, user-agent rotation, request jitter, request pacing, DNS staggering, decoy traffic, and honeypot detection for operational security |
+| **Metric Isolation** | Performance and usage metrics collected without exposing operational data |
 
 ---
 

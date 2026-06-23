@@ -1,19 +1,25 @@
 [default.extend-words]
-# Add Siyarix specific words that are not typos here
+# Add Siyarix-specific words that are not typos
 siyarix = "siyarix"
 mufthakherul = "mufthakherul"
+bug_hunter = "bug_hunter"
+repl = "repl"
+
+[default.extend-identifiers]
+# Code identifiers to allow
 siyarix = "siyarix"
-siyarix = "siyarix"
-siyarix = "siyarix"
-pylint = "pylint"
-isort = "isort"
+mufthakherul = "mufthakherul"
 
 [files]
 extend-exclude = [
     "*.lock",
+    "*.whl",
+    "*.deb",
     "tests/fixtures/**",
     "dist/**",
     "build/**",
     ".mypy_cache/**",
-    ".ruff_cache/**"
+    ".ruff_cache/**",
+    ".venv/**",
+    "node_modules/**",
 ]

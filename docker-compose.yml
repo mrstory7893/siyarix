@@ -1,66 +1,113 @@
-version: "3.9"
-
 services:
   siyarix:
     build:
       context: .
       target: production
-    image: siyarix:latest
+      args:
+        SIYARIX_VERSION: ${SIYARIX_VERSION:-3.0.0}
+    image: siyarix:${SIYARIX_TAG:-latest}
     container_name: siyarix
+    restart: unless-stopped
     environment:
       - SIYARIX_LOG_LEVEL=${SIYARIX_LOG_LEVEL:-INFO}
       - SIYARIX_PERSONA=${SIYARIX_PERSONA:-bug_hunter}
       - SIYARIX_PROVIDER=${SIYARIX_PROVIDER:-noop}
       - SIYARIX_NO_TELEMETRY=${SIYARIX_NO_TELEMETRY:-1}
+      - SIYARIX_HOME=/home/siyarix/.siyarix
+      - SIYARIX_MODE=${SIYARIX_MODE:-cli}
+      - REDIS_URL=${REDIS_URL:-}
+      - OTEL_EXPORTER_OTLP_ENDPOINT=${OTEL_EXPORTER_OTLP_ENDPOINT:-}
     volumes:
-      - siyarix_data:/root/.siyarix
-      - ./src:/app/src:ro
+      - siyarix_data:/home/siyarix/.siyarix
     stdin_open: true
     tty: true
     networks:
       - siyarix_net
+    healthcheck:
+      test: ["CMD-SHELL", "siyarix --help > /dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      start_period: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   siyarix-worker:
     build:
       context: .
       target: production
-    image: siyarix:latest
+      args:
+        SIYARIX_VERSION: ${SIYARIX_VERSION:-3.0.0}
+    image: siyarix:${SIYARIX_TAG:-latest}
     container_name: siyarix-worker
+    restart: unless-stopped
+    command: ["siyarix", "worker"]
     environment:
       - SIYARIX_MODE=worker
       - REDIS_URL=redis://redis:6379
+      - SIYARIX_HOME=/home/siyarix/.siyarix
+      - SIYARIX_LOG_LEVEL=${SIYARIX_LOG_LEVEL:-INFO}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     volumes:
-      - siyarix_data:/root/.siyarix
+      - siyarix_data:/home/siyarix/.siyarix
     networks:
       - siyarix_net
     deploy:
       replicas: 3
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   siyarix-dashboard:
     build:
       context: .
       target: production
-    image: siyarix:latest
+      args:
+        SIYARIX_VERSION: ${SIYARIX_VERSION:-3.0.0}
+    image: siyarix:${SIYARIX_TAG:-latest}
     container_name: siyarix-dashboard
+    restart: unless-stopped
     command: ["siyarix", "dashboard"]
     ports:
-      - "8090:8090"
+      - "${SIYARIX_DASHBOARD_PORT:-8090}:8090"
     environment:
       - SIYARIX_DASHBOARD_PORT=8090
       - SIYARIX_DASHBOARD_HOST=0.0.0.0
       - REDIS_URL=redis://redis:6379
+      - SIYARIX_HOME=/home/siyarix/.siyarix
+      - SIYARIX_LOG_LEVEL=${SIYARIX_LOG_LEVEL:-INFO}
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - siyarix_net
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
   redis:
     image: redis:7-alpine
     container_name: siyarix-redis
+    restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     networks:
@@ -69,26 +116,50 @@ services:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
+      start_period: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 32M
 
   otel-collector:
     image: otel/opentelemetry-collector-contrib:latest
     container_name: siyarix-otel
+    restart: unless-stopped
     environment:
       - TZ=UTC
     volumes:
       - ./otel-collector-config.yaml:/etc/otel/config.yaml:ro
     ports:
-      - "4318:4318"
+      - "${OTEL_PORT:-4318}:4318"
     networks:
       - siyarix_net
     profiles:
       - telemetry
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
 networks:
   siyarix_net:
     driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16
 
 volumes:
   siyarix_data:
+    name: siyarix_data
   redis_data:
+    name: siyarix_redis_data

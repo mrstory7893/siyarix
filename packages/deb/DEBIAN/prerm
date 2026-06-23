@@ -2,9 +2,12 @@
 set -e
 
 case "$1" in
-  remove|purge)
+  purge)
     echo "Removing Siyarix configuration..."
-    rm -rf /root/.siyarix
+    rm -rf /etc/siyarix
+    ;;
+  remove|upgrade|deconfigure)
+    # Keep configuration on upgrade/remove
     ;;
 esac
 

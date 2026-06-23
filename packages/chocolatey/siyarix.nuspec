@@ -13,7 +13,7 @@ Siyarix is an AI-native cybersecurity operations platform with autonomous execut
 ## Features
 - Autonomous AI-driven penetration testing
 - Multi-agent coordination for complex security workflows
-- 25+ security tool parsers (nmap, nuclei, metasploit, etc.)
+- 80+ security tool parsers (nmap, nuclei, metasploit, etc.)
 - Built-in OPSEC, stealth, and kill-switch mechanisms
 - Advanced reporting and compliance frameworks
 - Distributed orchestration with worker pools
@@ -24,13 +24,13 @@ This package installs Siyarix via pip. Python 3.11+ is required.
     <projectUrl>https://github.com/mufthakherul/siyarix</projectUrl>
     <packageSourceUrl>https://github.com/mufthakherul/siyarix</packageSourceUrl>
     <projectSourceUrl>https://github.com/mufthakherul/siyarix</projectSourceUrl>
-    <docsUrl>https://github.com/mufthakherul/siyarix</docsUrl>
+    <docsUrl>https://siyarix.dev/docs</docsUrl>
     <bugTrackerUrl>https://github.com/mufthakherul/siyarix/issues</bugTrackerUrl>
     <tags>siyarix cybersecurity security agent cli pentest ai automation</tags>
-    <copyright>2024 MD MUFTHAKHERUL ISLAM MIRAZ</copyright>
+    <copyright>2026 MD MUFTHAKHERUL ISLAM MIRAZ</copyright>
     <licenseUrl>https://github.com/mufthakherul/siyarix/blob/main/LICENSE</licenseUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <iconUrl>https://raw.githubusercontent.com/mufthakherul/siyarix/main/docs/logo.png</iconUrl>
+    <iconUrl>https://raw.githubusercontent.com/mufthakherul/siyarix/main/assets/logo.png</iconUrl>
     <dependencies>
       <dependency id="python" version="[3.11,)" />
       <dependency id="pip" />

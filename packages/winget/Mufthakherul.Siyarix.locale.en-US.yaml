@@ -11,7 +11,7 @@
   "PackageUrl": "https://github.com/mufthakherul/siyarix",
   "License": "AGPL-3.0-or-later",
   "LicenseUrl": "https://github.com/mufthakherul/siyarix/blob/main/LICENSE",
-  "Copyright": "Copyright (c) 2024 MD MUFTHAKHERUL ISLAM MIRAZ",
+  "Copyright": "Copyright (c) 2026 MD MUFTHAKHERUL ISLAM MIRAZ",
   "ShortDescription": "Siyarix — AI Cybersecurity Orchestration Agent",
   "Description": "Siyarix is an AI-native cybersecurity operations platform with autonomous execution, multi-agent framework, intelligent workflow orchestration, and advanced security tooling for offensive and defensive cybersecurity operations.",
   "Moniker": "siyarix",
@@ -22,14 +22,6 @@
     "cybersecurity",
     "pentest",
     "security"
-  ],
-  "Installers": [
-    {
-      "Architecture": "x64",
-      "InstallerType": "portable",
-      "InstallerUrl": "https://github.com/mufthakherul/siyarix/releases/download/v3.0.0/siyarix-install.ps1",
-      "InstallerSha256": "SKIP_AUTO"
-    }
   ],
   "ManifestType": "defaultLocale",
   "ManifestVersion": "1.6.0"

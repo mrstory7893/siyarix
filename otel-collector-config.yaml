@@ -4,9 +4,17 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 1024
+  memory_limiter:
+    check_interval: 1s
+    limit_mib: 512
+
 exporters:
-  logging:
-    loglevel: debug
+  debug:
+    verbosity: basic
   prometheus:
     endpoint: 0.0.0.0:8889
 
@@ -14,7 +22,13 @@ service:
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [logging]
+      processors: [memory_limiter, batch]
+      exporters: [debug]
     metrics:
       receivers: [otlp]
-      exporters: [logging, prometheus]
+      processors: [memory_limiter, batch]
+      exporters: [debug, prometheus]
+
+  telemetry:
+    logs:
+      level: info

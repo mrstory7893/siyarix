@@ -3,8 +3,9 @@ import re
 import shutil
 import argparse
 from pathlib import Path
+from typing import Any
 
-def flatten_name(path, root_dir):
+def flatten_name(path: str, root_dir: str) -> str:
     """
     Converts a nested path into a flat name.
     Example: architecture/overview.md -> architecture-overview.md
@@ -21,7 +22,7 @@ def flatten_name(path, root_dir):
     flat_name = rel_path.replace(os.sep, "-").lower()
     return flat_name
 
-def update_links(content, path_map):
+def update_links(content: str, path_map: dict[str, str]) -> str:
     """
     Updates markdown links from nested paths to flattened wiki paths.
     GitHub Wiki links should NOT have the .md extension and should be relative.

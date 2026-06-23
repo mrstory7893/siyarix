@@ -3,7 +3,10 @@ site_description: AI-Native Cybersecurity Orchestration Agent — 24 AI provider
 site_url: https://siyarix.dev
 repo_url: https://github.com/mufthakherul/siyarix
 repo_name: mufthakherul/siyarix
+edit_uri: edit/main/docs/
 copyright: Copyright &copy; 2026 MD MUFTHAKHERUL ISLAM MIRAZ
+strict: true
+docs_dir: docs
 
 theme:
   name: material
