@@ -19,6 +19,7 @@ from __future__ import annotations
 import heapq
 import json
 import logging
+import threading
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
@@ -135,32 +136,34 @@ class KnowledgeGraph:
         self._edges: list[Edge] = []
         self._adjacency: dict[str, list[str]] = defaultdict(list)
         self._reverse_adj: dict[str, list[str]] = defaultdict(list)
+        self._lock = threading.RLock()
 
     # ── Node operations ──────────────────────────────────────────────────
 
     def prune(self, ttl_seconds: int = 86400 * 30) -> int:
         """Remove nodes older than TTL (and their associated edges)."""
         now = datetime.now(timezone.utc)
-        to_remove = []
-        for nid, node in self._nodes.items():
-            try:
-                dt = datetime.fromisoformat(node.discovered_at)
-                if (now - dt).total_seconds() > ttl_seconds:
-                    to_remove.append(nid)
-            except ValueError:
-                pass
+        with self._lock:
+            to_remove = []
+            for nid, node in self._nodes.items():
+                try:
+                    dt = datetime.fromisoformat(node.discovered_at)
+                    if (now - dt).total_seconds() > ttl_seconds:
+                        to_remove.append(nid)
+                except ValueError:
+                    pass
 
-        for nid in to_remove:
-            self._nodes.pop(nid, None)
+            for nid in to_remove:
+                self._nodes.pop(nid, None)
 
-        self._edges = [
-            e for e in self._edges if e.source_id not in to_remove and e.target_id not in to_remove
-        ]
-        self._adjacency.clear()
-        self._reverse_adj.clear()
-        for e in self._edges:
-            self._adjacency[e.source_id].append(e.target_id)
-            self._reverse_adj[e.target_id].append(e.source_id)
+            self._edges = [
+                e for e in self._edges if e.source_id not in to_remove and e.target_id not in to_remove
+            ]
+            self._adjacency.clear()
+            self._reverse_adj.clear()
+            for e in self._edges:
+                self._adjacency[e.source_id].append(e.target_id)
+                self._reverse_adj[e.target_id].append(e.source_id)
 
         return len(to_remove)
 
@@ -174,54 +177,58 @@ class KnowledgeGraph:
         **properties: Any,
     ) -> Node:
         """Add a node to the graph. Returns existing node if label+type match."""
-        # Dedup by label + type
-        for existing in self._nodes.values():
-            if existing.label == label and existing.node_type == node_type:
-                # Merge properties
-                existing.properties.update(properties)
-                return existing
+        with self._lock:
+            # Dedup by label + type
+            for existing in self._nodes.values():
+                if existing.label == label and existing.node_type == node_type:
+                    # Merge properties
+                    existing.properties.update(properties)
+                    return existing
 
-        nid = node_id or f"{node_type.value}_{uuid.uuid4().hex}"
-        node = Node(
-            node_id=nid,
-            node_type=node_type,
-            label=label,
-            properties=properties,
-            discovered_by=discovered_by,
-            confidence=confidence,
-        )
-        self._nodes[nid] = node
-        return node
+            nid = node_id or f"{node_type.value}_{uuid.uuid4().hex}"
+            node = Node(
+                node_id=nid,
+                node_type=node_type,
+                label=label,
+                properties=properties,
+                discovered_by=discovered_by,
+                confidence=confidence,
+            )
+            self._nodes[nid] = node
+            return node
 
     def get_node(self, node_id: str) -> Node | None:
-        return self._nodes.get(node_id)
+        with self._lock:
+            return self._nodes.get(node_id)
 
     def find_nodes(self, node_type: NodeType | None = None, label_contains: str = "") -> list[Node]:
         """Search nodes by type and/or label substring."""
-        results = []
-        for node in self._nodes.values():
-            if node_type and node.node_type != node_type:
-                continue
-            if label_contains and label_contains.lower() not in node.label.lower():
-                continue
-            results.append(node)
-        return results
+        with self._lock:
+            results = []
+            for node in self._nodes.values():
+                if node_type and node.node_type != node_type:
+                    continue
+                if label_contains and label_contains.lower() not in node.label.lower():
+                    continue
+                results.append(node)
+            return results
 
     def remove_node(self, node_id: str) -> bool:
         """Remove a node and all its edges."""
-        if node_id not in self._nodes:
-            return False
-        del self._nodes[node_id]
-        self._edges = [e for e in self._edges if e.source_id != node_id and e.target_id != node_id]
-        self._adjacency.pop(node_id, None)
-        self._reverse_adj.pop(node_id, None)
-        for adj_list in self._adjacency.values():
-            while node_id in adj_list:
-                adj_list.remove(node_id)
-        for adj_list in self._reverse_adj.values():
-            while node_id in adj_list:
-                adj_list.remove(node_id)
-        return True
+        with self._lock:
+            if node_id not in self._nodes:
+                return False
+            del self._nodes[node_id]
+            self._edges = [e for e in self._edges if e.source_id != node_id and e.target_id != node_id]
+            self._adjacency.pop(node_id, None)
+            self._reverse_adj.pop(node_id, None)
+            for adj_list in self._adjacency.values():
+                while node_id in adj_list:
+                    adj_list.remove(node_id)
+            for adj_list in self._reverse_adj.values():
+                while node_id in adj_list:
+                    adj_list.remove(node_id)
+            return True
 
     # ── Edge operations ──────────────────────────────────────────────────
 
@@ -233,34 +240,35 @@ class KnowledgeGraph:
         **properties: Any,
     ) -> Edge | None:
         """Add a directed edge between two nodes."""
-        if source_id not in self._nodes or target_id not in self._nodes:
-            logger.warning(
-                "Cannot add edge: source=%s or target=%s not in graph",
-                source_id,
-                target_id,
+        with self._lock:
+            if source_id not in self._nodes or target_id not in self._nodes:
+                logger.warning(
+                    "Cannot add edge: source=%s or target=%s not in graph",
+                    source_id,
+                    target_id,
+                )
+                return None
+
+            # Dedup
+            for existing in self._edges:
+                if (
+                    existing.source_id == source_id
+                    and existing.target_id == target_id
+                    and existing.edge_type == edge_type
+                ):
+                    existing.properties.update(properties)
+                    return existing
+
+            edge = Edge(
+                source_id=source_id,
+                target_id=target_id,
+                edge_type=edge_type,
+                properties=properties,
             )
-            return None
-
-        # Dedup
-        for existing in self._edges:
-            if (
-                existing.source_id == source_id
-                and existing.target_id == target_id
-                and existing.edge_type == edge_type
-            ):
-                existing.properties.update(properties)
-                return existing
-
-        edge = Edge(
-            source_id=source_id,
-            target_id=target_id,
-            edge_type=edge_type,
-            properties=properties,
-        )
-        self._edges.append(edge)
-        self._adjacency[source_id].append(target_id)
-        self._reverse_adj[target_id].append(source_id)
-        return edge
+            self._edges.append(edge)
+            self._adjacency[source_id].append(target_id)
+            self._reverse_adj[target_id].append(source_id)
+            return edge
 
     def get_edges(
         self,
@@ -269,55 +277,59 @@ class KnowledgeGraph:
         edge_type: EdgeType | None = None,
     ) -> list[Edge]:
         """Query edges by source, target, and/or type."""
-        results = []
-        for edge in self._edges:
-            if source_id and edge.source_id != source_id:
-                continue
-            if target_id and edge.target_id != target_id:
-                continue
-            if edge_type and edge.edge_type != edge_type:
-                continue
-            results.append(edge)
-        return results
+        with self._lock:
+            results = []
+            for edge in self._edges:
+                if source_id and edge.source_id != source_id:
+                    continue
+                if target_id and edge.target_id != target_id:
+                    continue
+                if edge_type and edge.edge_type != edge_type:
+                    continue
+                results.append(edge)
+            return results
 
     # ── Traversal ────────────────────────────────────────────────────────
 
     def neighbors(self, node_id: str, direction: str = "out") -> list[Node]:
         """Get neighboring nodes. direction = 'out' | 'in' | 'both'."""
-        ids: set[str] = set()
-        if direction in ("out", "both"):
-            ids.update(self._adjacency.get(node_id, []))
-        if direction in ("in", "both"):
-            ids.update(self._reverse_adj.get(node_id, []))
-        return [self._nodes[nid] for nid in ids if nid in self._nodes]
+        with self._lock:
+            ids: set[str] = set()
+            if direction in ("out", "both"):
+                ids.update(self._adjacency.get(node_id, []))
+            if direction in ("in", "both"):
+                ids.update(self._reverse_adj.get(node_id, []))
+            return [self._nodes[nid] for nid in ids if nid in self._nodes]
 
     def shortest_path(self, start_id: str, end_id: str) -> list[str] | None:
         """BFS shortest path between two nodes (unweighted hops). Returns node IDs or None."""
-        if start_id not in self._nodes or end_id not in self._nodes:
-            return None
-        if start_id == end_id:
-            return [start_id]
+        with self._lock:
+            if start_id not in self._nodes or end_id not in self._nodes:
+                return None
+            if start_id == end_id:
+                return [start_id]
 
-        visited: set[str] = {start_id}
-        queue: list[list[str]] = [[start_id]]
+            visited: set[str] = {start_id}
+            queue: list[list[str]] = [[start_id]]
 
-        while queue:
-            path = queue.pop(0)
-            current = path[-1]
+            while queue:
+                path = queue.pop(0)
+                current = path[-1]
 
-            for neighbor_id in self._adjacency.get(current, []):
-                if neighbor_id in visited:
-                    continue
-                new_path = path + [neighbor_id]
-                if neighbor_id == end_id:
-                    return new_path
-                visited.add(neighbor_id)
-                queue.append(new_path)
+                for neighbor_id in self._adjacency.get(current, []):
+                    if neighbor_id in visited:
+                        continue
+                    new_path = path + [neighbor_id]
+                    if neighbor_id == end_id:
+                        return new_path
+                    visited.add(neighbor_id)
+                    queue.append(new_path)
 
-        return None  # No path found
+            return None  # No path found
 
     def _get_edge_weight(self, source_id: str, target_id: str) -> float:
         """Calculate the traversal cost for an edge (BloodHound style)."""
+        # Called from easiest_attack_path / blast_radius which hold the lock
         edges = self.get_edges(source_id=source_id, target_id=target_id)
         if not edges:
             return float("inf")
@@ -347,71 +359,73 @@ class KnowledgeGraph:
 
     def easiest_attack_path(self, start_id: str, end_id: str) -> list[str] | None:
         """Dijkstra's shortest path based on exploitability costs."""
-        if start_id not in self._nodes or end_id not in self._nodes:
-            return None
-        if start_id == end_id:
-            return [start_id]
+        with self._lock:
+            if start_id not in self._nodes or end_id not in self._nodes:
+                return None
+            if start_id == end_id:
+                return [start_id]
 
-        distances = {node_id: float("inf") for node_id in self._nodes}
-        distances[start_id] = 0.0
+            distances = {node_id: float("inf") for node_id in self._nodes}
+            distances[start_id] = 0.0
 
-        # Priority queue stores (cost, current_node_id, path_so_far)
-        pq: list[tuple[float, str, list[str]]] = [(0.0, start_id, [start_id])]
-        visited: set[str] = set()
+            pq: list[tuple[float, str, list[str]]] = [(0.0, start_id, [start_id])]
+            visited: set[str] = set()
 
-        while pq:
-            current_cost, current_node, path = heapq.heappop(pq)
+            while pq:
+                current_cost, current_node, path = heapq.heappop(pq)
 
-            if current_node == end_id:
-                return path
+                if current_node == end_id:
+                    return path
 
-            if current_node in visited:
-                continue
-            visited.add(current_node)
-
-            for neighbor_id in self._adjacency.get(current_node, []):
-                if neighbor_id in visited:
+                if current_node in visited:
                     continue
+                visited.add(current_node)
 
-                edge_cost = self._get_edge_weight(current_node, neighbor_id)
-                new_cost = current_cost + edge_cost
+                for neighbor_id in self._adjacency.get(current_node, []):
+                    if neighbor_id in visited:
+                        continue
 
-                if new_cost < distances[neighbor_id]:
-                    distances[neighbor_id] = new_cost
-                    heapq.heappush(pq, (new_cost, neighbor_id, path + [neighbor_id]))
+                    edge_cost = self._get_edge_weight(current_node, neighbor_id)
+                    new_cost = current_cost + edge_cost
+
+                    if new_cost < distances[neighbor_id]:
+                        distances[neighbor_id] = new_cost
+                        heapq.heappush(pq, (new_cost, neighbor_id, path + [neighbor_id]))
 
         return None
 
     def blast_radius(self, start_id: str, max_cost: float = 20.0) -> list[str]:
         """Reachability analysis: all nodes reachable within a specific exploit cost."""
-        if start_id not in self._nodes:
-            return []
+        with self._lock:
+            if start_id not in self._nodes:
+                return []
 
-        distances = {start_id: 0.0}
-        pq: list[tuple[float, str]] = [(0.0, start_id)]
-        reachable = set([start_id])
+            distances = {start_id: 0.0}
+            pq: list[tuple[float, str]] = [(0.0, start_id)]
+            reachable = {start_id}
 
-        while pq:
-            current_cost, current_node = heapq.heappop(pq)
+            while pq:
+                current_cost, current_node = heapq.heappop(pq)
 
-            if current_cost > max_cost:
-                continue
+                if current_cost > max_cost:
+                    continue
 
-            for neighbor_id in self._adjacency.get(current_node, []):
-                edge_cost = self._get_edge_weight(current_node, neighbor_id)
-                new_cost = current_cost + edge_cost
+                for neighbor_id in self._adjacency.get(current_node, []):
+                    edge_cost = self._get_edge_weight(current_node, neighbor_id)
+                    new_cost = current_cost + edge_cost
 
-                if new_cost <= max_cost:
-                    if neighbor_id not in distances or new_cost < distances[neighbor_id]:
-                        distances[neighbor_id] = new_cost
-                        reachable.add(neighbor_id)
-                        heapq.heappush(pq, (new_cost, neighbor_id))
+                    if new_cost <= max_cost:
+                        if neighbor_id not in distances or new_cost < distances[neighbor_id]:
+                            distances[neighbor_id] = new_cost
+                            reachable.add(neighbor_id)
+                            heapq.heappush(pq, (new_cost, neighbor_id))
 
         return list(reachable)
 
     def find_crown_jewel_paths(self, start_id: str) -> dict[str, list[str]]:
         """Find easiest paths to any nodes tagged as 'crown_jewel'."""
-        crown_jewels = [n.node_id for n in self._nodes.values() if n.properties.get("crown_jewel")]
+        with self._lock:
+            crown_jewels = [n.node_id for n in self._nodes.values() if n.properties.get("crown_jewel")]
         paths = {}
         for cj in crown_jewels:
             if cj != start_id:
@@ -422,44 +436,49 @@ class KnowledgeGraph:
 
     def subgraph(self, node_type: NodeType) -> list[dict[str, Any]]:
         """Extract a subgraph containing only nodes of a given type and their edges."""
-        type_nodes = {n.node_id for n in self._nodes.values() if n.node_type == node_type}
-        return [
-            edge.to_dict()
-            for edge in self._edges
-            if edge.source_id in type_nodes or edge.target_id in type_nodes
-        ]
+        with self._lock:
+            type_nodes = {n.node_id for n in self._nodes.values() if n.node_type == node_type}
+            return [
+                edge.to_dict()
+                for edge in self._edges
+                if edge.source_id in type_nodes or edge.target_id in type_nodes
+            ]
 
     @property
     def nodes(self) -> dict[str, Node]:
         """All nodes in the graph (mapping node_id → Node)."""
-        return self._nodes
+        with self._lock:
+            return dict(self._nodes)
 
     # ── Statistics ───────────────────────────────────────────────────────
 
     @property
     def node_count(self) -> int:
-        return len(self._nodes)
+        with self._lock:
+            return len(self._nodes)
 
     @property
     def edge_count(self) -> int:
-        return len(self._edges)
+        with self._lock:
+            return len(self._edges)
 
     def stats(self) -> dict[str, Any]:
         """Return graph statistics."""
-        type_counts: dict[str, int] = defaultdict(int)
-        for node in self._nodes.values():
-            type_counts[node.node_type.value] += 1
+        with self._lock:
+            type_counts: dict[str, int] = defaultdict(int)
+            for node in self._nodes.values():
+                type_counts[node.node_type.value] += 1
 
-        edge_type_counts: dict[str, int] = defaultdict(int)
-        for edge in self._edges:
-            edge_type_counts[edge.edge_type.value] += 1
+            edge_type_counts: dict[str, int] = defaultdict(int)
+            for edge in self._edges:
+                edge_type_counts[edge.edge_type.value] += 1
 
-        return {
-            "total_nodes": self.node_count,
-            "total_edges": self.edge_count,
-            "nodes_by_type": dict(type_counts),
-            "edges_by_type": dict(edge_type_counts),
-        }
+            return {
+                "total_nodes": self.node_count,
+                "total_edges": self.edge_count,
+                "nodes_by_type": dict(type_counts),
+                "edges_by_type": dict(edge_type_counts),
+            }
 
     # ── Ingest findings ──────────────────────────────────────────────────
 
@@ -508,33 +527,35 @@ class KnowledgeGraph:
     # ── Persistence ──────────────────────────────────────────────────────
 
     def search(self, query: str, limit: int = 10) -> list[str]:
-        q = query.lower()
-        results: list[str] = []
-        for node in self._nodes.values():
-            if q in node.label.lower():
-                results.append(f"[{node.node_type.value}] {node.label} ({node.node_id})")
-                if len(results) >= limit:
-                    break
-        if len(results) < limit:
+        with self._lock:
+            q = query.lower()
+            results: list[str] = []
             for node in self._nodes.values():
-                for k, v in node.properties.items():
-                    if (
-                        q in str(v).lower()
-                        and f"[{node.node_type.value}] {node.label} ({node.node_id})" not in results
-                    ):
-                        results.append(f"[{node.node_type.value}] {node.label} ({node.node_id})")
-                        if len(results) >= limit:
-                            break
-                if len(results) >= limit:
-                    break
-        return results
+                if q in node.label.lower():
+                    results.append(f"[{node.node_type.value}] {node.label} ({node.node_id})")
+                    if len(results) >= limit:
+                        break
+            if len(results) < limit:
+                for node in self._nodes.values():
+                    for k, v in node.properties.items():
+                        if (
+                            q in str(v).lower()
+                            and f"[{node.node_type.value}] {node.label} ({node.node_id})" not in results
+                        ):
+                            results.append(f"[{node.node_type.value}] {node.label} ({node.node_id})")
+                            if len(results) >= limit:
+                                break
+                    if len(results) >= limit:
+                        break
+            return results
 
     def to_json(self) -> str:
         """Serialize the graph to JSON."""
-        data = {
-            "nodes": [n.to_dict() for n in self._nodes.values()],
-            "edges": [e.to_dict() for e in self._edges],
-        }
+        with self._lock:
+            data = {
+                "nodes": [n.to_dict() for n in self._nodes.values()],
+                "edges": [e.to_dict() for e in self._edges],
+            }
         return json.dumps(data, indent=2, default=str)
 
     def save_json(self, path: str | Path) -> None:
@@ -542,12 +563,13 @@ class KnowledgeGraph:
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(self.to_json(), encoding="utf-8")
-        logger.info(
-            "Knowledge graph saved to %s (%d nodes, %d edges)",
-            p,
-            self.node_count,
-            self.edge_count,
-        )
+        with self._lock:
+            logger.info(
+                "Knowledge graph saved to %s (%d nodes, %d edges)",
+                p,
+                len(self._nodes),
+                len(self._edges),
+            )
 
     @classmethod
     def load_json(cls, path: str | Path) -> KnowledgeGraph:
@@ -558,27 +580,28 @@ class KnowledgeGraph:
             return graph
 
         data = json.loads(p.read_text(encoding="utf-8"))
-        for nd in data.get("nodes", []):
-            graph._nodes[nd["node_id"]] = Node(
-                node_id=nd["node_id"],
-                node_type=NodeType(nd["type"]),
-                label=nd["label"],
-                properties=nd.get("properties", {}),
-                discovered_at=nd.get("discovered_at", ""),
-                discovered_by=nd.get("discovered_by", ""),
-                confidence=float(nd.get("confidence", 1.0)),
-            )
-        for ed in data.get("edges", []):
-            edge = Edge(
-                source_id=ed["source"],
-                target_id=ed["target"],
-                edge_type=EdgeType(ed["type"]),
-                properties=ed.get("properties", {}),
-                edge_id=ed.get("edge_id", uuid.uuid4().hex),
-            )
-            graph._edges.append(edge)
-            graph._adjacency[edge.source_id].append(edge.target_id)
-            graph._reverse_adj[edge.target_id].append(edge.source_id)
+        with graph._lock:
+            for nd in data.get("nodes", []):
+                graph._nodes[nd["node_id"]] = Node(
+                    node_id=nd["node_id"],
+                    node_type=NodeType(nd["type"]),
+                    label=nd["label"],
+                    properties=nd.get("properties", {}),
+                    discovered_at=nd.get("discovered_at", ""),
+                    discovered_by=nd.get("discovered_by", ""),
+                    confidence=float(nd.get("confidence", 1.0)),
+                )
+            for ed in data.get("edges", []):
+                edge = Edge(
+                    source_id=ed["source"],
+                    target_id=ed["target"],
+                    edge_type=EdgeType(ed["type"]),
+                    properties=ed.get("properties", {}),
+                    edge_id=ed.get("edge_id", uuid.uuid4().hex),
+                )
+                graph._edges.append(edge)
+                graph._adjacency[edge.source_id].append(edge.target_id)
+                graph._reverse_adj[edge.target_id].append(edge.source_id)
 
         logger.info(
             "Knowledge graph loaded from %s (%d nodes, %d edges)",
