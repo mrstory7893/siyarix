@@ -9,7 +9,9 @@ Provides typed events for each content block lifecycle phase:
 
 from __future__ import annotations
 
+import asyncio
 import json
+import logging
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, AsyncIterator, Callable
@@ -130,7 +132,17 @@ class AssistantMessageEventStream:
         """Push an event to the stream."""
         self._events.append(event)
         for handler in self._handlers:
-            handler(event)
+            try:
+                handler(event)
+            except Exception:
+                logger = logging.getLogger(__name__)
+                logger.exception("Event handler raised an error")
+
+    def signal_error(self, error: Exception) -> None:
+        """Signal an error on the stream."""
+        self._error = error
+        self.push(StreamEvent(type=EventType.ERROR, reason=str(error)))
+        self._done = True
 
     def end(self) -> None:
         """Mark the stream as complete."""
@@ -160,8 +172,6 @@ class AssistantMessageEventStream:
                 yield self._events[index]
                 index += 1
             else:
-                import asyncio
-
                 await asyncio.sleep(0.01)
 
     # ── Convenience helpers ──────────────────────────────────────────

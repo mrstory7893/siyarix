@@ -7,7 +7,18 @@ A full-featured interactive shell for Siyarix, similar to leading enterprise ter
 
 from .repl import SiyarixChat, start_chat
 from .console import console
-from .commands import CommandProfile, CommandProfileStore
+from .commands import (
+    CommandProfile,
+    CommandProfileStore,
+    CommandRegistry,
+    CommandCategory,
+    CommandInfo,
+    ArgInfo,
+    CommandHistory,
+    command_history,
+    HELP_CATEGORIES,
+    SLASH_HELP,
+)
 from .platform_utils import (
     CROSS_PLATFORM_COMMANDS,
     detect_shell,
@@ -23,6 +34,14 @@ __all__ = [
     "console",
     "CommandProfile",
     "CommandProfileStore",
+    "CommandRegistry",
+    "CommandCategory",
+    "CommandInfo",
+    "ArgInfo",
+    "CommandHistory",
+    "command_history",
+    "HELP_CATEGORIES",
+    "SLASH_HELP",
     "CROSS_PLATFORM_COMMANDS",
     "detect_shell",
     "get_shell_platform",

@@ -14,6 +14,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import subprocess
 from dataclasses import dataclass
 from typing import Any, AsyncGenerator
 
@@ -331,8 +332,6 @@ def make_client(
     Uses the provider config to resolve base_url if not provided,
     and applies any provider-specific client customizations.
     """
-    import subprocess
-
     for _attempt in range(2):
         try:
             from openai import AsyncOpenAI
@@ -445,6 +444,8 @@ async def _gemini_generate(
     if system_prompt:
         body["systemInstruction"] = {"parts": [{"text": system_prompt}]}
 
+    if not api_key:
+        raise LLMProviderError("Gemini API key is required but not provided")
     url = f"{_GEMINI_API_BASE}/models/{model}:generateContent"
     async with httpx.AsyncClient(timeout=120) as client:
         resp = await client.post(url, params={"key": api_key}, json=body)
@@ -492,6 +493,8 @@ async def _gemini_stream(
     if system_prompt:
         body["systemInstruction"] = {"parts": [{"text": system_prompt}]}
 
+    if not api_key:
+        raise LLMProviderError("Gemini API key is required but not provided")
     url = f"{_GEMINI_API_BASE}/models/{model}:streamGenerateContent"
     async with httpx.AsyncClient(timeout=120) as client:
         async with client.stream(
@@ -543,11 +546,15 @@ async def openai_stream(
         "max_tokens": max_tokens,
         "temperature": temperature,
         "stream": True,
-        "stream_options": {"include_usage": True},
     }
+    if compat is None or compat.supports_usage_in_streaming:
+        call_kwargs["stream_options"] = {"include_usage": True}
     if tools:
         call_kwargs["tools"] = tools
-    response = await client.chat.completions.create(**call_kwargs)
+    try:
+        response = await client.chat.completions.create(**call_kwargs)
+    except Exception as exc:
+        raise LLMProviderError(f"Stream creation failed (model={model}): {exc}") from exc
     async for chunk in response:
         if chunk.choices and len(chunk.choices) > 0:
             delta = chunk.choices[0].delta
@@ -590,6 +597,8 @@ async def openai_complete(
         msg = str(exc) or repr(exc)
         raise LLMProviderError(f"API call failed (model={model}): {msg}") from exc
 
+    if not response.choices:
+        raise LLMProviderError(f"API returned no choices (model={model})")
     choice = response.choices[0]
     usage = response.usage
     return {

@@ -1,8 +1,10 @@
 from __future__ import annotations
 from .platform_utils import build_platform_context
 import asyncio
+import json
 import logging
 import os
+import re
 import shutil
 import sys
 import time
@@ -126,7 +128,7 @@ class LLMEngineMixin:
         with console.status("[bold green]Planning...[/bold green]", spinner="dots"):
             plan = await engine.plan(instruction)
 
-        if not plan.steps:
+        if plan is None or not plan.steps:
             # Registry/offline mode: local response only (no LLM)
             if self._mode in ("registry", "offline"):
                 response = self._generate_text_response(instruction) or ""
@@ -216,7 +218,7 @@ class LLMEngineMixin:
 
             tester = AdversarialTester()
             plan_lines = [
-                f"{s.tool or ''} {' '.join(s.args)} {s.target or ''}".strip() or s.command or ""
+                f"{getattr(s, 'tool', '') or ''} {' '.join(str(a) for a in getattr(s, 'args', []))} {getattr(s, 'target', '') or ''}".strip() or getattr(s, 'command', '') or ""
                 for s in plan.steps
             ]
             findings = tester.review_plan(plan_lines)
@@ -276,9 +278,9 @@ class LLMEngineMixin:
             if plan and plan.id:
                 step_dicts = [
                     {
-                        "tool": s.tool,
-                        "status": s.status.value,
-                        "description": s.description,
+                        "tool": getattr(s, "tool", ""),
+                        "status": s.status.value if s.status is not None else "unknown",
+                        "description": getattr(s, "description", ""),
                     }
                     for s in plan.steps
                 ]
@@ -1015,15 +1017,14 @@ class LLMEngineMixin:
         """Background task to compile a high-confidence parameterized skill into a Universal Skill using the LLM."""
         from rich.console import Console
         _console = Console()
-        _console.print(f"\n[bold magenta]⚡ Background Task:[/bold magenta] Compiling universal skill for '{skill.intent_pattern[:40]}...'")
+        _console.print(f"[bold magenta]\u26a1 Background Task:[/bold magenta] Compiling universal skill for '{skill.intent_pattern[:40]}...'")
         try:
             steps_text = []
             for i, s in enumerate(skill.steps):
                 steps_text.append(f"Step {i+1}: Tool={s.tool}, Command={s.command_template}, Desc={s.description}")
             steps_str = "\n".join(steps_text)
-            
-            import json as _json
-            param_values_str = _json.dumps(skill.param_values, indent=2) if getattr(skill, 'param_values', None) else "{}"
+
+            param_values_str = json.dumps(skill.param_values, indent=2) if getattr(skill, 'param_values', None) else "{}"
 
             prompt = (
                 "You are an AI compiler for a Continuous Learning System.\n"
@@ -1044,21 +1045,21 @@ class LLMEngineMixin:
                 "}\n"
                 "Ensure that {target} and {param_N} placeholders remain in the refined templates."
             )
-            
+
             # Use the provider's direct completion
             response = await llm_call_fn(
                 system="You are an expert systems engineer and schema designer.",
                 user=prompt,
                 stream=False
             )
-            
+
             if isinstance(response, dict) and "content" in response:
                 content = response["content"]
+            elif isinstance(response, str):
+                content = response
             else:
                 content = str(response)
-                
-            import re
-            import json
+
             match = re.search(r"\{.*\}", content, re.DOTALL)
             if match:
                 schema_json = json.loads(match.group(0))
@@ -1066,11 +1067,11 @@ class LLMEngineMixin:
                 from dataclasses import asdict
                 skill.backup_json = json.dumps([asdict(s) for s in skill.steps])
                 skill.universal_schema = json.dumps(schema_json.get("parameters", {}))
-                
+
                 # Apply refinements if provided
                 if schema_json.get("refined_intent"):
                     skill.intent_pattern = schema_json["refined_intent"]
-                
+
                 if schema_json.get("refined_steps"):
                     from ..learning_system import LearnedStep
                     new_steps = []
@@ -1081,11 +1082,11 @@ class LLMEngineMixin:
                             description=s.get("description", "")
                         ))
                     skill.steps = new_steps
-                
+
                 from ..learning_system import get_learning_system
                 get_learning_system()._save_skill(skill)
                 _console.print("[bold green]✓ Universal skill compiled successfully![/bold green]")
-                
+
         except Exception as e:
             _console.print(f"[dim yellow]⚠ Universal skill compilation failed: {e}[/dim yellow]")
 

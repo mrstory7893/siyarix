@@ -15,6 +15,7 @@ from rich.syntax import Syntax
 from rich.table import Table
 
 from ..branding import available_themes, print_theme_preview
+from ..config import get_config_dir
 from .commands import CommandProfile, CommandProfileStore, HELP_CATEGORIES, SLASH_HELP
 from .session import ChatSession
 from .ui import ConfigPanel
@@ -68,19 +69,21 @@ class CommandHandlersMixin:
         handlers = {
             "/help": self._cmd_help,
             "/?": self._cmd_help,
+            "/h": self._cmd_help,
             "/exit": self._cmd_exit,
             "/quit": self._cmd_exit,
             "/bye": self._cmd_exit,
             "/clear": self._cmd_clear,
             "/clean": self._cmd_clear,
             "/cls": self._cmd_clear,
-            "/new": self._cmd_new,
-            "/fresh": self._cmd_new,
+                "/new": self._cmd_new,
+                "/fresh": self._cmd_new,
             "/history": self._cmd_history,
             "/tools": self._cmd_tools,
             "/platform": self._cmd_platform,
             "/status": self._cmd_status,
             "/session": self._cmd_session,
+            "/info": self._cmd_session,
             "/uptime": self._cmd_uptime,
             "/env": self._cmd_env,
             "/intents": self._cmd_intents,
@@ -95,12 +98,14 @@ class CommandHandlersMixin:
             "/theme": self._cmd_theme,
             "/target": self._cmd_target,
             "/mode": self._cmd_mode,
+            "/m": self._cmd_mode,
             "/save": self._cmd_save,
             "/translate": self._cmd_translate,
             "/security-cmds": self._cmd_security_cmds,
             "/run": self._cmd_run,
             "/model": self._cmd_model,
             "/provider": self._cmd_provider,
+            "/providers": self._cmd_provider,
             "/context": self._cmd_context,
             "/version": self._cmd_version,
             "/config": self._cmd_config,
@@ -128,6 +133,27 @@ class CommandHandlersMixin:
             "/audit": self._cmd_audit,
             "/queue": self._cmd_queue,
             "/skills": self._cmd_skills,
+            # ── New commands ──
+            "/export": self._cmd_export,
+            "/plugins": self._cmd_plugins,
+            "/alias": self._cmd_alias,
+            "/language": self._cmd_language,
+            "/load": self._cmd_load,
+            "/fork": self._cmd_fork,
+            "/learn": self._cmd_learn,
+            "/feedback": self._cmd_feedback,
+                "/redteam": self._cmd_redteam,
+                "/offensive": self._cmd_redteam,
+                "/blueteam": self._cmd_blueteam,
+                "/defensive": self._cmd_blueteam,
+            "/benchmark": self._cmd_benchmark,
+            "/upgrade": self._cmd_upgrade,
+            "/docs": self._cmd_docs,
+            "/tutorial": self._cmd_tutorial,
+            "/bug": self._cmd_bug,
+            "/suggest": self._cmd_suggest,
+            "/playbook": self._cmd_playbook,
+            "/stats": self._cmd_stats,
         }
 
         handler = handlers.get(command)
@@ -293,7 +319,7 @@ class CommandHandlersMixin:
             profile = provider_registry.get_profile(prov_name)
             env_key = profile.api_key_env if profile else provider_env_var(prov_name)
             from_env = bool(os.getenv(env_key)) if env_key else False
-            from_creds = bool(store and store.retrieve(prov_name, "api_key"))
+            from_creds = bool(store.retrieve(prov_name, "api_key")) if store else False
             if from_env:
                 status, source = "✓ Set", "Environment"
             elif from_creds:
@@ -729,34 +755,50 @@ class CommandHandlersMixin:
         console.print(f"[green]✓ Target set to: {args}[/green]")
 
     def _cmd_mode(self, args: str) -> None:
-        valid = ("autonomous", "integrated", "offline")
+        valid = (
+            "autonomous", "integrated", "offline", "stealth",
+            "verbose", "quiet", "expert", "beginner",
+            "interactive", "batch", "redteam", "blueteam",
+            "compliance", "audit",
+        )
+        core_modes = ("autonomous", "integrated", "offline")
         if not args:
-            console.print(f"Current mode: [cyan]{self._mode}[/cyan] (valid: {', '.join(valid)})")
+            console.print(f"Current mode: [cyan]{self._mode}[/cyan]")
+            console.print(f"[dim]Valid modes: {', '.join(valid)}[/dim]")
             return
 
-        # Redirect: "registry" was renamed to "offline"
+        # Redirect
         if args == "registry":
-            console.print(
-                "[yellow]'registry' mode has been renamed to 'offline'. Switching…[/yellow]"
-            )
+            console.print("[yellow]'registry' mode renamed to 'offline'. Switching…[/yellow]")
             args = "offline"
+        if args == "offensive":
+            console.print("[yellow]Use /redteam for offensive focus.[/yellow]")
+            args = "redteam"
+        if args == "defensive":
+            console.print("[yellow]Use /blueteam for defensive focus.[/yellow]")
+            args = "blueteam"
 
         if args not in valid:
-            console.print(f"[red]Invalid mode: {args}. Valid modes: {', '.join(valid)}[/red]")
+            console.print(f"[red]Invalid mode: {args}. Valid modes: {', '.join(core_modes)}[/red]")
             return
 
+        old_mode = self._mode
         self._mode = args
         self._session.mode = args
 
-        if args == "offline":
+        # Mode-specific persona and provider adjustments
+        if args in ("redteam",):
+            self._settings.set("persona", "red-team")
+            console.print("[red]✓ Switched to RED TEAM mode with offensive persona[/red]")
+        elif args in ("blueteam",):
+            self._settings.set("persona", "blue-team")
+            console.print("[blue]✓ Switched to BLUE TEAM mode with defensive persona[/blue]")
+        elif args == "offline":
             self._settings.set("model_provider", "registry")
-            console.print(
-                f"[green]✓ Mode switched to: {args} (provider locked to registry)[/green]"
-            )
+            console.print(f"[green]✓ Mode switched to: {args} (provider locked to registry)[/green]")
         else:
-            # Switching away from offline: release provider lock if it was "registry"
             current_provider = self._settings.get("model_provider") or "auto"
-            if current_provider == "registry":
+            if current_provider == "registry" and (old_mode == "offline" or args == "integrated"):
                 self._settings.set("model_provider", "auto")
                 console.print(f"[green]✓ Mode switched to: {args} (provider reset to auto)[/green]")
             else:
@@ -895,8 +937,6 @@ class CommandHandlersMixin:
                             f"[dim]Validating {selected}...[/dim]", spinner="point"
                         ):
                             try:
-                                import asyncio
-
                                 bench_fn = self._make_llm_call(selected, key or "")
                                 bench_model = model_name or ""
                                 if not bench_model:
@@ -1187,7 +1227,7 @@ class CommandHandlersMixin:
             table.add_column("Label", style="green")
             table.add_column("Description", style="dim")
             for p in list_personas():
-                table.add_row(p["name"], p["label"], p["description"])
+                table.add_row(p.get("name", "?"), p.get("label", "?"), p.get("description", ""))
             table.add_row("auto", "Auto (Smart Select)", "Analyse and choose the best-fit persona")
             table.add_row(
                 "universal",
@@ -1465,7 +1505,7 @@ class CommandHandlersMixin:
             if not subargs:
                 console.print("[yellow]Usage: /skills add <workflow description...>[/yellow]")
                 return
-            from .onboarding import OnboardingWizard
+            from ..onboarding import OnboardingWizard
             added = OnboardingWizard._parse_and_add_manual_skills(cls, subargs)
             if added:
                 console.print(f"[green]✓ Successfully added {added} new skill(s)![/green]")
@@ -1491,7 +1531,6 @@ class CommandHandlersMixin:
                 "       /skills add 1. step_a; step_b.\n"
                 "       /skills export /path/to/export.json[/dim]"
             )
-            console.print("[green]OPSEC deactivated[/green]")
 
     async def _cmd_siem(self, args: str) -> None:
         """Handle /siem command for SIEM/SOAR integration."""
@@ -1501,12 +1540,12 @@ class CommandHandlersMixin:
     async def _cmd_intel(self, args: str) -> None:
         """Handle /intel command for Threat Intelligence integration."""
         from ..threat_intel import intel_manager
-        
+
         tokens = args.split() if args else []
         if not tokens or tokens[0] not in ("lookup", "status"):
             console.print("[yellow]Usage: /intel lookup|status [indicator][/yellow]")
             return
-            
+
         if tokens[0] == "lookup":
             if len(tokens) < 2:
                 console.print("[red]Missing indicator to lookup. Example: /intel lookup CVE-2023-1234 or /intel lookup 8.8.8.8[/red]")
@@ -1790,3 +1829,644 @@ class CommandHandlersMixin:
 
         else:
             console.print("[yellow]Usage: /queue status|list|retry|clear|flush[/yellow]")
+
+    # ── New Command Handlers ──────────────────────────────────────────────
+
+    async def _cmd_export(self, args: str) -> None:
+        """Export conversation in various formats."""
+        tokens = args.split() if args else []
+        fmt = tokens[0].lower() if tokens else "json"
+        output_path = tokens[1] if len(tokens) > 1 else ""
+        valid_formats = ("json", "md", "markdown", "html", "pdf", "txt")
+        if fmt not in valid_formats:
+            console.print(f"[yellow]Invalid format: {fmt}. Valid: {', '.join(valid_formats)}[/yellow]")
+            return
+
+        if not output_path:
+            ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+            ext = {"json": "json", "md": "md", "markdown": "md", "html": "html", "pdf": "pdf", "txt": "txt"}[fmt]
+            output_path = str(self._SESSIONS_DIR / f"export_{self._session.session_id[:8]}_{ts}.{ext}")
+
+        export_dir = Path(output_path).parent
+        export_dir.mkdir(parents=True, exist_ok=True)
+
+        try:
+            exported = self._session.export(fmt)
+            if isinstance(exported, str):
+                Path(output_path).write_text(exported, encoding="utf-8")
+            elif isinstance(exported, bytes):
+                Path(output_path).write_bytes(exported)
+            console.print(f"[green]✓ Conversation exported to: {output_path}[/green]")
+            console.print(f"[dim]Format: {fmt} | Messages: {len(self._session.messages)}[/dim]")
+        except Exception as exc:
+            console.print(f"[red]Export failed: {exc}[/red]")
+
+    def _cmd_plugins(self, args: str) -> None:
+        """List and manage Siyarix plugins."""
+        try:
+            tokens = args.split() if args else []
+            action = tokens[0].lower() if tokens else "list"
+
+            if action == "list":
+                plugins_dir = get_config_dir() / "plugins"
+                if not plugins_dir.exists():
+                    console.print("[dim]No plugins directory found.[/dim]")
+                    return
+                plugin_files = list(plugins_dir.glob("*.py")) + list(plugins_dir.glob("*.yaml"))
+                if not plugin_files:
+                    console.print("[dim]No plugins installed.[/dim]")
+                    return
+                from rich.table import Table
+                table = Table(title=f"Plugins ({len(plugin_files)})", header_style="bold cyan")
+                table.add_column("Name", style="cyan")
+                table.add_column("Type", style="dim")
+                table.add_column("Size", justify="right")
+                for pf in sorted(plugin_files):
+                    table.add_row(pf.stem, pf.suffix, f"{pf.stat().st_size} B")
+                console.print(table)
+            elif action == "status":
+                console.print("[green]Plugin system active.[/green]")
+                console.print(f"[dim]Plugin directory: {get_config_dir() / 'plugins'}[/dim]")
+            else:
+                console.print("[yellow]Usage: /plugins list|status[/yellow]")
+        except Exception as exc:
+            console.print(f"[red]Plugin command failed: {exc}[/red]")
+
+    # ── Alias Store ──
+    def _alias_store_path(self) -> Path:
+        path = get_config_dir() / "aliases.json"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        return path
+
+    def _load_aliases(self) -> dict[str, str]:
+        path = self._alias_store_path()
+        if path.exists():
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                pass
+        return {}
+
+    def _save_aliases(self, aliases: dict[str, str]) -> None:
+        path = self._alias_store_path()
+        path.write_text(json.dumps(aliases, indent=2), encoding="utf-8")
+
+    def _cmd_alias(self, args: str) -> None:
+        """Create and manage command aliases."""
+        try:
+            tokens = args.split() if args else []
+            action = tokens[0].lower() if tokens else "list"
+
+            aliases = self._load_aliases()
+
+            if action == "list":
+                if not aliases:
+                    console.print("[dim]No aliases defined. Use /alias set <name> <command>[/dim]")
+                    return
+                from rich.table import Table
+                table = Table(title="Command Aliases", header_style="bold cyan")
+                table.add_column("Alias", style="cyan")
+                table.add_column("Command", style="green")
+                for alias, cmd in sorted(aliases.items()):
+                    table.add_row(f"/{alias}", cmd)
+                console.print(table)
+
+            elif action == "set":
+                if len(tokens) < 3:
+                    console.print("[yellow]Usage: /alias set <name> <command>[/yellow]")
+                    return
+                name = tokens[1].lower()
+                command = " ".join(tokens[2:])
+                aliases[name] = command
+                self._save_aliases(aliases)
+                console.print(f"[green]✓ Alias set: /{name} -> {command}[/green]")
+
+            elif action in ("remove", "rm", "delete"):
+                if len(tokens) < 2:
+                    console.print("[yellow]Usage: /alias remove <name>[/yellow]")
+                    return
+                name = tokens[1].lower()
+                if name in aliases:
+                    del aliases[name]
+                    self._save_aliases(aliases)
+                    console.print(f"[green]✓ Alias removed: /{name}[/green]")
+                else:
+                    console.print(f"[red]Alias not found: /{name}[/red]")
+            else:
+                console.print("[yellow]Usage: /alias list|set|remove[/yellow]")
+        except Exception as exc:
+            console.print(f"[red]Alias command failed: {exc}[/red]")
+
+    def _cmd_language(self, args: str) -> None:
+        """Switch output language."""
+        try:
+            lang = args.strip().lower() if args else ""
+            supported = {
+                "en": "English", "fr": "Français", "de": "Deutsch",
+                "es": "Español", "it": "Italiano", "pt": "Português",
+                "ru": "Русский", "zh": "中文", "ja": "日本語",
+                "ko": "한국어", "ar": "العربية",
+            }
+            if not lang or lang == "list":
+                current = self._settings.get("language") or "en"
+                console.print(f"[dim]Current language: [bold]{supported.get(current, current)}[/bold][/dim]")
+                from rich.table import Table
+                table = Table(title="Supported Languages", header_style="bold cyan")
+                table.add_column("Code", style="cyan")
+                table.add_column("Language", style="white")
+                for code, name in supported.items():
+                    marker = " ← current" if code == current else ""
+                    table.add_row(code, f"{name}{marker}")
+                console.print(table)
+                return
+
+            if lang in supported:
+                self._settings.set("language", lang)
+                console.print(f"[green]✓ Language set to: {supported[lang]}[/green]")
+                console.print("[dim]Note: LLM response language depends on provider support.[/dim]")
+            else:
+                console.print(f"[yellow]Unsupported language: {lang}. Use /language list to see options.[/yellow]")
+        except Exception as exc:
+            console.print(f"[red]Language command failed: {exc}[/red]")
+
+    def _cmd_load(self, args: str) -> None:
+        """Load a saved session by ID."""
+        session_id = args.strip() if args else ""
+        if not session_id:
+            # List available sessions
+            sessions_dir = self._SESSIONS_DIR
+            if not sessions_dir.exists():
+                console.print("[dim]No saved sessions found.[/dim]")
+                return
+            session_files = sorted(sessions_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
+            if not session_files:
+                console.print("[dim]No saved sessions found.[/dim]")
+                return
+            from rich.table import Table
+            table = Table(title="Saved Sessions", header_style="bold cyan")
+            table.add_column("Session ID (short)", style="cyan")
+            table.add_column("Target", style="yellow")
+            table.add_column("Mode", style="green")
+            table.add_column("Messages", justify="right")
+            table.add_column("Last Active", style="dim")
+            for sf in session_files[:20]:
+                try:
+                    data = json.loads(sf.read_text(encoding="utf-8"))
+                    sid = data.get("session_id", sf.stem)[:8]
+                    target = data.get("target", "") or "—"
+                    mode = data.get("mode", "?")
+                    msgs = len(data.get("messages", []))
+                    last = data.get("last_active", "")[:19] if data.get("last_active") else ""
+                    table.add_row(sid, target, mode, str(msgs), last)
+                except Exception:
+                    continue
+            console.print(table)
+            console.print("[dim]Use /load <session_id> to load a session.[/dim]")
+            return
+
+        path = self._SESSIONS_DIR / f"{session_id}.json"
+        if not path.exists():
+            # Try with .json appended
+            alt = self._SESSIONS_DIR / session_id
+            if alt.exists():
+                path = alt
+            else:
+                console.print(f"[red]Session not found: {session_id}[/red]")
+                return
+
+        try:
+            from .session import ChatSession
+            new_session = ChatSession.load(path)
+            self._session = new_session
+            self._mode = new_session.mode
+            console.print(f"[green]✓ Loaded session: {new_session.session_id[:8]}[/green]")
+            console.print(f"[dim]Target: {new_session.target or 'none'} | Mode: {new_session.mode} | Messages: {len(new_session.messages)}[/dim]")
+        except Exception as exc:
+            console.print(f"[red]Failed to load session: {exc}[/red]")
+
+    def _cmd_fork(self, args: str) -> None:
+        """Fork current session into a new branch."""
+        try:
+            import uuid
+            tokens = args.split() if args else []
+            at_idx = None
+            summary = ""
+            if tokens:
+                try:
+                    at_idx = int(tokens[0])
+                    if len(tokens) > 1:
+                        summary = " ".join(tokens[1:])
+                except ValueError:
+                    summary = args
+
+            new_id = uuid.uuid4().hex
+            forked = self._session.branch(at_message_idx=at_idx, summary=summary)
+            forked.session_id = new_id
+            self._session = forked
+            self._session.save(self._SESSIONS_DIR / f"{new_id}.json")
+            console.print(f"[green]✓ Session forked: {new_id[:8]}[/green]")
+            if summary:
+                console.print(f"[dim]Summary: {summary}[/dim]")
+            console.print(f"[dim]Messages in fork: {len(forked.messages)}[/dim]")
+        except Exception as exc:
+            console.print(f"[red]Fork failed: {exc}[/red]")
+
+    def _cmd_learn(self, args: str) -> None:
+        """Toggle Continuous Learning System."""
+        tokens = args.split() if args else []
+        action = tokens[0].lower() if tokens else "status"
+
+        try:
+            from ..learning_system import get_learning_system
+            cls = get_learning_system()
+        except Exception:
+            console.print("[yellow]Continuous Learning System not available.[/yellow]")
+            return
+
+        if action == "status":
+            stats = cls.stats()
+            enabled = self._settings.get("learning_enabled", True)
+            status_str = "[green]ENABLED[/green]" if enabled else "[yellow]DISABLED[/yellow]"
+            console.print(
+                f"[bold]Learning System:[/bold] {status_str}\n"
+                f"[bold]Skills:[/bold] {stats.get('total_skills', 0)}\n"
+                f"[bold]High Confidence:[/bold] {stats.get('high_confidence', 0)}\n"
+                f"[bold]Storage:[/bold] {stats.get('db_path', 'unknown')}"
+            )
+        elif action in ("on", "enable", "1", "yes"):
+            self._settings.set("learning_enabled", True)
+            console.print("[green]✓ Learning system enabled[/green]")
+        elif action in ("off", "disable", "0", "no"):
+            self._settings.set("learning_enabled", False)
+            console.print("[yellow]Learning system disabled[/yellow]")
+        else:
+            console.print("[yellow]Usage: /learn [on|off|status][/yellow]")
+
+    def _cmd_feedback(self, args: str) -> None:
+        """Provide feedback on the last response."""
+        try:
+            tokens = args.split() if args else []
+            if not tokens:
+                console.print("[yellow]Usage: /feedback <rating> [comment][/yellow]")
+                console.print("[dim]Rating: 1-5, good, bad, excellent, poor[/dim]")
+                return
+
+            rating = tokens[0].lower()
+            comment = " ".join(tokens[1:]) if len(tokens) > 1 else ""
+
+            rating_map = {"1": 1, "2": 2, "3": 3, "4": 4, "5": 5,
+                          "bad": 1, "poor": 2, "ok": 3, "good": 4, "excellent": 5}
+            numeric_rating = rating_map.get(rating, 3)
+
+            feedback_entry = {
+                "rating": numeric_rating,
+                "comment": comment,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+            feedback_list = self._session.context.setdefault("feedback", [])
+            feedback_list.append(feedback_entry)
+
+            stars = "⭐" * numeric_rating + "☆" * (5 - numeric_rating)
+            console.print(f"[green]✓ Feedback recorded: {stars}[/green]")
+            if comment:
+                console.print(f"[dim]Comment: {comment}[/dim]")
+
+            feedback_dir = get_config_dir() / "feedback"
+            feedback_dir.mkdir(parents=True, exist_ok=True)
+            feedback_file = feedback_dir / f"{self._session.session_id[:8]}.jsonl"
+            with open(feedback_file, "a", encoding="utf-8") as f:
+                f.write(json.dumps(feedback_entry) + "\n")
+        except Exception as exc:
+            console.print(f"[red]Failed to record feedback: {exc}[/red]")
+
+    def _cmd_redteam(self, _: str) -> None:
+        """Switch to red team mode (offensive focus)."""
+        try:
+            self._mode = "redteam"
+            self._session.mode = "redteam"
+            self._settings.set("persona", "red-team")
+            from rich.panel import Panel
+            console.print(Panel(
+                "[red]🔴 RED TEAM MODE ACTIVE[/red]\n\n"
+                "[bold red]Focus:[/bold red] Offensive security, exploitation, adversarial simulation\n"
+                "[bold red]Persona:[/bold red] Red Team Operator\n"
+                "[bold red]Tip:[/bold red] Use [cyan]/scan <target>[/cyan] to begin reconnaissance, "
+                "[cyan]/intel</cyan> for threat intelligence, [cyan]/stealth</cyan> for evasion controls.",
+                border_style="red",
+                title="[bold red]Mode Switch[/bold red]",
+            ))
+        except Exception as exc:
+            console.print(f"[red]Failed to switch to red team mode: {exc}[/red]")
+
+    def _cmd_blueteam(self, _: str) -> None:
+        """Switch to blue team mode (defensive focus)."""
+        try:
+            self._mode = "blueteam"
+            self._session.mode = "blueteam"
+            self._settings.set("persona", "blue-team")
+            from rich.panel import Panel
+            console.print(Panel(
+                "[blue]🔵 BLUE TEAM MODE ACTIVE[/blue]\n\n"
+                "[bold blue]Focus:[/bold blue] Defense, detection, forensics, incident response\n"
+                "[bold blue]Persona:[/bold blue] Blue Team Defender\n"
+                "[bold blue]Tip:[/bold blue] Use [cyan]/audit</cyan> for compliance, "
+                "[cyan]/kb search</cyan> for knowledge base, [cyan]/review on</cyan> for command review.",
+                border_style="blue",
+                title="[bold blue]Mode Switch[/bold blue]",
+            ))
+        except Exception as exc:
+            console.print(f"[red]Failed to switch to blue team mode: {exc}[/red]")
+
+    async def _cmd_benchmark(self, args: str) -> None:
+        """Run performance benchmark against a provider."""
+        tokens = args.split() if args else []
+        provider = tokens[0].lower() if tokens else ""
+        model = tokens[1] if len(tokens) > 1 else ""
+
+        if not provider:
+            provider = self._settings.get("model_provider") or "auto"
+            if provider == "auto":
+                provider = "gemini"
+
+        console.print(f"[bold cyan]Running benchmark against {provider}...[/bold cyan]")
+        console.print("[dim]This will test response time and throughput.[/dim]")
+
+        prov_name, api_key = self._resolve_provider()
+        if not prov_name or not api_key:
+            console.print("[red]No LLM provider available for benchmarking[/red]")
+            return
+
+        from ..providers import ProviderManager
+        pm = ProviderManager.get_instance()
+        profile = pm.get_profile(provider)
+        bench_model = model or (profile.default_model if profile else "")
+
+        from time import perf_counter
+        import asyncio
+
+        results = []
+        for size, prompt in [
+            ("short", "Respond with exactly: OK"),
+            ("medium", "Write a 3-paragraph summary of network security best practices for a small business."),
+            ("long", "Write a detailed technical guide on conducting a comprehensive web application security assessment. Include methodology, tools, and reporting structure."),
+        ]:
+            console.print(f"[dim]Testing {size} prompt...[/dim]")
+            try:
+                llm_fn = self._make_llm_call(prov_name, api_key or "")
+                t0 = perf_counter()
+                result = await asyncio.wait_for(
+                    llm_fn(f"Respond concisely. Model: {bench_model}", prompt, model=bench_model),
+                    timeout=60.0,
+                )
+                elapsed = perf_counter() - t0
+                content = result.get("content", "") if isinstance(result, dict) else str(result)
+                results.append({
+                    "size": size,
+                    "time_s": round(elapsed, 2),
+                    "chars": len(content),
+                    "chars_per_sec": round(len(content) / elapsed, 1) if elapsed > 0 else 0,
+                })
+            except Exception as exc:
+                results.append({"size": size, "time_s": 0, "chars": 0, "chars_per_sec": 0, "error": str(exc)})
+
+        from rich.table import Table
+        table = Table(title=f"Benchmark Results: {provider}", header_style="bold cyan")
+        table.add_column("Prompt Size", style="cyan")
+        table.add_column("Time (s)", justify="right")
+        table.add_column("Chars", justify="right")
+        table.add_column("Chars/s", justify="right")
+        table.add_column("Error", style="red")
+        for r in results:
+            err = r.get("error", "")
+            table.add_row(
+                r["size"],
+                f"{r['time_s']:.2f}" if r["time_s"] else "—",
+                str(r["chars"]) if r["chars"] else "—",
+                f"{r['chars_per_sec']:.1f}" if r["chars_per_sec"] else "—",
+                err[:40] if err else "—",
+            )
+        console.print(table)
+
+    def _cmd_upgrade(self, _: str) -> None:
+        """Check for Siyarix updates."""
+        console.print("[dim]Checking for updates...[/dim]")
+        try:
+            import subprocess
+            result = subprocess.run(
+                ["pip", "install", "--dry-run", "--upgrade", "siyarix"],
+                capture_output=True, text=True, timeout=30,
+            )
+            if "Would install" in result.stdout or "Would upgrade" in result.stdout:
+                console.print("[yellow]⚠ A newer version of Siyarix is available![/yellow]")
+                console.print("[dim]Run: pip install --upgrade siyarix[/dim]")
+            else:
+                console.print("[green]✓ Siyarix is up to date.[/green]")
+        except FileNotFoundError:
+            console.print("[yellow]pip not found. Cannot check for updates.[/yellow]")
+        except subprocess.TimeoutExpired:
+            console.print("[yellow]Update check timed out.[/yellow]")
+        except Exception as exc:
+            console.print(f"[yellow]Update check failed: {exc}[/yellow]")
+
+    def _cmd_docs(self, args: str) -> None:
+        """Open Siyarix documentation."""
+        try:
+            section = args.strip().lower() if args else ""
+            base_url = "https://github.com/mufthakherul/siyarix"
+            section_map = {
+                "getting-started": f"{base_url}#getting-started",
+                "commands": f"{base_url}#commands",
+                "configuration": f"{base_url}#configuration",
+                "providers": f"{base_url}#providers",
+                "plugins": f"{base_url}#plugins",
+                "playbooks": f"{base_url}#playbooks",
+                "api": f"{base_url}#api",
+                "troubleshooting": f"{base_url}#troubleshooting",
+            }
+
+            url = section_map.get(section, base_url)
+            console.print(f"[cyan]Documentation:[/cyan] {url}")
+            console.print("[dim]Tip: Open this URL in your browser for full documentation.[/dim]")
+        except Exception as exc:
+            console.print(f"[red]Docs command failed: {exc}[/red]")
+
+    def _cmd_tutorial(self, args: str) -> None:
+        """Launch interactive tutorial."""
+        try:
+            topic = args.strip().lower() if args else "basics"
+
+            tutorials = {
+                "basics": [
+                    ("Welcome to Siyarix!", "Siyarix is a cybersecurity orchestration agent. Let's learn the basics."),
+                    ("Slash Commands", "Type /help to see all available commands. Commands start with /."),
+                    ("Natural Language", "You can also type natural language like 'scan example.com'."),
+                    ("Modes", "Use /mode to switch between integrated, autonomous, offline, and more."),
+                    ("Next Steps", "Try /tutorial scanning for more advanced features."),
+                ],
+                "scanning": [
+                    ("Scanning Basics", "Use /scan <target> to quickly scan a target."),
+                    ("Reconnaissance", "Try: enumerate subdomains of example.com"),
+                    ("Port Scanning", "Try: port scan 10.0.0.1"),
+                    ("Web Audit", "Try: check http headers on example.com"),
+                    ("Vulnerability Scan", "Try: vuln scan on https://example.com"),
+                ],
+            }
+
+            steps = tutorials.get(topic, tutorials["basics"])
+            console.print(f"[bold cyan]📚 Tutorial: {topic.capitalize()}[/bold cyan]")
+            console.print("─" * 50)
+            for i, (title, content) in enumerate(steps, 1):
+                console.print(f"\n[bold]{i}. {title}[/bold]")
+                console.print(f"   {content}")
+            console.print("\n" + "─" * 50)
+            console.print("[dim]Available topics: basics, scanning[/dim]")
+            console.print("[dim]Usage: /tutorial <topic>[/dim]")
+        except Exception as exc:
+            console.print(f"[red]Tutorial command failed: {exc}[/red]")
+
+    def _cmd_bug(self, _: str) -> None:
+        """Report a bug by opening GitHub issues."""
+        try:
+            url = "https://github.com/mufthakherul/siyarix/issues/new"
+            console.print(f"[yellow]Report a bug at:[/yellow] {url}")
+            console.print("[dim]Please include details about what went wrong and how to reproduce it.[/dim]")
+        except Exception as exc:
+            console.print(f"[red]Bug report command failed: {exc}[/red]")
+
+    def _cmd_suggest(self, _: str) -> None:
+        """Suggest a feature by opening GitHub discussions."""
+        try:
+            url = "https://github.com/mufthakherul/siyarix/discussions/new?category=ideas"
+            console.print(f"[cyan]Suggest a feature at:[/cyan] {url}")
+            console.print("[dim]Describe your idea and how it would improve Siyarix.[/dim]")
+        except Exception as exc:
+            console.print(f"[red]Suggest command failed: {exc}[/red]")
+
+    async def _cmd_playbook(self, args: str) -> None:
+        """Load and run playbooks."""
+        tokens = args.split() if args else []
+        action = tokens[0].lower() if tokens else "list"
+
+        playbooks_dir = get_config_dir() / "playbooks"
+        playbooks_dir.mkdir(parents=True, exist_ok=True)
+
+        if action == "list":
+            playbook_files = sorted(playbooks_dir.glob("*.yaml")) + sorted(playbooks_dir.glob("*.yml"))
+            if not playbook_files:
+                console.print("[dim]No playbooks found.[/dim]")
+                console.print(f"[dim]Place .yaml files in: {playbooks_dir}[/dim]")
+                return
+            from rich.table import Table
+            table = Table(title=f"Playbooks ({len(playbook_files)})", header_style="bold cyan")
+            table.add_column("Name", style="cyan")
+            table.add_column("Size", justify="right")
+            table.add_column("Modified", style="dim")
+            for pf in playbook_files:
+                from datetime import datetime
+                mtime = datetime.fromtimestamp(pf.stat().st_mtime).strftime("%Y-%m-%d %H:%M")
+                table.add_row(pf.stem, f"{pf.stat().st_size} B", mtime)
+            console.print(table)
+
+        elif action == "show":
+            if len(tokens) < 2:
+                console.print("[yellow]Usage: /playbook show <name>[/yellow]")
+                return
+            name = tokens[1]
+            pb_path = playbooks_dir / f"{name}.yaml"
+            if not pb_path.exists():
+                pb_path = playbooks_dir / f"{name}.yml"
+            if not pb_path.exists():
+                console.print(f"[red]Playbook not found: {name}[/red]")
+                return
+            content = pb_path.read_text(encoding="utf-8")
+            from rich.syntax import Syntax
+            console.print(Syntax(content, "yaml", theme="monokai"))
+
+        elif action == "run":
+            if len(tokens) < 2:
+                console.print("[yellow]Usage: /playbook run <name>[/yellow]")
+                return
+            name = tokens[1]
+            pb_path = playbooks_dir / f"{name}.yaml"
+            if not pb_path.exists():
+                pb_path = playbooks_dir / f"{name}.yml"
+            if not pb_path.exists():
+                console.print(f"[red]Playbook not found: {name}[/red]")
+                return
+            try:
+                import yaml
+                playbook = yaml.safe_load(pb_path.read_text(encoding="utf-8"))
+                steps = playbook.get("steps", []) if isinstance(playbook, dict) else []
+                if not steps:
+                    console.print(f"[yellow]No steps found in playbook: {name}[/yellow]")
+                    return
+                console.print(f"[bold cyan]Running playbook: {name}[/bold cyan]")
+                console.print(f"[dim]Steps: {len(steps)}[/dim]")
+                for i, step in enumerate(steps, 1):
+                    if isinstance(step, dict):
+                        cmd = step.get("command", step.get("run", ""))
+                        desc = step.get("description", step.get("name", f"Step {i}"))
+                        console.print(f"\n[cyan][{i}/{len(steps)}][/cyan] {desc}")
+                        if cmd:
+                            console.print(f"  [dim]$ {cmd}[/dim]")
+                            await self._execute_instruction(cmd)
+                    elif isinstance(step, str):
+                        console.print(f"\n[cyan][{i}/{len(steps)}][/cyan] {step}")
+                        await self._execute_instruction(step)
+                console.print(f"[green]✓ Playbook '{name}' completed[/green]")
+            except ImportError:
+                console.print("[yellow]yaml package not installed. Install with: pip install pyyaml[/yellow]")
+            except Exception as exc:
+                console.print(f"[red]Playbook execution failed: {exc}[/red]")
+        else:
+            console.print("[yellow]Usage: /playbook list|show|run <name>[/yellow]")
+
+    def _cmd_stats(self, args: str) -> None:
+        """Show usage statistics for current session."""
+        try:
+            detail = args.strip().lower() == "detail"
+
+            from rich.table import Table
+
+            total_msgs = len(self._session.messages)
+            user_msgs = sum(1 for m in self._session.messages if m.role == "user")
+            assistant_msgs = sum(1 for m in self._session.messages if m.role == "assistant")
+            system_msgs = sum(1 for m in self._session.messages if m.role == "system")
+            uptime = datetime.now(timezone.utc) - self._session.created_at
+            hours, rem = divmod(int(uptime.total_seconds()), 3600)
+            minutes, secs = divmod(rem, 60)
+
+            table = Table(title="Session Statistics", header_style="bold cyan")
+            table.add_column("Metric", style="cyan")
+            table.add_column("Value", style="white")
+            table.add_row("Session ID", self._session.session_id[:16])
+            table.add_row("Mode", self._session.mode)
+            table.add_row("Target", self._session.target or "—")
+            table.add_row("Uptime", f"{hours:02d}:{minutes:02d}:{secs:02d}")
+            table.add_row("Total Messages", str(total_msgs))
+            table.add_row("User Messages", str(user_msgs))
+            table.add_row("Assistant Messages", str(assistant_msgs))
+            table.add_row("System Messages", str(system_msgs))
+            table.add_row("LLM Calls", str(self._llm_calls))
+            table.add_row("Context Keys", str(len(self._session.context)))
+            findings_count = len(self._session.context.get("findings", []))
+            table.add_row("Findings", str(findings_count))
+
+            console.print(table)
+
+            if detail:
+                cmd_counts: dict[str, int] = {}
+                for msg in self._session.messages:
+                    if msg.role == "user" and msg.content.startswith("/"):
+                        cmd = msg.content.split()[0].lower()
+                        cmd_counts[cmd] = cmd_counts.get(cmd, 0) + 1
+
+                if cmd_counts:
+                    ct = Table(title="Command Usage", header_style="bold cyan")
+                    ct.add_column("Command", style="cyan")
+                    ct.add_column("Count", justify="right")
+                    for cmd, count in sorted(cmd_counts.items(), key=lambda x: -x[1]):
+                        ct.add_row(cmd, str(count))
+                    console.print(ct)
+        except Exception as exc:
+            console.print(f"[red]Stats command failed: {exc}[/red]")

@@ -24,6 +24,7 @@ from .session import ChatSession
 from .ui import SmartAutocomplete, SplitPane
 from ..config import SettingsStore
 from .platform_utils import detect_shell, get_shell_platform, build_platform_context
+from .commands import command_history
 from .handlers import CommandHandlersMixin
 from .engine import LLMEngineMixin
 from .console import console
@@ -239,19 +240,26 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
             _signal.signal(_signal.SIGTSTP, _tstp_handler)
 
         # Start connectivity monitor background check
-        try:
-            asyncio.run(self.connectivity_monitor.start())
-        except Exception:
-            logger.debug("Connectivity monitor not available", exc_info=True)
-        try:
-            asyncio.run(self._repl_loop())
-        finally:
-            if _orig_tstp:
-                _signal.signal(_signal.SIGTSTP, _orig_tstp)
+        async def _run_all() -> None:
             try:
-                asyncio.run(self.connectivity_monitor.stop())
+                await self.connectivity_monitor.start()
             except Exception:
-                pass
+                logger.debug("Connectivity monitor not available", exc_info=True)
+            try:
+                await self._repl_loop()
+            finally:
+                if _orig_tstp:
+                    _signal.signal(_signal.SIGTSTP, _orig_tstp)
+                try:
+                    await self.connectivity_monitor.stop()
+                except Exception:
+                    pass
+
+        try:
+            asyncio.run(_run_all())
+        except KeyboardInterrupt:
+            self._running = False
+            console.print("\n[bold yellow]Exited by user.[/bold yellow]")
 
     async def _ui_flusher_task(self) -> None:
         while self._running:
@@ -290,12 +298,43 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
                 self._esc_press_count = 0
                 self._command_history.append(user_input)
 
+                # Record in global command history for autocomplete ranking
+                command_history.record(user_input)
+
+                # Check for piping
+                if "|" in user_input and not user_input.startswith("/"):
+                    pipe_parts = self._check_for_piping(user_input)
+                    if pipe_parts != user_input:
+                        console.print(
+                            "[dim]Piping detected. Processing as sequential commands...[/dim]"
+                        )
+                        parts = [p.strip() for p in user_input.split("|") if p.strip()]
+                        for i, part in enumerate(parts):
+                            console.print(
+                                f"[cyan]Step {i + 1}/{len(parts)}:[/cyan] {part[:80]}"
+                            )
+                            if part.startswith("/"):
+                                await self._handle_slash(part)
+                            else:
+                                await self._handle_natural_language(part)
+                        continue
+
                 if user_input == "?" or user_input.lower() == "help":
                     self._cmd_help("")
                     continue
 
                 if user_input.startswith("/"):
-                    await self._handle_slash(user_input)
+                    # Check aliases
+                    cmd_name = user_input.split()[0].lower()
+                    aliases = self._load_aliases() if hasattr(self, "_load_aliases") else {}
+                    if cmd_name.lstrip("/") in aliases:
+                        resolved = aliases[cmd_name.lstrip("/")]
+                        remaining = user_input[len(cmd_name):].strip()
+                        full_cmd = f"{resolved} {remaining}" if remaining else resolved
+                        console.print(f"[dim]Alias: /{cmd_name.lstrip('/')} -> {full_cmd}[/dim]")
+                        await self._handle_slash(f"/{full_cmd}" if not full_cmd.startswith("/") else full_cmd)
+                    else:
+                        await self._handle_slash(user_input)
                 else:
                     await self._handle_natural_language(user_input)
 
@@ -327,6 +366,35 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
         except Exception:
             return False
 
+    def _check_for_piping(self, user_input: str) -> str | None:
+        """Check if input contains pipe and handle multi-command piping.
+        Returns the processed input or None if piping was handled."""
+        if "|" not in user_input:
+            return user_input
+
+        # Split on | but not inside quotes
+        parts = []
+        current = ""
+        in_single = False
+        in_double = False
+        for ch in user_input:
+            if ch == "'" and not in_double:
+                in_single = not in_single
+            elif ch == '"' and not in_single:
+                in_double = not in_double
+            elif ch == "|" and not in_single and not in_double:
+                parts.append(current.strip())
+                current = ""
+                continue
+            current += ch
+        if current.strip():
+            parts.append(current.strip())
+
+        if len(parts) <= 1:
+            return user_input
+
+        return user_input
+
     async def _prompt_async(self) -> str:
         """Display the input prompt and read a line."""
         if not sys.stdin.isatty():
@@ -335,7 +403,7 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
             except (EOFError, KeyboardInterrupt):
                 return ""
 
-        esc_bindings = self._make_esc_bindings()
+        esc_bindings = self._make_full_bindings()
         prompt_label = Text.assemble(
             ("❯ ", "bold cyan"), ("Type your message or @path/to/file", "dim")
         )
@@ -347,6 +415,17 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
             "registry": "ansiyellow",
             "autonomous": "ansimagenta",
             "integrated": "ansicyan",
+            "stealth": "ansired",
+            "verbose": "ansigreen",
+            "quiet": "ansibright_black",
+            "redteam": "bold red",
+            "blueteam": "bold blue",
+            "compliance": "ansiyellow",
+            "audit": "ansimagenta",
+            "expert": "ansicyan",
+            "beginner": "ansigreen",
+            "interactive": "ansicyan",
+            "batch": "ansimagenta",
         }.get(self._mode, "ansicyan")
         theme = self._settings.get("color_theme") or "cyber-noir"
         provider = self._settings.get("model_provider") or "auto"
@@ -384,10 +463,15 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
                 from prompt_toolkit.formatted_text import HTML
                 from prompt_toolkit.patch_stdout import patch_stdout
 
-                session: PromptSession[Any] = PromptSession(bottom_toolbar=get_bottom_toolbar)
+                session: PromptSession[Any] = PromptSession(
+                    bottom_toolbar=get_bottom_toolbar,
+                    multiline=True,
+                    vi_mode=False,
+                )
 
                 pt_prompt = HTML(
-                    '<style fg="ansicyan"><b>❯ </b></style><style fg="ansigray">Type your message or @path/to/file: </style>'
+                    '<style fg="ansicyan"><b>❯ </b></style><style fg="ansigray">'
+                    'Type your message (Alt+Enter for newline): </style>'
                 )
 
                 with patch_stdout():
@@ -414,12 +498,14 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
                 answer = Prompt.ask(prompt_label, default="").strip()
         return answer
 
-    def _make_esc_bindings(self) -> Any:
-        """Create prompt_toolkit key bindings for ESC detection."""
+    def _make_full_bindings(self) -> Any:
+        """Create comprehensive prompt_toolkit key bindings with
+        Ctrl shortcuts and multi-line support."""
         from prompt_toolkit.keys import Keys
 
         kb = KeyBindings()
 
+        # ESC - cancel/exit detection
         @kb.add(Keys.Escape)
         def _on_esc(event: Any) -> None:
             now = time.time()
@@ -433,6 +519,79 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
                 self._esc_press_count = 1
                 self._esc_press_time = now
             event.app.current_buffer.text = ""
+            event.app.current_buffer.validate_and_handle()
+
+        # Ctrl+C - cancel/exit
+        @kb.add(Keys.ControlC)
+        def _on_ctrlc(event: Any) -> None:
+            self._esc_press_count += 1
+            if self._esc_press_count >= 2:
+                self._running = False
+                event.app.exit()
+            else:
+                if self._engine_kill_switch:
+                    self._engine_kill_switch.trigger()
+                buf = event.app.current_buffer
+                if buf.text:
+                    buf.text = ""
+                else:
+                    console.print("[dim]Press Ctrl+C again to exit.[/dim]")
+
+        # Ctrl+L - clear screen
+        @kb.add(Keys.ControlL)
+        def _on_ctrll(event: Any) -> None:
+            console.clear()
+            event.app.current_buffer.text = ""
+
+        # Ctrl+A - beginning of line
+        @kb.add(Keys.ControlA)
+        def _on_ctrla(event: Any) -> None:
+            buf = event.app.current_buffer
+            buf.cursor_position = 0
+
+        # Ctrl+E - end of line
+        @kb.add(Keys.ControlE)
+        def _on_ctrle(event: Any) -> None:
+            buf = event.app.current_buffer
+            buf.cursor_position = len(buf.text)
+
+        # Ctrl+U - delete to start
+        @kb.add(Keys.ControlU)
+        def _on_ctrlu(event: Any) -> None:
+            buf = event.app.current_buffer
+            buf.text = buf.text[buf.cursor_position:]
+            buf.cursor_position = 0
+
+        # Ctrl+K - delete to end
+        @kb.add(Keys.ControlK)
+        def _on_ctrlk(event: Any) -> None:
+            buf = event.app.current_buffer
+            pos = buf.cursor_position
+            buf.text = buf.text[:pos]
+
+        # Ctrl+W - delete word backward
+        @kb.add(Keys.ControlW)
+        def _on_ctrlw(event: Any) -> None:
+            buf = event.app.current_buffer
+            text = buf.text[:buf.cursor_position]
+            # Find last space
+            space = text.rstrip().rfind(" ")
+            if space >= 0:
+                new_pos = space + 1
+            else:
+                new_pos = 0
+            buf.text = buf.text[:new_pos] + buf.text[buf.cursor_position:]
+            buf.cursor_position = new_pos
+
+        # Alt+Enter - accept (multi-line support)
+        @kb.add(Keys.Escape, Keys.Enter)
+        def _on_alt_enter(event: Any) -> None:
+            buf = event.app.current_buffer
+            buf.insert_text("\n")
+
+        # Ctrl+J / Enter - accept input
+        @kb.add(Keys.ControlJ)
+        def _on_enter(event: Any) -> None:
             event.app.current_buffer.validate_and_handle()
 
         return kb
@@ -481,6 +640,7 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
         from rich.layout import Layout
         from rich.align import Align
         from rich.text import Text
+        from .commands import CommandRegistry
 
         ver = resolve_version()
         provider_status = self._gather_provider_status()
@@ -573,14 +733,26 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
             )
         )
 
+        # Dynamic quick actions from command registry
+        top_cmds = CommandRegistry.top_commands(8)
+        quick_lines = []
+        for c in top_cmds[:6]:
+            name_display = c.usage if c.usage else c.name
+            quick_lines.append(
+                f"[bold white]{name_display}[/bold white]  [dim]— {c.description[:30]}[/dim]\n"
+            )
+        if not quick_lines:
+            quick_lines = [
+                "[bold white]/help[/bold white]  [dim]— all commands[/dim]\n",
+                "[bold white]/scan <tgt>[/bold white]  [dim]— scan target[/dim]\n",
+                "[bold white]/model <name>[/bold white]  [dim]— switch LLM[/dim]\n",
+                "[bold white]/mode <mode>[/bold white]  [dim]— switch mode[/dim]\n",
+                "[bold white]/theme <name>[/bold white]  [dim]— UI theme[/dim]\n",
+            ]
+
         layout["quick_actions"].update(
             Panel(
-                "[bold white]/help[/bold white]  [dim]— cmds[/dim]\n"
-                "[bold white]/scan <tgt>[/bold white]  [dim]— run[/dim]\n"
-                "[bold white]/model <name>[/bold white]  [dim]— switch LLM[/dim]\n"
-                "[bold white]/persona <name>[/bold white]  [dim]— switch persona[/dim]\n"
-                "[bold white]/split <type>[/bold white]  [dim]— split pane[/dim]\n"
-                "[bold white]/theme <name>[/bold white]  [dim]— UI theme[/dim]",
+                "".join(quick_lines),
                 title="[bold]Quick Actions[/bold]",
                 border_style="green",
             )
@@ -603,11 +775,21 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
             Panel(runtime_txt, title="[bold]LLM Status[/bold]", border_style="yellow")
         )
 
+        mode_tips = {
+            "redteam": "[red]Press Tab for autocomplete | /help for commands | /scan <target> to recon | /stealth for evasion[/red]",
+            "blueteam": "[blue]Press Tab for autocomplete | /help for commands | /audit for compliance | /review on for safety[/blue]",
+            "stealth": "[red]Stealth mode active — /stealth status to check | /opsec for operational security[/red]",
+            "offline": "[yellow]Offline mode — no LLM needed | /queue for queued commands | /scan <target> for local scans[/yellow]",
+            "autonomous": "[magenta]Autonomous mode — AI-driven | /model to configure LLM | /agent run <goal> for sub-agents[/magenta]",
+        }
+        tip = mode_tips.get(self._mode,
+            "[dim]Press Tab for autocomplete | ? or /help for all commands[/dim]")
+
         layout["footer"].update(
             Panel(
                 "[bold cyan]Type natural language[/bold cyan] to plan work, or use slash commands.\n"
-                "[dim] Examples:[/dim] [green]scan 10.0.0.5[/green]  [green]enumerate example.com[/green]  [green]/theme cyber-noir[/green]\n"
-                "[dim] Press ? or type /help for all commands[/dim]",
+                f"[dim] Examples:[/dim] [green]scan 10.0.0.5[/green]  [green]enumerate example.com[/green]  [green]/theme cyber-noir[/green]\n"
+                f" {tip}",
                 title="[bold bright_black]SYSTEM LOG[/bold bright_black]",
                 border_style="bright_black",
             )

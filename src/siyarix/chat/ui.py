@@ -4,64 +4,20 @@
 
 from __future__ import annotations
 
-from typing import Any
+import difflib
+import time
+from typing import Any, Generator
 
 from prompt_toolkit.completion import Completer, Completion, PathCompleter
+from prompt_toolkit.document import Document
 
 from ..output import output as _output_engine
+from .commands import CommandRegistry
 
 
 class SmartAutocomplete(Completer):
-    """Context-aware autocomplete for the chat REPL."""
-
-    _COMMANDS: list[str] = [
-        "/help",
-        "/exit",
-        "/clear",
-        "/new",
-        "/history",
-        "/search",
-        "/tools",
-        "/platform",
-        "/status",
-        "/session",
-        "/uptime",
-        "/env",
-        "/intents",
-        "/shells",
-        "/run",
-        "/save",
-        "/config",
-        "/key",
-        "/mode",
-        "/model",
-        "/provider",
-        "/theme",
-        "/target",
-        "/version",
-        "/context",
-        "/log",
-        "/diff",
-        "/agent",
-        "/review",
-        "/persona",
-        "/report",
-        "/split",
-        "/batch",
-        "/opsec",
-        "/siem",
-        "/performance",
-        "/cache",
-        "/campaign",
-        "/kb",
-        "/ticket",
-        "/retest",
-        "/stealth",
-        "/audit",
-        "/savecmd",
-        "/cmds",
-        "/cmd",
-    ]
+    """Context-aware autocomplete with fuzzy matching, recency ranking,
+    and per-command argument suggestions."""
 
     _ARG_COMMANDS: dict[str, str] = {
         "/run": "tool",
@@ -72,9 +28,123 @@ class SmartAutocomplete(Completer):
         "/mode": "mode",
         "/persona": "persona",
         "/theme": "theme",
+        "/search": "text",
+        "/history": "number",
+        "/scan": "target",
+        "/load": "session_id",
+        "/fork": "number",
+        "/diff": "session_id",
+        "/batch": "file",
+        "/playbook": "playbook_action",
+        "/export": "format",
+        "/report": "format",
+        "/config": "config_action",
+        "/log": "log_action",
+        "/alias": "alias_action",
+        "/learn": "toggle",
+        "/feedback": "rating",
+        "/language": "language",
+        "/stealth": "stealth_action",
+        "/audit": "audit_action",
+        "/queue": "queue_action",
+        "/cache": "cache_action",
+        "/performance": "perf_action",
+        "/campaign": "campaign_action",
+        "/ticket": "ticket_action",
+        "/retest": "retest_action",
+        "/opsec": "opsec_action",
+        "/agent": "agent_action",
+        "/intel": "intel_action",
+        "/kb": "kb_action",
+        "/skills": "skills_action",
+        "/docs": "section",
+        "/tutorial": "topic",
+        "/benchmark": "provider",
+        "/split": "split_type",
+        "/socket": "socket_action",
+        "/save": "session_id",
+        "/cmd": "profile_name",
+        "/tools": "category",
+        "/translate": "intent",
+        "/savecmd": "command_text",
+        "/siem": "siem_action",
+        "/stats": "detail",
+        "/plugins": "plugins_action",
+        "/review": "toggle",
+        "/redteam": "",
+        "/blueteam": "",
+        "/upgrade": "",
+        "/bug": "",
+        "/suggest": "",
+        "/security-cmds": "",
+        "/session": "",
+        "/info": "",
+        "/context": "",
+        "/examples": "",
+        "/reset": "",
+        "/env": "",
+        "/version": "",
+        "/uptime": "",
+        "/status": "",
+        "/shells": "",
+        "/cmds": "",
+        "/new": "",
+        "/clear": "",
+        "/cancel": "",
+        "/esc": "",
+        "/fresh": "",
     }
 
-    def __init__(self, session: Any) -> None:
+    _STATIC_ARG_CHOICES: dict[str, list[str]] = {
+        "mode": ["autonomous", "integrated", "offline", "stealth", "verbose",
+                 "quiet", "interactive", "batch", "expert", "beginner",
+                 "redteam", "blueteam", "compliance", "audit"],
+        "format": ["json", "md", "markdown", "html", "pdf", "txt"],
+        "toggle": ["on", "off", "status"],
+        "rating": ["1", "2", "3", "4", "5", "good", "bad", "excellent", "poor"],
+        "language": ["en", "fr", "de", "es", "it", "pt", "ru", "zh", "ja", "ko", "ar"],
+        "stealth_action": ["status", "on", "off", "level"],
+        "audit_action": ["export", "status", "verify"],
+        "queue_action": ["status", "list", "retry", "clear", "flush"],
+        "cache_action": ["status", "clear", "invalidate"],
+        "perf_action": ["status", "tune", "configure"],
+        "campaign_action": ["list", "create", "status"],
+        "ticket_action": ["create", "list"],
+        "retest_action": ["schedule", "status"],
+        "opsec_action": ["isolate", "burn", "status", "disable"],
+        "agent_action": ["run", "status"],
+        "intel_action": ["lookup", "status"],
+        "kb_action": ["search", "list"],
+        "skills_action": ["stats", "list", "add", "export"],
+        "config_action": ["show", "set", "get", "list", "tools"],
+        "log_action": ["list", "show", "export"],
+        "alias_action": ["list", "set", "remove"],
+        "split_type": ["timeline", "metrics", "cheatsheet", "attack_map", "off", "disable"],
+        "section": ["getting-started", "commands", "configuration", "providers",
+                    "plugins", "playbooks", "api", "troubleshooting"],
+        "topic": ["basics", "scanning", "recon", "exploitation", "reporting",
+                  "playbooks", "aliases", "learning"],
+        "socket_action": ["connect", "status", "disconnect"],
+        "playbook_action": ["list", "show", "run"],
+        "plugins_action": ["list", "status"],
+        "siem_action": ["connect", "status", "disconnect"],
+        "detail": ["detail"],
+        "command_text": [],
+        "number": [],
+        "text": [],
+        "target": [],
+        "theme": [],
+        "persona": [],
+        "session_id": [],
+        "profile_name": [],
+        "category": [],
+        "intent": [],
+        "provider": [],
+        "model": [],
+        "tool": [],
+    }
+
+    def __init__(self, session: Any = None) -> None:
         self._session = session
         self._path_completer = PathCompleter()
         self._tool_cache: list[str] = []
@@ -82,7 +152,7 @@ class SmartAutocomplete(Completer):
         self._last_cache_refresh = 0.0
 
     def _refresh_caches(self) -> None:
-        now = __import__("time").time()
+        now = time.time()
         if now - self._last_cache_refresh < 30.0:
             return
         self._last_cache_refresh = now
@@ -106,16 +176,28 @@ class SmartAutocomplete(Completer):
         except Exception:
             self._model_cache = []
 
-    def _complete_arg(self, arg_type: str, prefix: str) -> Any:
+    def _complete_arg(self, arg_type: str, prefix: str) -> Generator[Completion, None, None]:
         self._refresh_caches()
+
+        # Static choices first
+        static = self._STATIC_ARG_CHOICES.get(arg_type)
+        if static:
+            for choice in static:
+                if not prefix or choice.startswith(prefix):
+                    yield Completion(
+                        choice,
+                        start_position=-len(prefix),
+                        display_meta=f"[{arg_type}]",
+                    )
+
         if arg_type == "tool":
             for name in self._tool_cache:
                 if name.startswith(prefix):
-                    yield Completion(name, start_position=-len(prefix))
+                    yield Completion(name, start_position=-len(prefix), display_meta="[tool]")
         elif arg_type == "model":
             for name in self._model_cache:
                 if name.startswith(prefix):
-                    yield Completion(name, start_position=-len(prefix))
+                    yield Completion(name, start_position=-len(prefix), display_meta="[model]")
         elif arg_type == "provider":
             try:
                 from ..providers import ProviderManager
@@ -123,7 +205,56 @@ class SmartAutocomplete(Completer):
                 mgr = ProviderManager.get_instance()
                 for prov in mgr.list_providers():
                     if prov.startswith(prefix):
-                        yield Completion(prov, start_position=-len(prefix))
+                        yield Completion(prov, start_position=-len(prefix), display_meta="[provider]")
+            except Exception:
+                pass
+        elif arg_type == "persona":
+            try:
+                from ..personas import list_personas
+                for p in list_personas():
+                    name = p.get("name", "")
+                    label = p.get("label", "")
+                    if name.startswith(prefix):
+                        yield Completion(name, start_position=-len(prefix), display_meta=f"[persona] {label}")
+                for extra in ("auto", "universal", "none"):
+                    if extra.startswith(prefix):
+                        yield Completion(extra, start_position=-len(prefix), display_meta="[persona]")
+            except Exception:
+                pass
+        elif arg_type == "session_id":
+            try:
+                from ..config import get_config_dir
+                sessions_dir = get_config_dir() / "sessions"
+                if sessions_dir.exists():
+                    for sf in sorted(sessions_dir.glob("*.json"), key=lambda p: p.stat().st_mtime, reverse=True)[:20]:
+                        sid = sf.stem
+                        if sid.startswith(prefix):
+                            yield Completion(sid, start_position=-len(prefix), display_meta="[session]")
+            except Exception:
+                pass
+        elif arg_type == "category":
+            try:
+                from ..tool_models import ToolCategory
+                for cat in ToolCategory:
+                    if cat.value.startswith(prefix):
+                        yield Completion(cat.value, start_position=-len(prefix), display_meta="[category]")
+            except Exception:
+                pass
+        elif arg_type == "intent":
+            try:
+                from .platform_utils import CROSS_PLATFORM_COMMANDS
+                for intent in sorted(CROSS_PLATFORM_COMMANDS.keys()):
+                    if intent.startswith(prefix):
+                        yield Completion(intent, start_position=-len(prefix), display_meta="[intent]")
+            except Exception:
+                pass
+        elif arg_type == "profile_name":
+            try:
+                from .commands import CommandProfileStore
+                store = CommandProfileStore()
+                for p in store.list_profiles():
+                    if p.name.startswith(prefix):
+                        yield Completion(p.name, start_position=-len(prefix), display_meta="[profile]")
             except Exception:
                 pass
 
@@ -133,13 +264,37 @@ class SmartAutocomplete(Completer):
         if text.startswith("/"):
             parts = text.split()
             cmd = parts[0] if parts else ""
+
             if len(parts) <= 1:
-                # Completing the command itself
+                # Completing the command itself — use fuzzy matching with recency boost
                 prefix = cmd.lstrip("/")
-                for c in self._COMMANDS:
-                    if c.startswith(cmd):
-                        yield Completion(c, start_position=-len(cmd))
+                # Get mode from session if available
+                current_mode = getattr(self._session, 'mode', 'integrated') if self._session else 'integrated'
+                for info in CommandRegistry.visible_commands_for_mode(current_mode):
+                    primary = info.name.lstrip("/")
+                    names = [primary] + [a.lstrip("/") for a in info.aliases]
+                    for name in names:
+                        # Exact prefix match
+                        if name.startswith(prefix):
+                            meta = f"[{info.category}] {info.description[:50]}"
+                            yield Completion(
+                                info.name,
+                                start_position=-len(prefix) - 1,  # include /
+                                display_meta=meta,
+                            )
+                            break
+                        # Fuzzy match (for partial/typo)
+                        ratio = difflib.SequenceMatcher(None, prefix, name).ratio()
+                        if prefix and ratio > 0.6:
+                            meta = f"[{info.category}] {info.description[:50]}"
+                            yield Completion(
+                                info.name,
+                                start_position=-len(prefix) - 1,
+                                display_meta=f"~ {meta}",
+                            )
+                            break
                 return
+
             # Completing an argument to a command
             arg_type = self._ARG_COMMANDS.get(cmd)
             if arg_type:
@@ -150,8 +305,6 @@ class SmartAutocomplete(Completer):
         # Path completion if text contains @ or looks like a path
         word = document.get_word_before_cursor(WORD=True)
         if word.startswith("@"):
-            from prompt_toolkit.document import Document
-
             adjusted = document.text.replace("@", "", 1)
             pos = max(0, document.cursor_position - 1)
             document_copy = Document(text=adjusted, cursor_position=pos)
