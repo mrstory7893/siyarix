@@ -331,9 +331,10 @@ async def test_onboarding_wizard_flow():
                                     with patch.object(wizard, "_step_persona_sysmsg"):
                                         with patch.object(wizard, "_step_install_persona_tools"):
                                             with patch.object(wizard, "_step_preferences"):
-                                                with patch.object(wizard, "_step_network_diagnostics", AsyncMock()):
-                                                    with patch.object(wizard, "_finalize", AsyncMock()):
-                                                        result = await wizard.run()
+                                                with patch.object(wizard, "_step_learning_setup"):
+                                                    with patch.object(wizard, "_step_network_diagnostics", AsyncMock()):
+                                                        with patch.object(wizard, "_finalize", AsyncMock()):
+                                                            result = await wizard.run()
                                                         assert result is True
 
 

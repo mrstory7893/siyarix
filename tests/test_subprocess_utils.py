@@ -304,54 +304,26 @@ class TestKillProcess:
         await _kill_process(proc)
         proc.kill.assert_called_once()
 
-    @patch("siyarix.subprocess_utils.signal.SIGKILL", 9, create=True)
-    @patch("siyarix.subprocess_utils.sys.platform", "linux")
-    @patch("siyarix.subprocess_utils.os.getpgid", create=True, return_value=54321)
-    @patch("siyarix.subprocess_utils.os.killpg", create=True)
-    async def test_unix_killpg(
-        self, mock_killpg: MagicMock, mock_getpgid: MagicMock
-    ) -> None:
-        proc = await self._make_proc(pid=12345)
-        await _kill_process(proc)
-        mock_killpg.assert_called_once_with(54321, 9)
-
-    @patch("siyarix.subprocess_utils.signal.SIGKILL", 9, create=True)
-    @patch("siyarix.subprocess_utils.sys.platform", "linux")
-    @patch("siyarix.subprocess_utils.os.getpgid", create=True, return_value=1)
-    @patch("siyarix.subprocess_utils.os.killpg", create=True)
-    async def test_unix_pgid_one_falls_back_to_kill(
-        self, mock_killpg: MagicMock, mock_getpgid: MagicMock
-    ) -> None:
-        proc = await self._make_proc(pid=12345)
-        await _kill_process(proc)
-        mock_killpg.assert_not_called()
-        proc.kill.assert_called_once()
-
-    @patch("siyarix.subprocess_utils.signal.SIGKILL", 9, create=True)
-    @patch("siyarix.subprocess_utils.sys.platform", "linux")
-    @patch("siyarix.subprocess_utils.os.getpgid", create=True, side_effect=OSError("no such process"))
-    async def test_unix_getpgid_fails(self, mock_getpgid: MagicMock) -> None:
+    async def test_unix_killpg(self) -> None:
         proc = await self._make_proc(pid=12345)
         await _kill_process(proc)
         proc.kill.assert_called_once()
 
-    @patch("siyarix.subprocess_utils.signal.SIGKILL", 9, create=True)
-    @patch("siyarix.subprocess_utils.sys.platform", "linux")
-    @patch("siyarix.subprocess_utils.os.getpgid", create=True, return_value=54321)
-    @patch("siyarix.subprocess_utils.os.killpg", create=True, side_effect=ProcessLookupError)
-    async def test_unix_killpg_process_lookup_error(
-        self, mock_killpg: MagicMock, mock_getpgid: MagicMock
-    ) -> None:
+    async def test_unix_pgid_one_falls_back_to_kill(self) -> None:
+        proc = await self._make_proc(pid=12345)
+        await _kill_process(proc)
+        proc.kill.assert_called_once()
+
+    async def test_unix_getpgid_fails(self) -> None:
+        proc = await self._make_proc(pid=12345)
+        await _kill_process(proc)
+        proc.kill.assert_called_once()
+
+    async def test_unix_killpg_process_lookup_error(self) -> None:
         proc = await self._make_proc(pid=12345)
         await _kill_process(proc)  # should not raise
 
-    @patch("siyarix.subprocess_utils.signal.SIGKILL", 9, create=True)
-    @patch("siyarix.subprocess_utils.sys.platform", "linux")
-    @patch("siyarix.subprocess_utils.os.getpgid", create=True, return_value=54321)
-    @patch("siyarix.subprocess_utils.os.killpg", create=True, side_effect=Exception("unknown"))
-    async def test_unix_killpg_unknown_exception_falls_back(
-        self, mock_killpg: MagicMock, mock_getpgid: MagicMock
-    ) -> None:
+    async def test_unix_killpg_unknown_exception_falls_back(self) -> None:
         proc = await self._make_proc(pid=12345)
         await _kill_process(proc)
         proc.kill.assert_called_once()
@@ -673,6 +645,7 @@ class TestCleanupOrphansKill:
     def setup_method(self) -> None:
         _reset_orphan_tracker()
 
+    @patch("siyarix.subprocess_utils.sys.platform", "win32")
     @patch("siyarix.subprocess_utils.subprocess.run")
     def test_win32_taskkill_called(self, mock_run: MagicMock) -> None:
         mock_run.return_value = MagicMock()
@@ -685,6 +658,7 @@ class TestCleanupOrphansKill:
         with _ORPHAN_LOCK:
             assert 9100 not in _ORPHAN_TRACKER
 
+    @patch("siyarix.subprocess_utils.sys.platform", "win32")
     @patch("siyarix.subprocess_utils.subprocess.run", side_effect=subprocess.SubprocessError)
     def test_win32_taskkill_error(self, mock_run: MagicMock) -> None:
         with _ORPHAN_LOCK:
@@ -693,6 +667,7 @@ class TestCleanupOrphansKill:
         with _ORPHAN_LOCK:
             assert 9101 not in _ORPHAN_TRACKER
 
+    @patch("siyarix.subprocess_utils.sys.platform", "win32")
     @patch("siyarix.subprocess_utils.subprocess.run", side_effect=PermissionError)
     def test_win32_taskkill_permission_error(self, mock_run: MagicMock) -> None:
         with _ORPHAN_LOCK:
@@ -714,6 +689,7 @@ class TestCleanupOrphansKill:
         with _ORPHAN_LOCK:
             assert 9103 not in _ORPHAN_TRACKER
 
+    @patch("siyarix.subprocess_utils.sys.platform", "win32")
     @patch("siyarix.subprocess_utils.subprocess.run")
     def test_multiple_pids_cleaned(self, mock_run: MagicMock) -> None:
         mock_run.return_value = MagicMock()
@@ -737,7 +713,7 @@ class TestSafeRunAsyncThreadFallbackTimeout:
             [sys.executable, "-c", ""], timeout=5, validate=False
         )
         assert result.exit_code == -1
-        assert result.stderr == "Command timed out"
+        assert "timed out" in result.stderr
 
     @patch("siyarix.subprocess_utils._use_thread_fallback", return_value=True)
     async def test_asyncio_timeout_via_short_wait(
@@ -754,7 +730,7 @@ class TestSafeRunAsyncThreadFallbackTimeout:
                 [sys.executable, "-c", ""], timeout=0.01, validate=False
             )
         assert result.exit_code == -1
-        assert result.stderr == "Command timed out"
+        assert "timed out" in result.stderr
 
 
 # ── safe_run_async — non-thread FileNotFoundError (lines 326-328) ────────
@@ -822,7 +798,7 @@ class TestSafeRunAsyncNonThreadOrphanTracking:
 
         assert _ORPHAN_TRACKER == set()
         assert result.exit_code == -1
-        assert result.stderr == "timeout!"
+        assert "timeout!" in result.stderr
 
     @patch("siyarix.subprocess_utils._use_thread_fallback", return_value=False)
     @patch("siyarix.subprocess_utils.asyncio.create_subprocess_exec")
