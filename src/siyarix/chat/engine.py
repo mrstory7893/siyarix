@@ -410,6 +410,8 @@ class LLMEngineMixin:
         lowered = instruction.lower()
 
         suggestions = []
+        if any(kw in lowered for kw in ("ping", "icmp", "reachable")):
+            suggestions.append("  • **`ping example.com`** — ICMP ping connectivity test")
         if any(kw in lowered for kw in ("scan", "port", "nmap")):
             suggestions.append("  • **`scan example.com`** — full port scan")
         if any(kw in lowered for kw in ("web", "http", "website", "site")):
@@ -808,15 +810,9 @@ class LLMEngineMixin:
                     )
 
         if not llm_plan:
-            if require_llm:
-                # LLM connected but planning format failed (model didn't return
-                # valid JSON).  Stream the response directly instead of aborting.
-                llm_plan = agent.planner_autonomous.create_plan(
-                    goal=instruction_with_target, context={}
-                )
-            else:
-                with console.status("[bold green]Planning...[/bold green]", spinner="dots"):
-                    llm_plan = agent.planner_registry.plan(instruction_with_target, tool_names)
+            llm_plan = agent.planner_autonomous.create_plan(
+                goal=instruction_with_target, context={}
+            )
 
         # ── No tools needed ──────────────────────────────────────────────
         if not llm_plan.steps:
@@ -973,28 +969,34 @@ class LLMEngineMixin:
         total_duration = time.time() - total_start
 
         # ── CLS: observe and learn from the completed LLM action sequence ──
-        try:
-            from ..learning_system import get_learning_system
-            _cls_real_target = target or self._session.target or ""
-            _cls_result = last_executed_plan or plan  # use the plan that was actually executed
-            _learned_skill = get_learning_system().observe_llm_action(
-                goal=instruction_with_target,
-                plan=llm_plan,
-                result=_cls_result,
-                target=_cls_real_target,
-                wave_count=wave + 1,
-                duration_ms=total_duration * 1000,
-            )
-            if _learned_skill:
-                logger.debug(
-                    "CLS: LLM action learned — skill '%s' confidence=%.2f",
-                    _learned_skill.intent_pattern[:50],
-                    _learned_skill.confidence,
+        if llm_connected:
+            try:
+                from ..learning_system import get_learning_system
+                _cls_real_target = target or self._session.target or ""
+                _cls_result = last_executed_plan or plan  # use the plan that was actually executed
+                _learned_skill = get_learning_system().observe_llm_action(
+                    goal=instruction_with_target,
+                    plan=llm_plan,
+                    result=_cls_result,
+                    target=_cls_real_target,
+                    wave_count=wave + 1,
+                    duration_ms=total_duration * 1000,
                 )
-                if _learned_skill.confidence >= 0.80 and _learned_skill.universal_schema == "{}" and "{param_" in _learned_skill.intent_pattern:
-                    asyncio.create_task(self._compile_universal_skill(_learned_skill, llm_call_fn))
-        except Exception as _exc:
-            logger.debug("CLS LLM observation failed: %s", _exc)
+                if _learned_skill:
+                    logger.debug(
+                        "CLS: LLM action learned — skill '%s' confidence=%.2f",
+                        _learned_skill.intent_pattern[:50],
+                        _learned_skill.confidence,
+                    )
+                    _has_param_accum = (
+                        getattr(_learned_skill, 'param_values', None) and
+                        any(len(v) >= 3 for v in _learned_skill.param_values.values())
+                    )
+                    if _learned_skill.universal_schema == "{}" and "{param_" in _learned_skill.intent_pattern:
+                        if _learned_skill.confidence >= 0.80 or _has_param_accum:
+                            asyncio.create_task(self._compile_universal_skill(_learned_skill, llm_call_fn))
+            except Exception as _exc:
+                logger.debug("CLS LLM observation failed: %s", _exc)
 
         persona_name = self._settings.get("persona") or "none"
         stats_parts = [
@@ -1020,12 +1022,18 @@ class LLMEngineMixin:
                 steps_text.append(f"Step {i+1}: Tool={s.tool}, Command={s.command_template}, Desc={s.description}")
             steps_str = "\n".join(steps_text)
             
+            import json as _json
+            param_values_str = _json.dumps(skill.param_values, indent=2) if getattr(skill, 'param_values', None) else "{}"
+
             prompt = (
                 "You are an AI compiler for a Continuous Learning System.\n"
                 "The system has identified a reusable workflow pattern with variable parameters ({param_0}, etc).\n"
                 "Your task is to analyze the pattern and provide a universal schema explaining these parameters.\n\n"
                 f"Intent Pattern: {skill.intent_pattern}\n"
                 f"Steps:\n{steps_str}\n\n"
+                f"Observed parameter values across executions:\n{param_values_str}\n\n"
+                "Use the observed values to infer each parameter's name, type, and possible range/format.\n"
+                "For example, if values are numbers, set type='integer'; if URLs/IPs, set type='string'.\n\n"
                 "Output ONLY a valid JSON object with the following structure:\n"
                 "{\n"
                 '  "parameters": {\n'
@@ -1389,7 +1397,7 @@ class LLMEngineMixin:
 
                     ensure_ollama_running()
                 except Exception:
-                    pass
+                    logger.debug("Ollama auto-start skipped or failed")
             return (prov, key or None)
 
         return (None, None)

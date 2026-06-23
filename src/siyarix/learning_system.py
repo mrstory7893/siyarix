@@ -82,6 +82,7 @@ class LearnedSkill:
     notes: str = ""
     backup_json: str = "{}"   # Backup of steps/data when generalized by LLM
     universal_schema: str = "{}" # LLM explanation of parameterized values
+    param_values: dict[str, list[str]] = field(default_factory=dict) # observed values per {param_N}
 
     # ── Confidence helpers ──────────────────────────────────────────────
 
@@ -151,6 +152,7 @@ class LearnedSkill:
             "notes": self.notes,
             "backup_json": self.backup_json,
             "universal_schema": self.universal_schema,
+            "param_values": self.param_values,
         }
 
 
@@ -228,7 +230,8 @@ class ContinuousLearningSystem:
                     last_used      REAL    NOT NULL,
                     source         TEXT    DEFAULT 'llm',
                     backup_json    TEXT    DEFAULT '{}',
-                    universal_schema TEXT  DEFAULT '{}'
+                    universal_schema TEXT  DEFAULT '{}',
+                    param_values   TEXT    DEFAULT '{}'
                 );
             """)
 
@@ -243,11 +246,19 @@ class ContinuousLearningSystem:
                         conn.executescript("""
                             ALTER TABLE learned_skills ADD COLUMN backup_json TEXT DEFAULT '{}';
                             ALTER TABLE learned_skills ADD COLUMN universal_schema TEXT DEFAULT '{}';
+                            ALTER TABLE learned_skills ADD COLUMN param_values TEXT DEFAULT '{}';
                         """)
                     except sqlite3.OperationalError as e:
                         if "duplicate column name" not in str(e).lower():
                             raise
                     conn.execute("UPDATE meta SET value = '3' WHERE key = 'schema_version'")
+                elif current_version == 3:
+                    try:
+                        conn.execute("ALTER TABLE learned_skills ADD COLUMN param_values TEXT DEFAULT '{}'")
+                        conn.execute("UPDATE meta SET value = '4' WHERE key = 'schema_version'")
+                    except sqlite3.OperationalError as e:
+                        if "duplicate column name" not in str(e).lower():
+                            raise
             conn.commit()
 
             conn.executescript("""
@@ -310,6 +321,7 @@ class ContinuousLearningSystem:
             notes=d.get("notes", "") or "",
             backup_json=d.get("backup_json", "{}"),
             universal_schema=d.get("universal_schema", "{}"),
+            param_values=json.loads(d.get("param_values", "{}") or "{}"),
         )
 
     def _save_skill(self, skill: LearnedSkill) -> None:
@@ -323,7 +335,7 @@ class ContinuousLearningSystem:
                             usage_count=?, success_count=?, tokens_json=?,
                             synonyms_json=?, tags_json=?, notes=?,
                             created_at=?, last_used=?, source=?,
-                            backup_json=?, universal_schema=?
+                            backup_json=?, universal_schema=?, param_values=?
                     WHERE skill_id=?
                     """,
                     (
@@ -341,6 +353,7 @@ class ContinuousLearningSystem:
                         skill.source,
                         skill.backup_json,
                         skill.universal_schema,
+                        json.dumps(skill.param_values),
                         skill.skill_id,
                     ),
                 )
@@ -351,8 +364,8 @@ class ContinuousLearningSystem:
                             (skill_id, intent_pattern, steps_json, confidence,
                              usage_count, success_count, tokens_json, synonyms_json,
                              tags_json, notes, created_at, last_used, source,
-                             backup_json, universal_schema)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                             backup_json, universal_schema, param_values)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """,
                         (
                             skill.skill_id,
@@ -370,6 +383,7 @@ class ContinuousLearningSystem:
                             skill.source,
                             skill.backup_json,
                             skill.universal_schema,
+                            json.dumps(skill.param_values),
                         ),
                     )
                 self._conn().commit()
@@ -558,8 +572,8 @@ class ContinuousLearningSystem:
         """Return the best matching existing skill or create a new one.
 
         Matching tiers:
-            >= 0.65  → strong match (update existing)
-            0.35–0.64 → partial match (merge into best candidate)
+            >= 0.60  → strong match (update existing)
+            0.35–0.59 → partial match (merge into best candidate)
             <  0.35  → no match (create new)
         """
         goal_tokens = self._tokenize(anon_goal)
@@ -620,6 +634,7 @@ class ContinuousLearningSystem:
             last_used=time.time(),
             source=source,
         )
+        self._skills[skill.skill_id] = skill
         logger.debug("CLS: created new skill '%s'", anon_goal[:60])
         return skill
 
@@ -729,7 +744,7 @@ class ContinuousLearningSystem:
 
         # ── Parameter abstraction ──────────────────────────────────────
         old_map, new_map = {}, {}
-        if skill.usage_count > 0 and skill.intent_pattern != anon_goal:
+        if skill.intent_pattern != anon_goal:
             new_pattern, old_map, new_map = self._abstract_parameters(skill.intent_pattern, anon_goal)
             if new_map:
                 anon_goal = new_pattern
@@ -742,6 +757,24 @@ class ContinuousLearningSystem:
                 # Apply old_map to existing steps
                 for ls in skill.steps:
                     ls.command_template = self._apply_parameters(ls.command_template, old_map)
+
+        # ── Accumulate observed parameter values ───────────────────────
+        # Track actual literal values from the new observation (new_map)
+        # and from the existing pattern when it was first created (old_map).
+        for literal, param_name in new_map.items():
+            if literal.startswith("{param_"):
+                continue
+            if param_name not in skill.param_values:
+                skill.param_values[param_name] = []
+            if literal not in skill.param_values[param_name]:
+                skill.param_values[param_name].append(literal)
+        for literal, param_name in old_map.items():
+            if literal.startswith("{param_"):
+                continue
+            if param_name not in skill.param_values:
+                skill.param_values[param_name] = []
+            if literal not in skill.param_values[param_name]:
+                skill.param_values[param_name].append(literal)
 
         # ── Merge steps (deduplicate by tool, newest wins) ──────────────
         if steps:
