@@ -738,7 +738,8 @@ class LLMEngineMixin:
                             f"'[cyan]{_hi_skill.intent_pattern[:55]}[/cyan]' "
                             f"([green]{_hi_skill.confidence:.0%}[/green] confidence)\u2026"
                         )
-                        _prerun_steps = _cls.instantiate_skill(_hi_skill, _real_target)
+                        _raw_anon = _cls._anonymize_target(instruction_with_target, _real_target)
+                        _prerun_steps = _cls.instantiate_skill(_hi_skill, _real_target, raw_anon_goal=_raw_anon)
                         if _prerun_steps:
                             from ..models import ExecutionPlan as _EP, PlanType, PlanStep
                             _prerun_plan = _EP(
@@ -854,6 +855,7 @@ class LLMEngineMixin:
         # ── Multi-wave execution loop ─────────────────────────────────────
         max_waves = self._settings.get("max_waves") or 12
         plan: Any = llm_plan
+        last_executed_plan: Any = None
 
         for wave in range(max_waves):
             if not plan or not plan.steps:
@@ -876,6 +878,7 @@ class LLMEngineMixin:
 
             agent.executor_autonomous.command_review = self._settings.get("command_review", True)
             plan = await agent.executor_autonomous.execute_plan(plan, live_display=True)
+            last_executed_plan = plan
 
             if plan.status.name == "CANCELLED":
                 console.print("[yellow]⚠ Command cancelled by user[/yellow]")
@@ -973,7 +976,7 @@ class LLMEngineMixin:
         try:
             from ..learning_system import get_learning_system
             _cls_real_target = target or self._session.target or ""
-            _cls_result = plan  # last plan after execution carries step results
+            _cls_result = last_executed_plan or plan  # use the plan that was actually executed
             _learned_skill = get_learning_system().observe_llm_action(
                 goal=instruction_with_target,
                 plan=llm_plan,
@@ -988,6 +991,8 @@ class LLMEngineMixin:
                     _learned_skill.intent_pattern[:50],
                     _learned_skill.confidence,
                 )
+                if _learned_skill.confidence >= 0.80 and _learned_skill.universal_schema == "{}" and "{param_" in _learned_skill.intent_pattern:
+                    asyncio.create_task(self._compile_universal_skill(_learned_skill, llm_call_fn))
         except Exception as _exc:
             logger.debug("CLS LLM observation failed: %s", _exc)
 
@@ -1004,12 +1009,84 @@ class LLMEngineMixin:
 
         return True
 
+    async def _compile_universal_skill(self, skill: Any, llm_call_fn: Any) -> None:
+        """Background task to compile a high-confidence parameterized skill into a Universal Skill using the LLM."""
+        from rich.console import Console
+        _console = Console()
+        _console.print(f"\n[bold magenta]⚡ Background Task:[/bold magenta] Compiling universal skill for '{skill.intent_pattern[:40]}...'")
+        try:
+            steps_text = []
+            for i, s in enumerate(skill.steps):
+                steps_text.append(f"Step {i+1}: Tool={s.tool}, Command={s.command_template}, Desc={s.description}")
+            steps_str = "\n".join(steps_text)
+            
+            prompt = (
+                "You are an AI compiler for a Continuous Learning System.\n"
+                "The system has identified a reusable workflow pattern with variable parameters ({param_0}, etc).\n"
+                "Your task is to analyze the pattern and provide a universal schema explaining these parameters.\n\n"
+                f"Intent Pattern: {skill.intent_pattern}\n"
+                f"Steps:\n{steps_str}\n\n"
+                "Output ONLY a valid JSON object with the following structure:\n"
+                "{\n"
+                '  "parameters": {\n'
+                '    "{param_0}": { "name": "human_readable_name", "description": "what this parameter does", "type": "string|integer" }\n'
+                "  },\n"
+                '  "refined_intent": "optional slightly cleaned up intent pattern",\n'
+                '  "refined_steps": [ { "tool": "...", "command_template": "...", "description": "..." } ]\n'
+                "}\n"
+                "Ensure that {target} and {param_N} placeholders remain in the refined templates."
+            )
+            
+            # Use the provider's direct completion
+            response = await llm_call_fn(
+                system="You are an expert systems engineer and schema designer.",
+                user=prompt,
+                stream=False
+            )
+            
+            if isinstance(response, dict) and "content" in response:
+                content = response["content"]
+            else:
+                content = str(response)
+                
+            import re
+            import json
+            match = re.search(r"\{.*\}", content, re.DOTALL)
+            if match:
+                schema_json = json.loads(match.group(0))
+                # Store original steps as backup
+                from dataclasses import asdict
+                skill.backup_json = json.dumps([asdict(s) for s in skill.steps])
+                skill.universal_schema = json.dumps(schema_json.get("parameters", {}))
+                
+                # Apply refinements if provided
+                if schema_json.get("refined_intent"):
+                    skill.intent_pattern = schema_json["refined_intent"]
+                
+                if schema_json.get("refined_steps"):
+                    from ..learning_system import LearnedStep
+                    new_steps = []
+                    for s in schema_json["refined_steps"]:
+                        new_steps.append(LearnedStep(
+                            tool=s.get("tool", ""),
+                            command_template=s.get("command_template", ""),
+                            description=s.get("description", "")
+                        ))
+                    skill.steps = new_steps
+                
+                from ..learning_system import get_learning_system
+                get_learning_system()._save_skill(skill)
+                _console.print("[bold green]✓ Universal skill compiled successfully![/bold green]")
+                
+        except Exception as e:
+            _console.print(f"[dim yellow]⚠ Universal skill compilation failed: {e}[/dim yellow]")
+
     def _make_llm_call(self, provider_name: str, api_key: str) -> Any:
         """Return an async callable (system, user, *, stream=False, history=None) -> dict | AsyncGenerator.
 
         Uses the unified OpenAI-compatible adapter for all OpenAI API providers
         (openai, openrouter, gemini, deepseek, xai, perplexity, groq, together,
-        azure, cerebras, fireworks, zai, minimax, moonshot, nvidia, opencode-go,
+        azure, cerebras, fireworks, zai, minimax, moonshot, nvidia, opencode-zen,
         huggingface, llamacpp, vllm, localai) and native SDK for Anthropic.
 
         When stream=True, call with await fn(system, user, stream=True, history=history)
@@ -1103,7 +1180,7 @@ class LLMEngineMixin:
             return bool(os.getenv("SIYARIX_SERVER_URL"))
         if provider == "custom":
             return bool(os.getenv("CUSTOM_API_KEY"))
-        if provider == "opencode":
+        if provider == "opencode-zen":
             return bool(os.getenv("OPENCODE_API_KEY"))
         if provider in ("ollama", "lmstudio", "llamacpp", "vllm", "localai"):
             return self._check_local_provider_running(provider)

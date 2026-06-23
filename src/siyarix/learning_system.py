@@ -80,6 +80,8 @@ class LearnedSkill:
     source: str               # 'llm' | 'offline' | 'inferred'
     tags: list[str] = field(default_factory=list)
     notes: str = ""
+    backup_json: str = "{}"   # Backup of steps/data when generalized by LLM
+    universal_schema: str = "{}" # LLM explanation of parameterized values
 
     # ── Confidence helpers ──────────────────────────────────────────────
 
@@ -147,6 +149,8 @@ class LearnedSkill:
             "source": self.source,
             "tags": self.tags,
             "notes": self.notes,
+            "backup_json": self.backup_json,
+            "universal_schema": self.universal_schema,
         }
 
 
@@ -164,7 +168,7 @@ class ContinuousLearningSystem:
     """
 
     _DB_FILENAME = "learning_store.db"
-    _SCHEMA_VERSION = 2
+    _SCHEMA_VERSION = 3
 
     def __init__(self, db_path: Path | None = None) -> None:
         from .config import get_config_dir
@@ -205,7 +209,7 @@ class ContinuousLearningSystem:
                     value TEXT NOT NULL
                 );
                 INSERT OR IGNORE INTO meta (key, value)
-                    VALUES ('schema_version', '2');
+                    VALUES ('schema_version', '3');
                 INSERT OR IGNORE INTO meta (key, value)
                     VALUES ('created_at', datetime('now'));
 
@@ -222,13 +226,34 @@ class ContinuousLearningSystem:
                     notes          TEXT    DEFAULT '',
                     created_at     REAL    NOT NULL,
                     last_used      REAL    NOT NULL,
-                    source         TEXT    DEFAULT 'llm'
+                    source         TEXT    DEFAULT 'llm',
+                    backup_json    TEXT    DEFAULT '{}',
+                    universal_schema TEXT  DEFAULT '{}'
                 );
+            """)
 
+            # Run migrations if schema version is old
+            cursor = conn.cursor()
+            cursor.execute("SELECT value FROM meta WHERE key = 'schema_version'")
+            row = cursor.fetchone()
+            if row:
+                current_version = int(row[0])
+                if current_version < 3:
+                    try:
+                        conn.executescript("""
+                            ALTER TABLE learned_skills ADD COLUMN backup_json TEXT DEFAULT '{}';
+                            ALTER TABLE learned_skills ADD COLUMN universal_schema TEXT DEFAULT '{}';
+                        """)
+                    except sqlite3.OperationalError as e:
+                        if "duplicate column name" not in str(e).lower():
+                            raise
+                    conn.execute("UPDATE meta SET value = '3' WHERE key = 'schema_version'")
+            conn.commit()
+
+            conn.executescript("""
                 CREATE TABLE IF NOT EXISTS skill_observations (
                     obs_id      TEXT PRIMARY KEY,
-                    skill_id    TEXT REFERENCES learned_skills(skill_id)
-                                    ON DELETE CASCADE,
+                    skill_id    TEXT REFERENCES learned_skills(skill_id),
                     anon_goal   TEXT NOT NULL,
                     target_type TEXT DEFAULT '',
                     success     INTEGER DEFAULT 0,
@@ -283,22 +308,25 @@ class ContinuousLearningSystem:
             source=d["source"],
             tags=json.loads(d.get("tags_json", "[]") or "[]"),
             notes=d.get("notes", "") or "",
+            backup_json=d.get("backup_json", "{}"),
+            universal_schema=d.get("universal_schema", "{}"),
         )
 
     def _save_skill(self, skill: LearnedSkill) -> None:
         steps_data = [asdict(s) for s in skill.steps]
         try:
             with self._lock:
-                self._conn().execute(
+                cur = self._conn().execute(
                     """
-                    INSERT OR REPLACE INTO learned_skills
-                        (skill_id, intent_pattern, steps_json, confidence,
-                         usage_count, success_count, tokens_json, synonyms_json,
-                         tags_json, notes, created_at, last_used, source)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    UPDATE learned_skills
+                        SET intent_pattern=?, steps_json=?, confidence=?,
+                            usage_count=?, success_count=?, tokens_json=?,
+                            synonyms_json=?, tags_json=?, notes=?,
+                            created_at=?, last_used=?, source=?,
+                            backup_json=?, universal_schema=?
+                    WHERE skill_id=?
                     """,
                     (
-                        skill.skill_id,
                         skill.intent_pattern,
                         json.dumps(steps_data),
                         skill.confidence,
@@ -311,8 +339,39 @@ class ContinuousLearningSystem:
                         skill.created_at,
                         skill.last_used,
                         skill.source,
+                        skill.backup_json,
+                        skill.universal_schema,
+                        skill.skill_id,
                     ),
                 )
+                if cur.rowcount == 0:
+                    self._conn().execute(
+                        """
+                        INSERT INTO learned_skills
+                            (skill_id, intent_pattern, steps_json, confidence,
+                             usage_count, success_count, tokens_json, synonyms_json,
+                             tags_json, notes, created_at, last_used, source,
+                             backup_json, universal_schema)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            skill.skill_id,
+                            skill.intent_pattern,
+                            json.dumps(steps_data),
+                            skill.confidence,
+                            skill.usage_count,
+                            skill.success_count,
+                            json.dumps(skill.tokens),
+                            json.dumps(skill.synonyms),
+                            json.dumps(skill.tags),
+                            skill.notes,
+                            skill.created_at,
+                            skill.last_used,
+                            skill.source,
+                            skill.backup_json,
+                            skill.universal_schema,
+                        ),
+                    )
                 self._conn().commit()
         except Exception as exc:
             logger.warning("CLS: failed to save skill %s: %s", skill.skill_id[:8], exc)
@@ -444,7 +503,7 @@ class ContinuousLearningSystem:
             union = len(set_a | set_b)
             token_sim = inter / union if union else 0.0
 
-        # 2 — Tool overlap bonus (up to +0.25)
+        # 2 — Tool overlap bonus (up to +0.30)
         tool_bonus = 0.0
         if steps_a and steps_b:
             tools_a = {s.tool for s in steps_a if s.tool}
@@ -452,16 +511,24 @@ class ContinuousLearningSystem:
             if tools_a and tools_b:
                 t_inter = len(tools_a & tools_b)
                 t_union = len(tools_a | tools_b)
-                tool_bonus = (t_inter / t_union) * 0.25
+                tool_bonus = (t_inter / t_union) * 0.30
 
-        # 3 — Intent pattern containment (up to +0.10)
+            # Command template overlap bonus (up to +0.10)
+            cmds_a = {s.command_template for s in steps_a if s.command_template}
+            cmds_b = {s.command_template for s in steps_b if s.command_template}
+            if cmds_a and cmds_b:
+                c_inter = len(cmds_a & cmds_b)
+                c_union = len(cmds_a | cmds_b)
+                tool_bonus += (c_inter / c_union) * 0.10
+
+        # 3 — Intent pattern containment (up to +0.15)
         pattern_bonus = 0.0
         if pattern_a and pattern_b:
             a_lower = pattern_a.lower()
             b_lower = pattern_b.lower()
             if a_lower in b_lower or b_lower in a_lower:
                 shorter = min(len(a_lower), len(b_lower))
-                pattern_bonus = 0.10 * (min(len(a_lower), len(b_lower)) / max(len(a_lower), len(b_lower), 1))
+                pattern_bonus = 0.15 * (min(len(a_lower), len(b_lower)) / max(len(a_lower), len(b_lower), 1))
 
         return min(1.0, token_sim + tool_bonus + pattern_bonus)
 
@@ -524,7 +591,7 @@ class ContinuousLearningSystem:
                 best_skill = skill
 
         # Tier 1: Strong match — reuse existing skill
-        if best_skill and best_sim >= 0.65:
+        if best_skill and best_sim >= 0.60:
             logger.debug(
                 "CLS: strong match '%s' (sim=%.2f)",
                 best_skill.intent_pattern[:50], best_sim,
@@ -585,6 +652,62 @@ class ContinuousLearningSystem:
                 )
         return list(merged.values())
 
+    def _abstract_parameters(self, old_pattern: str, new_pattern: str) -> tuple[str, dict[str, str], dict[str, str]]:
+        """Compare two patterns, extract differing tokens as {param_N}, and return maps."""
+        import re
+        
+        # Tokenize by keeping curly braces intact
+        def _split_tokens(s: str) -> list[str]:
+            return re.findall(r"\{[^}]+\}|\S+", s)
+            
+        old_tokens = _split_tokens(old_pattern)
+        new_tokens = _split_tokens(new_pattern)
+        
+        if len(old_tokens) != len(new_tokens):
+            return new_pattern, {}, {}
+            
+        param_pattern = []
+        old_map = {}
+        new_map = {}
+        
+        param_idx = 0
+        for old_t, new_t in zip(old_tokens, new_tokens):
+            if old_t == new_t:
+                param_pattern.append(old_t)
+            else:
+                if old_t.startswith("{param_") and old_t.endswith("}"):
+                    p_name = old_t
+                else:
+                    # Find highest existing param index
+                    existing_params = [int(re.search(r"\{param_(\d+)\}", t).group(1)) for t in param_pattern if re.search(r"\{param_(\d+)\}", t)]
+                    next_idx = max(existing_params) + 1 if existing_params else param_idx
+                    p_name = f"{{param_{next_idx}}}"
+                    param_idx = next_idx + 1
+                    
+                param_pattern.append(p_name)
+                old_map[old_t] = p_name
+                new_map[new_t] = p_name
+                
+        return " ".join(param_pattern), old_map, new_map
+
+    def _apply_parameters(self, s: str, param_map: dict[str, str]) -> str:
+        """Replace literal values with their {param_N} names in a string."""
+        if not s or not param_map:
+            return s
+        for literal, param_name in param_map.items():
+            # Basic replacement. Avoid \b since we want to match exactly.
+            # We can just use str.replace for simple literals.
+            s = s.replace(literal, param_name)
+        return s
+        
+    def _inject_parameters(self, s: str, param_map: dict[str, str]) -> str:
+        """Replace {param_N} placeholders with their extracted literal values."""
+        if not s or not param_map:
+            return s
+        for param_name, literal in param_map.items():
+            s = s.replace(param_name, literal)
+        return s
+
     def _learn_from_observation(
         self,
         anon_goal: str,
@@ -603,6 +726,22 @@ class ContinuousLearningSystem:
         * Enriches synonyms and intent pattern on each observation.
         """
         skill = self._find_or_create_skill(anon_goal, steps, source)
+
+        # ── Parameter abstraction ──────────────────────────────────────
+        old_map, new_map = {}, {}
+        if skill.usage_count > 0 and skill.intent_pattern != anon_goal:
+            new_pattern, old_map, new_map = self._abstract_parameters(skill.intent_pattern, anon_goal)
+            if new_map:
+                anon_goal = new_pattern
+                # Apply new_map to incoming steps
+                for s in steps:
+                    if "command" in s:
+                        s["command"] = self._apply_parameters(s["command"], new_map)
+                    if "command_template" in s:
+                        s["command_template"] = self._apply_parameters(s["command_template"], new_map)
+                # Apply old_map to existing steps
+                for ls in skill.steps:
+                    ls.command_template = self._apply_parameters(ls.command_template, old_map)
 
         # ── Merge steps (deduplicate by tool, newest wins) ──────────────
         if steps:
@@ -689,11 +828,27 @@ class ContinuousLearningSystem:
 
             success: bool = False
             if result is not None:
-                if hasattr(result, "success"):
+                if hasattr(result, "success") and isinstance(getattr(result, "success", None), bool):
                     success = bool(result.success)
                 elif hasattr(result, "status"):
-                    from .models import PlanStatus
+                    from .models import PlanStatus, StepStatus
                     success = getattr(result, "status", None) == PlanStatus.COMPLETED
+
+                # Fallback: check individual step results (more reliable
+                # when the plan-level status wasn't updated to COMPLETED)
+                if not success and hasattr(result, "steps"):
+                    completed = sum(
+                        1 for s in result.steps
+                        if getattr(s, "status", None) == StepStatus.COMPLETED
+                        or (hasattr(s, "result") and s.result and getattr(s.result, "status", None) == "success")
+                    )
+                    failed = sum(
+                        1 for s in result.steps
+                        if getattr(s, "status", None) == StepStatus.FAILED
+                        or (hasattr(s, "result") and s.result and getattr(s.result, "status", None) == "error")
+                    )
+                    if completed > 0 and failed == 0:
+                        success = True
 
             anon_goal = self._anonymize_target(goal, target)
             return self._learn_from_observation(
@@ -958,20 +1113,74 @@ class ContinuousLearningSystem:
 
     # ── Skill instantiation ─────────────────────────────────────────────
 
-    def instantiate_skill(
-        self, skill: LearnedSkill, target: str
-    ) -> list[dict[str, Any]]:
-        """Replace ``{target}`` placeholders with the real target in all step templates.
+    def _extract_param_values(self, prompt: str, pattern: str) -> dict[str, str]:
+        """Extract literal values from a prompt that match {param_N} slots in the pattern."""
+        import re
+        
+        # Build a regex from the pattern
+        # E.g. "ping {target} for {param_0} time" -> r"ping \{target\} for (.+?) time"
+        # We need to escape everything except {param_N} and {target}
+        # Actually {target} is a literal '{target}' because it was anonymized.
+        
+        # Escape regex specials in the pattern, but keep the braces around param_N
+        escaped_pattern = re.escape(pattern)
+        
+        # Now find all \{param_\d+\} and replace them with capture groups
+        param_names = re.findall(r"\\\{param_\d+\\\}", escaped_pattern)
+        if not param_names:
+            return {}
+            
+        regex_str = escaped_pattern
+        for p in param_names:
+            # Replace with a non-greedy capture group
+            regex_str = regex_str.replace(p, r"(.+?)", 1)
+            
+        # Ensure it matches the whole string
+        regex_str = f"^{regex_str}$"
+        
+        match = re.match(regex_str, prompt)
+        if not match:
+            # Fallback to token-by-token alignment if regex fails
+            tokens_prompt = prompt.split()
+            tokens_pattern = pattern.split()
+            extracted = {}
+            if len(tokens_prompt) == len(tokens_pattern):
+                for tp, tpat in zip(tokens_prompt, tokens_pattern):
+                    if tpat.startswith("{param_") and tpat.endswith("}"):
+                        extracted[tpat] = tp
+            return extracted
+            
+        extracted = {}
+        # param_names is like ['\\{param_0\\}', ...] -> '{param_0}'
+        clean_names = [p.replace("\\", "") for p in param_names]
+        for name, value in zip(clean_names, match.groups()):
+            extracted[name] = value
+        return extracted
 
-        Returns a list of step dicts ready for :class:`~siyarix.models.ExecutionPlan`.
-        """
+    def instantiate_skill(
+        self, skill: LearnedSkill, target: str, raw_anon_goal: str = ""
+    ) -> list[dict[str, Any]]:
+        """Replace ``{target}`` and extracted ``{param_N}`` placeholders."""
+        
+        param_map = {}
+        if raw_anon_goal:
+            param_map = self._extract_param_values(raw_anon_goal, skill.intent_pattern)
+            
         steps: list[dict[str, Any]] = []
         for s in skill.steps:
             instantiated = s.instantiate(target)
+            cmd = instantiated.command_template
+            desc = instantiated.description
+            
+            # Apply extracted parameters
+            if param_map:
+                cmd = self._inject_parameters(cmd, param_map)
+                desc = self._inject_parameters(desc, param_map)
+                
             steps.append({
                 "tool": instantiated.tool,
-                "command": instantiated.command_template,
-                "description": instantiated.description,
+                "command": cmd,
+                "description": desc,
                 "args": {
                     **instantiated.args,
                     "target": target,
