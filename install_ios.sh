@@ -6,7 +6,7 @@
 # =============================================================================
 set -e
 
-SIYARIX_VERSION="${SIYARIX_VERSION:-3.0.0}"
+SIYARIX_VERSION="${SIYARIX_VERSION:-1.0.0}"
 DRY_RUN="${SIYARIX_DRY_RUN:-0}"
 ISH_HOME="${HOME:-/root}"
 

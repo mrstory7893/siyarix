@@ -10,7 +10,7 @@
 # =============================================================================
 set -euo pipefail
 
-SIYARIX_VERSION="${SIYARIX_VERSION:-3.0.0}"
+SIYARIX_VERSION="${SIYARIX_VERSION:-1.0.0}"
 PYTHON_MIN_MAJOR=3
 PYTHON_MIN_MINOR=11
 INSTALL_METHOD=""
@@ -231,7 +231,7 @@ main() {
         echo "  --help, -h           Show this help message"
         echo ""
         echo "Environment variables:"
-        echo "  SIYARIX_VERSION    Version to install (default: 3.0.0)"
+        echo "  SIYARIX_VERSION    Version to install (default: 1.0.0)"
         echo "  SIYARIX_DRY_RUN    Set to 1 for dry-run (default: 0)"
         echo "  SIYARIX_APT_REPO   Custom APT repository URL"
         echo "  SIYARIX_APT_KEY    Custom APT repository GPG key URL"

@@ -8,7 +8,7 @@
 # =============================================================================
 
 $ErrorActionPreference = 'Stop'
-$__script_version = "3.0.0"
+$__script_version = "1.0.0"
 
 function Write-Banner {
   @"
