@@ -1,30 +1,28 @@
-# Operational Security
+# 🥷 Operational Security (OPSEC)
 
-Siyarix provides operational security (OPSEC) controls for conducting assessments with reduced detectability. The `OPSECManager` and `StealthEngine` work together to provide layered evasion capabilities.
+When conducting a red team assessment, flying under the radar is often just as important as finding the vulnerability. Siyarix features a robust `OPSECManager` and a `StealthEngine` that work together to provide layered evasion capabilities, keeping your operations quiet and untraceable.
 
-## OPSEC Controls
+> [!IMPORTANT]
+> OPSEC features are designed for authorized red team engagements where stealth is explicitly requested by the client to test their SOC (Security Operations Center) response.
 
-### TOR Routing
+## 🛡️ Core OPSEC Controls
 
-Route outbound connections through TOR:
+### 🧅 TOR Routing
+Want to hide your origin IP? You can easily route all outbound Siyarix connections (including HTTP/HTTPS tool traffic and AI API calls) through the TOR network:
 
 ```bash
 siyarix config set proxy socks5://127.0.0.1:9050
 ```
 
-All HTTP/HTTPS traffic from tools and AI provider calls routes through TOR.
-
-### DNS over HTTPS
-
-Prevent DNS leakage:
+### 🔒 DNS over HTTPS (DoH)
+Stop your ISP or local network administrators from snooping on your DNS queries:
 
 ```bash
 siyarix config set proxy dns+https://dns.cloudflare.com/dns-query
 ```
 
-### Traffic Jitter
-
-Random delays between requests to avoid pattern detection:
+### ⏱️ Traffic Jitter
+If you send requests exactly every 1.0 seconds, blue teams will spot you immediately. Add random "jitter" to blend in with normal human web traffic:
 
 ```toml
 [jitter]
@@ -33,24 +31,23 @@ min_delay = 1.0
 max_delay = 5.0
 ```
 
-### User-Agent Rotation
+### 🎭 User-Agent Rotation
+Don't let a static user-agent string give you away. Siyarix can cycle through realistic browser profiles:
 
 ```toml
 client_profile = "desktop_chrome"
-# Options: desktop_chrome, desktop_firefox, android_mobile, ios_safari
+# Other options: desktop_firefox, android_mobile, ios_safari
 ```
 
-### Proxy Rotation
+### 🔄 Proxy Rotation
+Spread your traffic across a pool of IP addresses to defeat rate-limiting and IP-based blocking:
 
 ```toml
 proxy_pool = "http://proxy1:8080,http://proxy2:8080,http://proxy3:8080"
 ```
 
-Each connection picks a random proxy from the pool.
-
-### Request Pacing
-
-Controls the rate of outbound requests to avoid rate limiting and detection patterns:
+### 🐌 Request Pacing
+Control your speed. Slow and steady avoids triggering automated intrusion detection systems:
 
 ```toml
 [pacing]
@@ -58,9 +55,8 @@ requests_per_second = 2.0
 burst_size = 5
 ```
 
-### DNS Staggering
-
-DNS queries are staggered across multiple resolvers to prevent DNS-based correlation:
+### 🔀 DNS Staggering
+Prevent SOC analysts from correlating your activities by scattering your DNS lookups across multiple public resolvers:
 
 ```toml
 [dns]
@@ -68,32 +64,19 @@ stagger = true
 resolvers = ["1.1.1.1", "8.8.8.8", "9.9.9.9"]
 ```
 
-## Stealth Engine (`stealth.py`)
+## 👻 The Stealth Engine (`stealth.py`)
 
-The `StealthEngine` manages evasion levels and provides comprehensive operational security controls:
+Configuring all those settings manually can be tedious. The Siyarix `StealthEngine` bundles them into easy-to-use "Evasion Levels".
 
-```python
-class StealthConfig:
-    level: str  # none, light, medium, heavy
-    use_tor: bool
-    use_proxy_chain: bool
-    jitter_enabled: bool
-    user_agent_rotation: bool
-    dns_over_https: bool
-```
+| Level | TOR | Jitter | Proxy Rotation | UA Rotation | DoH | Pacing | Staggering |
+|-------|-----|--------|----------------|-------------|-----|--------|------------|
+| **None** | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| **Light** | ❌ | ✅ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| **Medium**| ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Heavy** | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ *(+ 5-15s random delays)* |
 
-### Evasion Levels
-
-| Level | TOR | Jitter | Proxy rotation | UA rotation | DoH | Pacing | Stagger |
-|-------|-----|--------|----------------|-------------|-----|--------|---------|
-| none | No | No | No | No | No | No | No |
-| light | No | Yes | No | Yes | Yes | Yes | No |
-| medium | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
-| heavy | Yes | Yes | Yes | Yes | Yes | Yes | Yes (+ random delays 5-15s) |
-
-### Decoy Traffic
-
-The stealth engine can generate decoy traffic to mask actual assessment activities:
+### 🎯 Decoy Traffic
+The most advanced feature of the Stealth Engine is its ability to generate "noise." Siyarix can automatically browse benign websites in the background, burying your actual attack traffic inside a mountain of normal logs.
 
 ```toml
 [decoy]
@@ -102,50 +85,31 @@ targets = ["https://example.com", "https://google.com"]
 interval_seconds = 30
 ```
 
-### Honeypot Detection
+### 🍯 Honeypot Detection
+The Stealth Engine actively monitors network responses to detect known honeypot signatures and sandbox environments, automatically aborting the scan if it realizes it's being tricked by the blue team.
 
-The engine can detect and avoid known honeypot networks and sandbox environments.
+## 🔥 Session Burning
 
-## Session Burning
-
-After completing an assessment:
+When the engagement is over, leave no trace on your own machine. "Burning" the session permanently wipes your command history, the knowledge graph, tool outputs, and session logs.
 
 ```bash
 siyarix session-log --clear
 ```
 
-Clears command history, knowledge graph, tool outputs, and session logs.
+## 📜 Audit Logging Note
 
-## Audit Logging
-
-All actions are logged regardless of OPSEC settings. The audit log is tamper-evident (SHA-256 hash chain):
+> [!WARNING]
+> While Siyarix hides your traffic from the target, **it does not hide your actions from yourself**.
+> To maintain accountability, all actions are still logged to the local tamper-evident audit log, regardless of your OPSEC settings.
 
 ```bash
-siyarix audit-log   # View audit trail
-siyarix audit-log verify  # Verify chain integrity
+siyarix audit-log         # View your local audit trail
+siyarix audit-log verify  # Verify the cryptographic integrity of the log
 ```
 
-## Operational Security Manager (`opsec.py`)
+## 🛠️ Recommended Configuration for Red Teams
 
-The `OPSECManager` provides:
-
-- **Session isolation**: Each session operates in a sandboxed environment
-- **Secure cleanup**: Temporary files and artifacts are wiped on session end
-- **Memory scrubbing**: Sensitive data is cleared from memory
-- **Cooldown tracking**: Tracks timing between operations to avoid pattern detection
-- **Cover operations**: Can generate benign-looking traffic to mask assessment activities
-
-## Red Team Simulation Safety
-
-1. Define rules of engagement in a workflow file
-2. Use persona `redteam` for offensive operations with appropriate constraints
-3. Enable safe mode for initial reconnaissance
-4. Press Ctrl+C for emergency stop (once cancels task, twice exits entirely)
-5. Log all actions to the audit trail
-6. Generate comprehensive report after completion
-7. Burn session artifacts when done
-
-## Recommended Assessment Configuration
+If you are setting up for an authorized red team engagement, we recommend starting with this `siyarix.toml` configuration:
 
 ```toml
 stealth_mode = true

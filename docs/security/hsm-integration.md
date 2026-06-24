@@ -1,48 +1,59 @@
-# HSM Integration
+# 🔐 Hardware Security Module (HSM) Integration
 
-Siyarix supports Hardware Security Modules (HSMs) for secure key storage and cryptographic operations. **Note**: This feature is currently under development. Basic HSM detection exists as a stub in `chat/stubs.py` (`HSMService`), but full integration is not yet complete.
+Siyarix is built for enterprise environments, which means we understand the need for physical, hardware-backed security. While our HSM integration is currently **under active development**, this document outlines our roadmap and current workarounds for secure key storage and cryptographic operations.
 
-## Status
+> [!NOTE]
+> **Developer Status:** Basic HSM detection currently exists as a stub in `chat/stubs.py` (look for `HSMService`), but the full integration is not yet complete.
 
-| Type | Library | Status |
-|------|---------|--------|
-| YubiKey | `ykman` | Under development |
-| PKCS#11 | `python-pkcs11` | Under development |
-| TPM | (placeholder) | Under development |
-| Software fallback | Built-in | Implemented (CredentialStore) |
+## 📊 Current Integration Status
 
-## Planned Capabilities
+We are working to support the most common hardware security standards:
 
-When complete, HSM integration will support:
+| Hardware Type | Target Library | Current Status |
+|---------------|----------------|----------------|
+| **YubiKey** | `ykman` | 🚧 Under development |
+| **PKCS#11 Devices** | `python-pkcs11` | 🚧 Under development |
+| **TPM Modules** | TBD | 🚧 Under development |
+| **Software Fallback** | Built-in | ✅ Fully Implemented (`CredentialStore`) |
 
-- Secure key storage for credential store encryption
-- Hardware-backed cryptographic operations
-- FIPS/HSM compliance for enterprise deployments
-- Code signing for tool updates and reports
-- YubiKey, PKCS#11, and TPM interfaces
+## 🚀 Planned Capabilities
 
-## Current Workaround
+Once fully released, Siyarix's HSM integration will allow you to:
+- **Secure Key Storage:** Lock your `CredentialStore` master encryption keys inside physical hardware.
+- **Hardware Cryptography:** Offload sensitive signing and decryption operations to the HSM.
+- **FIPS Compliance:** Meet strict enterprise and government FIPS/HSM compliance requirements.
+- **Code Signing:** Cryptographically sign your Siyarix tool updates and generated assessment reports.
 
-For production deployments requiring hardware-backed security, the `CredentialStore` supports AWS KMS envelope encryption:
+## 🛠️ Current Workaround: AWS KMS
+
+If you are running Siyarix in a production environment that requires hardware-backed security *today*, you don't have to wait. The `CredentialStore` natively supports **AWS KMS envelope encryption**.
+
+This allows you to leverage AWS CloudHSM as your root of trust:
 
 ```bash
+# Enable the KMS provider
 export SIYARIX_KMS_PROVIDER=aws
-export AWS_KMS_KEY_ID=your-key-id
+
+# Point it to your specific key
+export AWS_KMS_KEY_ID=your-aws-kms-key-id
 ```
 
-This provides hardware-backed key management through AWS CloudHSM without requiring local HSM hardware.
+> [!TIP]
+> This approach keeps your local credentials encrypted with a data key, which is itself encrypted by the hardware-backed AWS KMS master key!
 
-## Cross-Platform PKCS#11 Paths (Reference)
+## 📂 Cross-Platform PKCS#11 Paths (Reference)
 
-| Platform | Default path |
-|----------|-------------|
-| Windows | `C:\Windows\System32\opensc-pkcs11.dll` |
-| macOS | `/usr/local/lib/opensc-pkcs11.so` |
-| Linux | `/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so` |
+For developers looking to contribute to the PKCS#11 integration, here are the default driver paths across platforms:
 
-## Use Cases (Planned)
+| OS Platform | Default Driver Path |
+|-------------|---------------------|
+| **Windows** | `C:\Windows\System32\opensc-pkcs11.dll` |
+| **macOS** | `/usr/local/lib/opensc-pkcs11.so` |
+| **Linux** | `/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so` |
 
-- Enterprise deployments: Meet FIPS/HSM compliance requirements
-- Key protection: Store API keys and signing keys in hardware
-- Credential store backup: HSM as root of trust for credential encryption
-- Code signing: Sign tool updates and reports with HSM-backed keys
+## 🎯 Enterprise Use Cases
+
+Why are we building this?
+1. **Compliance:** Many organizations cannot deploy security tools unless keys are stored in FIPS-validated hardware.
+2. **Key Protection:** Ensures that even if the host machine running Siyarix is compromised, the API keys (like your expensive OpenAI or Anthropic tokens) cannot be extracted.
+3. **Irrefutable Reports:** By signing security reports with a hardware key, clients can cryptographically verify that a Siyarix report hasn't been altered post-generation.

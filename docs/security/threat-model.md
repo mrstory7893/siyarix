@@ -1,85 +1,88 @@
-# Threat Model
+# 🎯 Siyarix Threat Model
 
-This document identifies assets, trust boundaries, threats, and mitigations for Siyarix. Security is not an afterthought in this platform — it is foundational. Every component, from the credential store to the permission gate, is designed with defense in mind.
+In Siyarix, security isn't an afterthought or a bolted-on feature—it is the foundation of the platform. This document outlines our threat model, detailing the assets we protect, our trust boundaries, potential threats, and the rigorous mitigations we've engineered into the system.
 
-## Assets
+## 💎 Critical Assets
+
+Here is what we are protecting. If these assets are compromised, the system fails.
 
 | Asset | Description | Sensitivity |
 |-------|-------------|-------------|
-| AI provider API keys | Keys for OpenAI, Gemini, Anthropic, etc. | CRITICAL |
-| Scan results | Target data, open ports, vulnerabilities | HIGH |
-| Knowledge graph | Mapped relationships (hosts, credentials) | HIGH |
-| Session logs | Command history, tool outputs | HIGH |
-| Config file | Provider settings, proxy settings | MEDIUM |
-| Credential store | AES-256-GCM encrypted vault of stored credentials | CRITICAL |
-| Audit log | SHA-256 chained tamper-evident action trail | HIGH |
+| **AI Provider API Keys** | Your tokens for OpenAI, Anthropic, Gemini, etc. | 🔴 CRITICAL |
+| **Credential Store** | The AES-256-GCM encrypted vault holding your secrets. | 🔴 CRITICAL |
+| **Scan Results** | Discovered target data, open ports, and vulnerabilities. | 🟠 HIGH |
+| **Knowledge Graph** | The mapped relationships of hosts and network topologies. | 🟠 HIGH |
+| **Session Logs** | Your command history and raw tool outputs. | 🟠 HIGH |
+| **Audit Log** | The SHA-256 tamper-evident trail of actions. | 🟠 HIGH |
+| **Config File** | Provider settings and network proxy configurations. | 🟡 MEDIUM |
 
-## Trust Boundaries
+## 🚧 Trust Boundaries
 
-```
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   User TTY   │────▶│  Siyarix    │────▶│  AI Provider │
-│  (terminal)  │     │  CLI Process│     │  (cloud)     │
-└──────────────┘     └──────┬───────┘     └──────────────┘
+Understanding where data flows helps us identify where attacks might happen.
+
+```text
+┌──────────────┐     ┌──────────────┐     ┌───────────────┐
+│   User TTY   │────▶│   Siyarix    │────▶│  AI Provider  │
+│  (Terminal)  │     │ CLI Process  │     │    (Cloud)    │
+└──────────────┘     └──────┬───────┘     └───────────────┘
                             │
                     ┌───────▼───────┐
-                    │  External     │
-                    │  Tools       │
-                    │  (nmap, etc.)│
+                    │   External    │
+                    │    Tools      │
+                    │ (nmap, etc.)  │
                     └───────────────┘
 ```
 
 ### Boundary 1: User → Siyarix
-- **Threat**: Malicious input (shell injection, command injection)
-- **Mitigation**: `InputValidator` with syntax validation, length limits, character restrictions, shell injection pattern detection, SSRF protection
+- **The Threat:** Malicious input from a compromised user account (e.g., shell or command injection).
+- **Our Defense:** The `InputValidator` strictly enforces syntax rules, length limits, and scans for SSRF and shell injection patterns before processing anything.
 
 ### Boundary 2: Siyarix → AI Provider
-- **Threat**: Sensitive data sent to third-party API
-- **Mitigation**: `DLP Engine` redacts 40+ secret patterns (credentials, IPs, hostnames, API keys, JWTs). Bidirectional masking ensures consistency within a session
+- **The Threat:** Accidentally sending highly sensitive data (like your company's AWS keys or client IPs) to a third-party AI cloud.
+- **Our Defense:** Our powerful **DLP Engine** redacts over 40+ secret patterns *before* the data leaves your machine. It uses session-scoped bidirectional masking to ensure you can still read the output locally!
 
 ### Boundary 3: Siyarix → External Tools
-- **Threat**: Tool vulnerability or unexpected behavior
-- **Mitigation**: Subprocess isolation, timeouts, output size limits, `PermissionGate` validates all commands before execution
+- **The Threat:** An external tool (like `nmap` or `nuclei`) acts unpredictably, or a vulnerability in the tool is exploited.
+- **Our Defense:** Siyarix isolates subprocesses, enforces strict timeouts, limits output sizes, and uses the `PermissionGate` to validate every single command before it is passed to the OS.
 
-## Threats and Mitigations
+---
+
+## ⚔️ Threats and Mitigations
+
+Here is exactly how Siyarix defends against specific attack vectors:
 
 ### T1: API Key Exfiltration
-- **Impact**: CRITICAL — unauthorized AI usage, cost
-- **Mitigation**: `CredentialStore` encrypts at rest with AES-256-GCM. `DLP Engine` redacts keys from AI provider traffic. Keys never logged, never in debug output. `AuditLogger` records all access
+- **Impact:** 🔴 CRITICAL (Financial loss from unauthorized AI usage).
+- **Defense:** The `CredentialStore` encrypts your keys at rest using AES-256-GCM. The DLP engine actively redacts these keys from all network traffic. Keys are never logged to console or debug files.
 
-### T2: Prompt Injection
-- **Impact**: HIGH — unauthorized command execution
-- **Mitigation**: `PermissionGate` two-stage gate (syntax + danger analysis) validates all commands. `DangerAnalyzer` blocks 38+ dangerous patterns. `ResponseGenerator` validates AI output for safety
+### T2: LLM Prompt Injection
+- **Impact:** 🟠 HIGH (Tricking the AI into executing unauthorized commands).
+- **Defense:** The AI does not have direct access to your shell. Everything the AI suggests must pass through the `PermissionGate` (syntax + danger analysis). The `DangerAnalyzer` actively blocks 38+ dangerous command patterns, and the user must manually confirm hybrid commands.
 
-### T3: Data Leakage to AI Provider
-- **Impact**: HIGH — data exposure
-- **Mitigation**: `DLP` bidirectional masking replaces IPs, hostnames, credentials. Session-scoped masking ensures consistency. Pattern types include API keys (OpenAI, AWS, GCP, Azure, GitHub, GitLab, Slack, Stripe), JWTs, SSH keys, passwords
+### T3: Data Leakage to the Cloud
+- **Impact:** 🟠 HIGH (Exposing client data to AI training sets).
+- **Defense:** Bidirectional masking replaces IPs, hostnames, passwords, JWTs, and API keys with safe placeholders (e.g., `[REDACTED_IP_1]`).
 
 ### T4: Unauthorized Tool Execution
-- **Impact**: CRITICAL — system damage
-- **Mitigation**: Two-stage `PermissionGate` (syntax + danger). 38 dangerous pattern checks (disk destruction, fork bombs, network floods, privilege escalation). Persona-based ACLs. `Safe Mode` blocks all exploitation. `SecurityHardening` for system-level controls
+- **Impact:** 🔴 CRITICAL (Accidental system damage).
+- **Defense:** Strict Permission Gates prevent commands like `rm -rf /` or `dd`. Role-based personas and `Safe Mode` can completely lock down the system to reconnaissance-only tools.
 
 ### T5: Audit Log Tampering
-- **Impact**: HIGH — loss of accountability
-- **Mitigation**: SHA-256 hash chain links entries. Any modification breaks the chain. `siyarix audit-log verify` command validates chain integrity. SIEM forwarding provides off-system copy. Event bus integration for real-time monitoring
+- **Impact:** 🟠 HIGH (Loss of forensic accountability).
+- **Defense:** Siyarix uses a cryptographic SHA-256 hash chain for audit logs. If an attacker deletes or alters a past log entry, the chain breaks, and `siyarix audit-log verify` will immediately flag the tampering.
 
 ### T6: Credential Store Compromise
-- **Impact**: CRITICAL — all stored credentials exposed
-- **Mitigation**: AES-256-GCM encryption with 32-byte key, 12-byte nonce. Keys stored in OS keyring (preferred) with encrypted file fallback. PBKDF2 key derivation with 600,000 iterations. Optional KMS envelope encryption. Key rotation support. Rate-limited access (10 req/s)
+- **Impact:** 🔴 CRITICAL (Total exposure of stored secrets).
+- **Defense:** We use AES-256-GCM with a 32-byte key and 12-byte nonce, derived via PBKDF2 (600,000 iterations). Keys are preferably stored in the secure OS keyring. We also support AWS KMS envelope encryption for enterprise setups.
 
 ### T7: AI Provider Compromise
-- **Impact**: HIGH — command injection, data exfiltration
-- **Mitigation**: `PermissionGate` blocks malformed commands. Registry fallback (heuristic planner) always available. `ProviderStateManager` circuit breaker prevents repeated retries to compromised providers
+- **Impact:** 🟠 HIGH (The cloud AI goes rogue and sends malicious commands).
+- **Defense:** Even if the AI provider is hacked, the `PermissionGate` blocks malformed or dangerous commands. Furthermore, our `ProviderStateManager` circuit breaker will automatically cut off a compromised or failing provider and failover to a local or offline model.
 
-### T8: System Hardening Bypass
-- **Impact**: MEDIUM — reduced security posture
-- **Mitigation**: `SecurityHardening` module provides system-level hardening, file integrity monitoring, and container security checks. `StealthEngine` for covert operations with TOR routing, user-agent rotation, request jitter
+## 🛡️ Core Security Assumptions
 
-## Security Assumptions
-
-- The user's terminal environment is trusted
-- Host OS file permissions protect `~/.siyarix/`
-- AI providers are untrusted third parties
-- External tools execute as subprocesses with standard OS isolation
-- Network traffic to AI providers uses TLS
-- The `cryptography` library is available for credential encryption
+To maintain this security posture, Siyarix assumes the following:
+1. Your local terminal environment and OS user account are relatively secure.
+2. The OS protects the file permissions of the `~/.siyarix/` directory.
+3. AI providers are treated as **untrusted** third parties.
+4. External tools execute as standard subprocesses without requiring raw `root` access unless explicitly authorized.

@@ -1,85 +1,82 @@
-# Ethical Hacking Policy
+# ⚖️ Ethical Hacking Policy
 
-Siyarix is a cybersecurity operations platform. This document defines the boundaries for ethical and legal use. Please read it carefully before using the platform.
+Siyarix is a powerful cybersecurity orchestration platform. Because great power comes with great responsibility, this document clearly defines the boundaries for the ethical and legal use of our software. 
 
-## Authorized Use
+> [!CAUTION]
+> **Please read this carefully.** By using Siyarix, you agree to adhere strictly to these guidelines.
 
-Siyarix may only be used against systems you own or have explicit written authorization to test:
+## ✅ Authorized Use
 
-- **Your own infrastructure**: Systems, networks, and applications you own
-- **Authorized penetration tests**: Systems covered by a signed Statement of Work (SoW)
-- **Bug bounty programs**: Programs with explicit rules of engagement
-- **CTF competitions**: Authorized capture-the-flag environments
-- **Educational labs**: Isolated training environments (HackTheBox, TryHackMe, etc.)
-- **Research**: Systems with IRB or organizational approval
-- **Enterprise security operations**: Security assessments of systems you are responsible for
-- **Supply chain security**: Software composition analysis of systems you own or operate
-- **Compliance validation**: Automated compliance checks against regulatory frameworks on authorized systems
+Siyarix is designed for defense and authorized testing. You may **only** use Siyarix against systems that you either own or have explicit, written authorization to assess. 
 
-## Prohibited Use
+**Acceptable use cases include:**
+- **Your Own Infrastructure:** Systems, networks, and apps that belong to you.
+- **Authorized Penetration Tests:** Client systems covered by a legally binding Statement of Work (SoW).
+- **Bug Bounty Programs:** Programs where you are acting strictly within their published rules of engagement.
+- **Educational Labs:** Isolated training platforms like HackTheBox or TryHackMe.
+- **Security Operations:** Blue team assessments of enterprise systems you are responsible for securing.
+- **Compliance Validation:** Automated checks against regulatory frameworks on authorized corporate networks.
 
-The following are strictly prohibited:
+## 🚫 Prohibited Use
 
-- Testing systems without authorization
-- Denial-of-service attacks against any system
-- Social engineering against non-consenting individuals
-- Data exfiltration beyond authorized scope
-- Modification or destruction of data without explicit permission
-- Any illegal activity
-- Violation of the Computer Fraud and Abuse Act (CFAA) or equivalent laws
-- Nation-state offensive cyber operations without lawful international mandate
-- Development of cyber weapons targeting civilian infrastructure
-- Integration with weapons systems or platforms
+Siyarix is **not** a tool for malicious actors. The following activities are strictly prohibited:
 
-## Rules of Engagement
+- ❌ Testing or scanning systems without explicit authorization.
+- ❌ Launching Denial-of-Service (DoS) or Distributed Denial-of-Service (DDoS) attacks.
+- ❌ Social engineering against non-consenting individuals.
+- ❌ Exfiltrating data beyond the agreed-upon scope of an authorized test.
+- ❌ Modifying or destroying data without express permission.
+- ❌ Any activity that violates the Computer Fraud and Abuse Act (CFAA) or local equivalent laws.
+- ❌ Nation-state offensive operations without a lawful international mandate.
 
-1. **Define scope**: Document what is in and out of scope before starting
-2. **Set boundaries**: Use safe mode (`SIYARIX_SAFE_MODE=1`) for initial reconnaissance
-3. **Stop on detection**: If you trigger IDS/IPS alerts, stop and coordinate with the client
-4. **Protect data**: Use DLP masking and encrypted storage for any data collected
-5. **Report responsibly**: Share findings only with authorized stakeholders
-6. **Least privilege**: Use the minimum access level and techniques necessary
-7. **Documentation**: Maintain clear records of authorization, scope, methodology, and findings
+> [!IMPORTANT]
+> Siyarix must **never** be integrated with kinetic weapons systems or platforms.
 
-## Legal Compliance
+## 📜 Rules of Engagement
 
-Users must comply with all applicable laws:
+When conducting an authorized assessment, follow these professional standards:
 
-- **United States**: CFAA, GDPR (if processing EU data)
-- **United Kingdom**: Computer Misuse Act 1990
-- **EU**: GDPR, national cybercrime laws
-- **Other jurisdictions**: Local computer misuse and data protection laws
+1. **Define the Scope:** Always document exactly what is "in scope" and "out of scope" before starting.
+2. **Start Safe:** Use Safe Mode (`SIYARIX_SAFE_MODE=1`) for your initial reconnaissance.
+3. **Stop on Detection:** If your actions trigger a client's IDS/IPS alerts, pause the operation and coordinate with the stakeholders.
+4. **Protect Data:** Rely on our built-in DLP engine and encrypted storage to protect any sensitive data you collect.
+5. **Least Privilege:** Always use the minimum access level and the quietest techniques necessary to prove the vulnerability.
+6. **Document Everything:** Keep crystal-clear records of your authorization, methodology, and findings.
 
-## Safe Mode
+## 🌍 Legal Compliance
 
-Restricts Siyarix to reconnaissance-only operations:
+You are responsible for complying with the laws of your jurisdiction, as well as the jurisdiction of your targets:
+
+- **United States:** Computer Fraud and Abuse Act (CFAA).
+- **United Kingdom:** Computer Misuse Act 1990.
+- **European Union:** General Data Protection Regulation (GDPR) and national cybercrime legislation.
+
+## 🦺 Safe Mode
+
+When in doubt, use Safe Mode. Safe Mode restricts Siyarix strictly to reconnaissance, ensuring you can't accidentally break anything.
 
 ```bash
 export SIYARIX_SAFE_MODE=1
-siyarix scan quick target
+siyarix scan quick target.com
 ```
 
-In safe mode:
-- No exploitation tools are available
-- No destructive commands can be executed
-- Only scanning and enumeration tools are permitted
-- Permission gate enforces maximum strictness
+**In Safe Mode:**
+- Exploitation tools are entirely disabled.
+- Destructive commands are hard-blocked.
+- The Permission Gate runs at maximum strictness.
 
-## Responsible Disclosure
+## 🗣️ Responsible Disclosure
 
-- Do not exploit vulnerabilities beyond what is necessary to confirm existence
-- Do not disclose publicly without giving the vendor reasonable time to patch
-- Do not sell or trade vulnerability information without authorization
-- Do not use vulnerabilities for personal gain
+If you find a vulnerability using Siyarix:
+- Do not exploit it further than necessary to prove it exists.
+- Report it privately to the vendor and give them reasonable time to patch it.
+- **Never** sell, trade, or publicly dump vulnerability data for personal gain or notoriety.
 
-## Reporting Misuse
+## 🚩 Reporting Misuse
 
-If you discover misuse of Siyarix:
+If you discover someone using Siyarix for illegal or malicious purposes, please let us know immediately:
+- Open a private security advisory on our [GitHub Security Page](https://github.com/mufthakherul/siyarix/security/advisories).
+- Email the core maintainers (contact details are in `SECURITY.md`).
 
-- Open a security advisory at https://github.com/mufthakherul/siyarix/security/advisories
-- Email the maintainers (details in SECURITY.md)
-- Include details of the misuse
-
-## Full Policy
-
-See the Ethical Use Policy and Responsible AI Use Policy for the complete ethical use framework, including detailed sections on prohibited activities, authorized use requirements, compliance, and enforcement.
+> [!NOTE]
+> For the complete legal framework, please refer to our full Ethical Use Policy and Responsible AI Use Policy documents.
