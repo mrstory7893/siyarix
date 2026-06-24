@@ -1,4 +1,4 @@
-﻿health_check  # unused function (src\siyarix\api\server.py:60)
+health_check  # unused function (src\siyarix\api\server.py:60)
 start_scan  # unused function (src\siyarix\api\server.py:65)
 abort_scan  # unused function (src\siyarix\api\server.py:94)
 list_sessions  # unused function (src\siyarix\api\server.py:103)
