@@ -1,6 +1,6 @@
 # Interaction Modes
 
-Siyarix v3.0.0 supports multiple interaction modes selected automatically by the **ModeDispatcher** based on the `LaunchContext`. Each mode provides a different level of autonomy, interactivity, and output formatting. The **OutputEngine** supports 8 output formats with 12 built-in themes, the **Branding** system applies consistent visual identity, and **Webhooks** enable external integration.
+Siyarix v1.0.0 supports multiple interaction modes selected automatically by the **ModeDispatcher** based on the `LaunchContext`. Each mode provides a different level of autonomy, interactivity, and output formatting. The **OutputEngine** supports 8 output formats with 12 built-in themes, the **Branding** system applies consistent visual identity, and **Webhooks** enable external integration.
 
 ---
 
@@ -361,3 +361,4 @@ ModeDispatcher
        ├── Themes: default, dark, light, matrix, cyber, minimal, ...
        └── Branding: logo, colors, headers, footers
 ```
+

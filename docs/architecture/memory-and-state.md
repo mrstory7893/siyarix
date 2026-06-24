@@ -1,6 +1,6 @@
 # Memory & State Management
 
-Siyarix v3.0.0 uses a multi-layered memory and state management system spanning in-memory runtime state, SQLite-backed persistence, and file-based exports. The system includes a **KnowledgeGraph** for infrastructure relationships, **MemoryManager** with semantic memory and embeddings, **ChatSession** with branching support, **SessionKernel** for persistence, **CacheManager** with LRU + TTL, and a **Context Manager** for LLM context window optimization.
+Siyarix v1.0.0 uses a multi-layered memory and state management system spanning in-memory runtime state, SQLite-backed persistence, and file-based exports. The system includes a **KnowledgeGraph** for infrastructure relationships, **MemoryManager** with semantic memory and embeddings, **ChatSession** with branching support, **SessionKernel** for persistence, **CacheManager** with LRU + TTL, and a **Context Manager** for LLM context window optimization.
 
 ---
 
@@ -305,3 +305,4 @@ Session End
 | **Compact** | Context window optimization for LLM budget |
 | **ProviderStateManager** | Provider cooldown/failure persistence |
 | **EventBus** | Emits state change events (kg.updated, memory.stored, cache.evicted) |
+

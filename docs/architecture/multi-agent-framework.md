@@ -1,6 +1,6 @@
 # Multi-Agent Framework
 
-Siyarix v3.0.0 includes a full multi-agent swarm framework for collaborative autonomous security operations. The **Swarm** orchestrator manages specialized agents (Recon, Scan, Exploit, Report) that communicate via the **EventBus**, share context through the **KnowledgeGraph**, and execute under the **PermissionGate** and **DLP Engine**. The **AgentCore** dispatches to single or multi-agent modes depending on the goal complexity.
+Siyarix v1.0.0 includes a full multi-agent swarm framework for collaborative autonomous security operations. The **Swarm** orchestrator manages specialized agents (Recon, Scan, Exploit, Report) that communicate via the **EventBus**, share context through the **KnowledgeGraph**, and execute under the **PermissionGate** and **DLP Engine**. The **AgentCore** dispatches to single or multi-agent modes depending on the goal complexity.
 
 ---
 
@@ -325,3 +325,4 @@ The following multi-agent components exist as placeholders for future developmen
 | `AdversarialTester` | Stub | Adversarial attack simulation |
 | `ThreatIntelFeed` | Stub | External threat intelligence ingestion |
 | `MITREAttackDB` | Basic | MITRE ATT&CK framework mapping |
+

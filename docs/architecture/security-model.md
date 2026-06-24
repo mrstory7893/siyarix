@@ -1,6 +1,6 @@
 # Security Model
 
-Siyarix v3.0.0 implements a defense-in-depth security model with multiple layers controlling command execution, data handling, credential storage, operational security, and audit integrity. All commands pass through a **PermissionGate** with two-stage review (BLOCK / REVIEW / ALLOW), are inspected by the **DLP Engine**, logged in a tamper-evident **AuditLogger**, and executed under **OPSECManager** controls.
+Siyarix v1.0.0 implements a defense-in-depth security model with multiple layers controlling command execution, data handling, credential storage, operational security, and audit integrity. All commands pass through a **PermissionGate** with two-stage review (BLOCK / REVIEW / ALLOW), are inspected by the **DLP Engine**, logged in a tamper-evident **AuditLogger**, and executed under **OPSECManager** controls.
 
 ---
 
@@ -334,3 +334,4 @@ StealthEngine ──→ OPSECManager
     ▼
 Execution ──→ AuditLogger (tamper-evident chain)
 ```
+

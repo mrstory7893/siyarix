@@ -1,6 +1,6 @@
 # System Architecture Overview
 
-Siyarix v3.0.0 is an AI-native cybersecurity operations platform that bridges natural language intent with deterministic tool execution. The architecture follows a layered orchestration model where an **AgentCore** dispatches across four operational modes, routing intent through planners, gates, executors, and persistence layers.
+Siyarix v1.0.0 is an AI-native cybersecurity operations platform that bridges natural language intent with deterministic tool execution. The architecture follows a layered orchestration model where an **AgentCore** dispatches across four operational modes, routing intent through planners, gates, executors, and persistence layers.
 
 ---
 
@@ -463,3 +463,4 @@ User Input → IntentRouter → Context Manager → Planner Router → Permissio
 - **HealthChecker**: Periodic system health verification
 - **OfflineQueue**: Request queuing for disconnected environments
 - **Compact**: LLM context window optimization to reduce token consumption
+

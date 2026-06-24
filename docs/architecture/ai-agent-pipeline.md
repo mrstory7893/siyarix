@@ -1,6 +1,6 @@
 # AI Agent Pipeline
 
-The AI agent pipeline in Siyarix v3.0.0 processes user input through a structured lifecycle of **Plan → Execute → Reflect**, orchestrated by the `AgentCore`. The pipeline supports four operational modes and an autonomous **Observe-Reason-Act** loop for goal-driven operation.
+The AI agent pipeline in Siyarix v1.0.0 processes user input through a structured lifecycle of **Plan → Execute → Reflect**, orchestrated by the `AgentCore`. The pipeline supports four operational modes and an autonomous **Observe-Reason-Act** loop for goal-driven operation.
 
 ---
 
@@ -253,3 +253,4 @@ loop_config = {
     "stop_conditions": ["objective_achieved", "max_iterations", "safety_trigger"]
 }
 ```
+
