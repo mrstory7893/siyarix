@@ -247,7 +247,6 @@ def make_whois_handler(tool_name: str) -> ToolHandler:
 def make_generic_handler(tool_name: str) -> ToolHandler:
     async def handler(**kwargs: Any) -> dict[str, Any]:
         from .subprocess_utils import safe_run_async
-        from .validators import ValidationError, validate_target
 
         cmd = [tool_name]
         target = kwargs.get("target", "")
