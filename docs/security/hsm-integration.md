@@ -1,37 +1,38 @@
 # HSM Integration
 
-Siyarix supports Hardware Security Modules (HSMs) for secure key storage and cryptographic operations. **Note**: This feature is a stub implementation — basic HSM detection exists but full integration is not yet complete.
+Siyarix supports Hardware Security Modules (HSMs) for secure key storage and cryptographic operations. **Note**: This feature is currently under development. Basic HSM detection exists as a stub in `chat/stubs.py` (`HSMService`), but full integration is not yet complete.
 
-## Supported HSM types
+## Status
 
 | Type | Library | Status |
 |------|---------|--------|
-| YubiKey | `ykman` | Stub |
-| PKCS#11 | `python-pkcs11` | Stub |
-| TPM | (placeholder) | Stub |
-| Software fallback | Built-in | Implemented |
+| YubiKey | `ykman` | Under development |
+| PKCS#11 | `python-pkcs11` | Under development |
+| TPM | (placeholder) | Under development |
+| Software fallback | Built-in | Implemented (CredentialStore) |
 
-## Usage
+## Planned Capabilities
+
+When complete, HSM integration will support:
+
+- Secure key storage for credential store encryption
+- Hardware-backed cryptographic operations
+- FIPS/HSM compliance for enterprise deployments
+- Code signing for tool updates and reports
+- YubiKey, PKCS#11, and TPM interfaces
+
+## Current Workaround
+
+For production deployments requiring hardware-backed security, the `CredentialStore` supports AWS KMS envelope encryption:
 
 ```bash
-siyarix health
-# Shows: HSM: connected (YubiKey 5 NFC) — if detected
+export SIYARIX_KMS_PROVIDER=aws
+export AWS_KMS_KEY_ID=your-key-id
 ```
 
-## HSM service (`hsm_manager.py`)
+This provides hardware-backed key management through AWS CloudHSM without requiring local HSM hardware.
 
-The `HSMService` provides a unified interface (stub implementation):
-
-```python
-from siyarix.hsm_manager import HSMService
-
-hsm = HSMService()
-status = hsm.connect()
-if status.connected:
-    hsm.store_secret("my_key", "my_secret_value")
-```
-
-## Cross-platform PKCS#11 paths
+## Cross-Platform PKCS#11 Paths (Reference)
 
 | Platform | Default path |
 |----------|-------------|
@@ -39,31 +40,7 @@ if status.connected:
 | macOS | `/usr/local/lib/opensc-pkcs11.so` |
 | Linux | `/usr/lib/x86_64-linux-gnu/opensc-pkcs11.so` |
 
-## Key operations
-
-| Operation | Description |
-|-----------|-------------|
-| `connect()` | Initialize HSM connection |
-| `disconnect()` | Close HSM connection securely |
-| `store_secret()` | Store a secret in HSM-backed storage |
-| `get_status()` | Get HSM connection and device status |
-| `list_keys()` | List available keys on the HSM |
-
-## Status data class
-
-```python
-@dataclass
-class HSMStatus:
-    connected: bool
-    provider: str        # "yubikey", "pkcs11", "tpm", "software"
-    model: str           # Device model
-    serial: str          # Device serial number
-    has_pin: bool        # Whether PIN is required
-    algorithms: list     # Supported algorithms
-    slots_available: int # Number of available key slots
-```
-
-## Use cases
+## Use Cases (Planned)
 
 - Enterprise deployments: Meet FIPS/HSM compliance requirements
 - Key protection: Store API keys and signing keys in hardware
