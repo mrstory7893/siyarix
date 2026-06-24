@@ -65,7 +65,7 @@ class ConnectivityMonitor:
                             new_state = ConnectionState.ONLINE
                         else:
                             new_state = ConnectionState.DEGRADED
-                        return self._update_state(new_state)
+                        return await self._update_state(new_state)
 
             except (httpx.ConnectError, httpx.TimeoutException, httpx.RemoteProtocolError, OSError):
                 self._consecutive_failures += 1
@@ -79,16 +79,18 @@ class ConnectivityMonitor:
             new_state = ConnectionState.OFFLINE
         else:
             new_state = ConnectionState.DEGRADED
-        return self._update_state(new_state)
+        return await self._update_state(new_state)
 
-    def _update_state(self, new_state: ConnectionState) -> ConnectionState:
+    async def _update_state(self, new_state: ConnectionState) -> ConnectionState:
         old_state = self._state
         if new_state != old_state:
             self._state = new_state
             logger.info("Connectivity state changed: %s -> %s", old_state, new_state)
             if self._on_state_change:
                 try:
-                    self._on_state_change(old_state, new_state)
+                    res = self._on_state_change(old_state, new_state)
+                    if hasattr(res, "__await__"):
+                        await res
                 except Exception as exc:
                     logger.warning("State change callback failed: %s", exc)
         return self._state

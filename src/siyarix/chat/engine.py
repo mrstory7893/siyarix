@@ -460,43 +460,48 @@ class LLMEngineMixin:
 
     def _build_greeting_response(self) -> str:
         import getpass
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         username = getpass.getuser()
-        hour = datetime.now(timezone.utc).hour
-        if hour < 12:
+        hour = datetime.now().hour
+        if 5 <= hour < 12:
             tod = "morning"
-        elif hour < 17:
+        elif 12 <= hour < 13:
+            tod = "noon"
+        elif 13 <= hour < 17:
             tod = "afternoon"
-        elif hour < 21:
+        elif 17 <= hour < 21:
             tod = "evening"
         else:
             tod = "night"
 
-        mode_info = ""
-        if self._mode in ("offline", "registry"):
-            mode_info = (
-                "I'm currently in **offline mode** — using built-in heuristic planning "
-                "without an LLM. I can still handle most security tasks.\n\n"
-                "**Example commands:**\n"
-                "- `scan example.com` — full recon\n"
-                "- `port scan 10.0.0.1` — network scan\n"
-                "- `check http headers on example.com` — web audit\n"
-                "- `enumerate subdomains of target.com` — subdomain discovery\n"
-                "- `dns recon on example.com` — DNS enumeration\n"
-                "- `vuln scan on https://app.local` — vulnerability scan"
-            )
-        else:
-            mode_info = (
-                "For maximum capability, I'm connected to an LLM. "
-                "Just describe any security task and I'll handle it."
-            )
+        time_of_day = {
+            "morning": "morning",
+            "noon": "noon",
+            "afternoon": "afternoon",
+            "evening": "evening",
+            "night": "night",
+        }.get(tod, "day")
+
+        website_url = "https://siyarix.github.io"
 
         return (
-            f"Good **{tod}**, **{username}**.\n\n"
-            "I'm **Siyarix** — your cybersecurity intelligence system.\n\n"
-            f"{mode_info}\n\n"
-            "Type **`/help`** for all available commands."
+            f"Hello, {username}. Good {time_of_day}.\n\n"
+            "I'm Siyarix — an open-source, AI-powered CLI assistant focused on cybersecurity. "
+            "I am currently under active development.\n\n"
+            "My principal creator is Mufthakherul, but as an open-source project, "
+            "maybe many developers from around the world contribute to building and improving me. "
+            "I am genuinely grateful to every contributor who helps shape Siyarix "
+            "and keeps it relevant in the modern era.\n\n"
+            "If you would like to contribute, please visit my repository:\n"
+            f"{website_url}\n\n"
+            "Useful commands:\n\n"
+            "  help\n"
+            "  /help\n"
+            "  --help\n\n"
+            "For complete documentation:\n"
+            f"{website_url}\n\n"
+            "Note: This is a pre-written offline response."
         )
 
     def _should_use_compact(self) -> bool:
@@ -582,7 +587,7 @@ class LLMEngineMixin:
         """
         from ..core import AgentCore, AgentMode
 
-        # ── Resolve provider with auto fallback ──────────────────────────
+        # ── Resolve provider ─────────────────────────────────────────────
         provider_name, api_key = self._resolve_provider()
         if not provider_name:
             if require_llm:
@@ -715,12 +720,35 @@ class LLMEngineMixin:
                         f"[yellow]⚠ {provider_name} not reachable — falling back[/yellow]"
                     )
             else:
-                llm_connected = True
+                # Quick connectivity probe before committing to a 120s LLM call
+                try:
+                    from .openai_compat import PROVIDER_CONFIG
+                    import httpx
+                    base_url = PROVIDER_CONFIG.get(provider_name, ("", "", ""))[0]
+                    if base_url:
+                        async with httpx.AsyncClient(timeout=5) as _client:
+                            await _client.get(base_url.rstrip("/v1"))
+                        llm_connected = True
+                    else:
+                        llm_connected = True
+                except Exception:
+                    llm_connected = False
 
         if not llm_connected:
             if require_llm:
                 console.print("[red]✗ No working LLM provider for autonomous mode[/red]")
                 return False
+            if self._mode == "integrated":
+                self._mode = "offline"
+                self._session.mode = "offline"
+                self._settings.set("model_provider", "registry")
+                console.print(
+                    "[yellow]⚠ All providers unreachable — switched to offline mode[/yellow]"
+                )
+            else:
+                console.print(
+                    f"[yellow]⚠ {provider_name} not reachable — using local planner[/yellow]"
+                )
 
         # ── Planning ─────────────────────────────────────────────────────
         all_outputs: list[str] = []
@@ -761,12 +789,14 @@ class LLMEngineMixin:
                                 plan_type=PlanType.SEQUENTIAL,
                                 context={"source": "cls_prerun"},
                             )
-                            agent.executor_autonomous.command_review = self._settings.get(
-                                "command_review", True
-                            )
-                            _prerun_executed = await agent.executor_autonomous.execute_plan(
-                                _prerun_plan, live_display=True
-                            )
+                            _saved_cr = agent.executor_autonomous.command_review
+                            agent.executor_autonomous.command_review = False
+                            try:
+                                _prerun_executed = await agent.executor_autonomous.execute_plan(
+                                    _prerun_plan, live_display=True
+                                )
+                            finally:
+                                agent.executor_autonomous.command_review = _saved_cr
                             console.print()
                             _prerun_outputs: list[str] = []
                             for _ps in _prerun_executed.steps:
@@ -790,8 +820,19 @@ class LLMEngineMixin:
                     self._llm_calls += 1
                     compact = self._should_use_compact()
                     plan_sys_prompt = self._build_system_prompt(compact=compact)
+                    if all_outputs:
+                        _goal_with_context = (
+                            f"Original request: {instruction_with_target}\n\n"
+                            f"Pre-executed from cached skill, results so far:\n\n"
+                            f"{''.join(all_outputs)}\n\n"
+                            f"Analyse these results. If the original request is already satisfied, "
+                            f"provide a concise final response (set needs_tools=false). "
+                            f"If more investigation is needed, plan the remaining steps."
+                        )
+                    else:
+                        _goal_with_context = instruction_with_target
                     plan_result = await agent.planner_autonomous.plan(
-                        instruction_with_target,
+                        _goal_with_context,
                         system_prompt=plan_sys_prompt,
                         llm_call=llm_call_fn,
                         tool_schemas=tool_dicts,
@@ -806,10 +847,26 @@ class LLMEngineMixin:
                         else ""
                     )
                     self._provider_state.record_success(provider_name or "")
-                except (asyncio.TimeoutError, RuntimeError, ValueError, AttributeError) as exc:
+                except Exception as exc:
+                    import sys
+                    sys.stdout.write("\033[2K\r\n")
+                    sys.stdout.flush()
                     console.print(
-                        f"[yellow]⚠ LLM planning failed ({exc}) — using local planner[/yellow]"
+                        f"[yellow]⚠ {provider_name} failed ({exc}) — using local planner[/yellow]"
                     )
+                    llm_connected = False
+                    llm_call_fn = None
+                    if self._mode == "integrated":
+                        self._mode = "offline"
+                        self._session.mode = "offline"
+                        self._settings.set("model_provider", "registry")
+                        console.print(
+                            "[yellow]⚠ Switched to offline mode[/yellow]"
+                        )
+                else:
+                    import sys
+                    sys.stdout.write("\033[2K\r\n")
+                    sys.stdout.flush()
 
         if not llm_plan:
             llm_plan = agent.planner_autonomous.create_plan(
@@ -951,19 +1008,23 @@ class LLMEngineMixin:
                             is_first_call=False,
                         )
                         llm_model = provider_name or "none"
-                        if plan.steps:
-                            console.print(
-                                f"[cyan]→ LLM decided more work needed — wave {wave + 2}[/cyan]"
-                            )
-                        else:
-                            # Done — show final response
-                            ctx = plan.context or {}
-                            summary = (ctx.get("response") or ctx.get("reasoning", "")) or "Done."
-                            self._session.add_message("assistant", summary)
-                            self._print_assistant(summary)
                     except asyncio.TimeoutError:
-                        console.print("[yellow]⚠ LLM analysis timed out — moving on[/yellow]")
                         plan = None
+                import sys
+                sys.stdout.write("\033[2K\r\n")
+                sys.stdout.flush()
+                if plan is None:
+                    console.print("[yellow]⚠ LLM analysis timed out — moving on[/yellow]")
+                elif plan.steps:
+                    console.print(
+                        f"[cyan]→ LLM decided more work needed — wave {wave + 2}[/cyan]"
+                    )
+                else:
+                    # Done — show final response
+                    ctx = plan.context or {}
+                    summary = (ctx.get("response") or ctx.get("reasoning", "")) or "Done."
+                    self._session.add_message("assistant", summary)
+                    self._print_assistant(summary)
             else:
                 plan = None
 
@@ -1331,25 +1392,17 @@ class LLMEngineMixin:
         """Return ``(provider_name, api_key)`` for the active provider.
 
         When ``model_provider`` is set to a specific name, use that.
-        When ``"auto"``, scan known providers sorted by cost (cheapest first),
-        skipping any that are disabled or in cooldown (persisted across restarts).
-
-        Local providers (ollama, lmstudio, llamacpp, vllm, localai) that don't
-        need a real API key supply ``"local"`` as fallback so callers can
-        distinguish ``"no key needed"`` from ``"no provider found"``.
-
-        The special ``"registry"`` provider represents offline mode and
-        returns ``(None, None)`` to signal no LLM is available.
+        When ``"auto"``, returns the first available cloud provider (with a real
+        API key).  Only falls back to local providers (ollama, lmstudio, etc.)
+        if no cloud provider has a key configured.
         """
-        from ..providers import ProviderManager
-
-        pm = ProviderManager.get_instance()
-
         configured = self._settings.get("model_provider") or "openrouter"
         if configured == "registry":
             return (None, None)
 
         if configured != "auto":
+            from ..providers import ProviderManager
+            pm = ProviderManager.get_instance()
             profile = pm.get_profile(configured)
             env_var = profile.api_key_env if profile else ""
             key = self._resolve_api_key(configured, env_var)
@@ -1358,47 +1411,55 @@ class LLMEngineMixin:
             if configured == "ollama":
                 try:
                     from ..providers.ollama_utils import ensure_ollama_running
-
                     ensure_ollama_running()
                 except Exception:
                     pass
             return (configured, key or None)
 
-        candidates: list[tuple[int, str, str]] = []
+        all_candidates = self._resolve_candidates()
+        for _candidate_name, _candidate_key in all_candidates:
+            if not _candidate_key or _candidate_key == "local":
+                continue
+            return (_candidate_name, _candidate_key)
+        if all_candidates:
+            return all_candidates[0]
+        return (None, None)
+
+    def _resolve_candidates(self) -> list[tuple[str, str]]:
+        """Return all candidate ``(provider_name, api_key)`` tuples for auto mode,
+        sorted by cost tier (cloud first, local last).  Local providers are only
+        included when no cloud provider has a valid API key.
+        """
+        from ..providers import ProviderManager
+        pm = ProviderManager.get_instance()
+
+        cloud: list[tuple[int, str, str]] = []
+        local: list[tuple[int, str, str]] = []
 
         for prov_name in pm.list_providers():
             if prov_name == "registry":
                 continue
-
             if self._provider_state.is_disabled(prov_name):
                 continue
-
             profile = pm.get_profile(prov_name)
             if not profile:
                 continue
 
             if not profile.api_key_env:
-                candidates.append((profile.cost_tier.sort_key, prov_name, "local"))
+                local.append((profile.cost_tier.sort_key, prov_name, "local"))
                 continue
 
             key = self._resolve_api_key(prov_name, profile.api_key_env)
             if key:
-                candidates.append((profile.cost_tier.sort_key, prov_name, key))
+                cloud.append((profile.cost_tier.sort_key, prov_name, key))
 
         def _sort_key(c: tuple) -> tuple:
             prof = pm.get_profile(c[1])
             return (c[0], -(prof.priority if prof else 0))
 
-        candidates.sort(key=_sort_key)
-        if candidates:
-            prov, key = candidates[0][1], candidates[0][2]
-            if prov == "ollama":
-                try:
-                    from ..providers.ollama_utils import ensure_ollama_running
+        local.sort(key=_sort_key)
+        cloud.sort(key=_sort_key)
 
-                    ensure_ollama_running()
-                except Exception:
-                    logger.debug("Ollama auto-start skipped or failed")
-            return (prov, key or None)
-
-        return (None, None)
+        # Cloud providers first (valid API key), local providers last
+        result = [(p, k) for _, p, k in cloud] + [(p, k) for _, p, k in local]
+        return result or []

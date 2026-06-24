@@ -639,12 +639,10 @@ class CommandHandlersMixin:
             table.add_column("#", style="dim", width=4)
             table.add_column("Name", style="cyan", no_wrap=True)
             table.add_column("Category", style="magenta")
-            table.add_column("Version", style="dim")
             table.add_column("Persona", style="yellow")
             for i, t in enumerate(sorted(tools, key=lambda x: x.category), 1):
-                ver = t.version[:20] if t.version else ""
                 personas = ", ".join(t.metadata.get("personas", [])) if t.metadata else ""
-                table.add_row(str(i), t.name, t.category.value, ver, personas)
+                table.add_row(str(i), t.name, t.category.value, personas)
             console.print(table)
         except Exception as exc:
             logger.exception("Tool discovery error")
@@ -1201,14 +1199,106 @@ class CommandHandlersMixin:
         from ..config import DESCRIPTIONS
 
         sub = args.strip() if args else ""
-        if not sub or sub == "show":
-            rows = self._settings.list_all()
-            table = Table(title="Configuration Settings", header_style="bold cyan")
-            table.add_column("Key", style="cyan", no_wrap=True)
-            table.add_column("Value", style="white")
-            table.add_column("Default", style="dim")
-            table.add_column("Description", style="green")
-            for r in rows:
+        if sub and sub != "show":
+            if sub == "tools":
+                ConfigPanel._section_tools()
+            elif sub.startswith("set "):
+                parts = sub.split(maxsplit=2)
+                if len(parts) < 3:
+                    console.print("[yellow]Usage: /config set <key> <value>[/yellow]")
+                    return
+                key, value = parts[1], parts[2]
+                try:
+                    result = self._settings.set(key, value)
+                    console.print(f"[green]✓ Set {key} = {result}[/green]")
+                    if key == "log_level":
+                        from ..logging_config import configure_logging
+                        configure_logging(str(result))
+                except KeyError as exc:
+                    console.print(f"[red]Unknown setting: {exc}[/red]")
+                    console.print("[yellow]Use /config to see available settings.[/yellow]")
+            elif sub.startswith("get "):
+                parts = sub.split(maxsplit=1)
+                key = parts[1] if len(parts) > 1 else ""
+                if not key:
+                    console.print("[yellow]Usage: /config get <key>[/yellow]")
+                    return
+                val = self._settings.get(key)
+                desc = DESCRIPTIONS.get(key, "")
+                if val is not None:
+                    console.print(f"[cyan]{key}[/cyan] = {val}")
+                    if desc:
+                        console.print(f"[dim]{desc}[/dim]")
+                else:
+                    console.print(f"[yellow]{key} is not set[/yellow]")
+            elif sub.startswith("list"):
+                valid_keys = sorted(DESCRIPTIONS.keys())
+                console.print("[bold]Available settings keys:[/bold]")
+                for k in valid_keys:
+                    console.print(f"  [cyan]{k}[/cyan]: [dim]{DESCRIPTIONS[k]}[/dim]")
+            else:
+                console.print("[yellow]Usage: /config [show|set|get|list|tools][/yellow]")
+            return
+
+        rows = {r["key"]: r for r in self._settings.list_all()}
+
+        categories = [
+            ("General", [
+                "default_output_format", "default_parallel", "scan_timeout",
+                "agent_timeout", "max_waves", "auto_sync", "notifications_enabled",
+                "history_retention_days", "auto_update_check",
+            ]),
+            ("Appearance", [
+                "color_theme", "syntax_theme", "log_level",
+            ]),
+            ("Mode & Persona", [
+                "default_mode", "model_provider", "persona",
+                "additional_system_message",
+            ]),
+            ("Security", [
+                "stealth_mode", "command_review", "tls_verify",
+            ]),
+            ("Cloud Providers", [
+                "openai_model", "anthropic_model", "gemini_model",
+                "groq_model", "together_model", "openrouter_model",
+                "deepseek_model", "xai_model", "mistral_model",
+                "perplexity_model", "azure_model", "cerebras_model",
+                "fireworks_model", "zai_model", "minimax_model",
+                "moonshot_model", "nvidia_model", "opencode_zen_model",
+                "huggingface_model",
+            ]),
+            ("Local Providers", [
+                "ollama_url", "ollama_model",
+                "lmstudio_url", "lmstudio_model",
+                "llamacpp_url", "llamacpp_model",
+                "vllm_url", "vllm_model",
+                "localai_url", "localai_model",
+                "_start_ollama_on_launch", "registry_model",
+            ]),
+            ("Behavior", [
+                "multiline", "auto_save_session",
+                "shell_completion_installed", "path_setup_done",
+                "onboarding_complete",
+            ]),
+        ]
+
+        for title, keys in categories:
+            cat_rows = [rows[k] for k in keys if k in rows]
+            if not cat_rows:
+                continue
+            table = Table(
+                title=title,
+                title_style="bold",
+                header_style="bold cyan",
+                box=None,
+                show_edge=False,
+                padding=(0, 2),
+            )
+            table.add_column("Key", style="cyan", no_wrap=True, ratio=2)
+            table.add_column("Value", style="white", ratio=3)
+            table.add_column("Default", style="dim", ratio=2)
+            table.add_column("Description", style="green", ratio=4)
+            for r in cat_rows:
                 val_style = "yellow" if r["modified"] else "white"
                 table.add_row(
                     r["key"],
@@ -1217,48 +1307,10 @@ class CommandHandlersMixin:
                     r["description"],
                 )
             console.print(table)
-            console.print(
-                "[dim]Use /config set <key> <value> to change, /config get <key> to view[/dim]"
-            )
-        elif sub == "tools":
-            ConfigPanel._section_tools()
-        elif sub.startswith("set "):
-            parts = sub.split(maxsplit=2)
-            if len(parts) < 3:
-                console.print("[yellow]Usage: /config set <key> <value>[/yellow]")
-                return
-            key, value = parts[1], parts[2]
-            try:
-                result = self._settings.set(key, value)
-                console.print(f"[green]✓ Set {key} = {result}[/green]")
-                if key == "log_level":
-                    from ..logging_config import configure_logging
 
-                    configure_logging(str(result))
-            except KeyError as exc:
-                console.print(f"[red]Unknown setting: {exc}[/red]")
-                console.print("[yellow]Use /config to see available settings.[/yellow]")
-        elif sub.startswith("get "):
-            parts = sub.split(maxsplit=1)
-            key = parts[1] if len(parts) > 1 else ""
-            if not key:
-                console.print("[yellow]Usage: /config get <key>[/yellow]")
-                return
-            val = self._settings.get(key)
-            desc = DESCRIPTIONS.get(key, "")
-            if val is not None:
-                console.print(f"[cyan]{key}[/cyan] = {val}")
-                if desc:
-                    console.print(f"[dim]{desc}[/dim]")
-            else:
-                console.print(f"[yellow]{key} is not set[/yellow]")
-        elif sub.startswith("list"):
-            valid_keys = sorted(DESCRIPTIONS.keys())
-            console.print("[bold]Available settings keys:[/bold]")
-            for k in valid_keys:
-                console.print(f"  [cyan]{k}[/cyan]: [dim]{DESCRIPTIONS[k]}[/dim]")
-        else:
-            console.print("[yellow]Usage: /config [show|set|get|list|tools][/yellow]")
+        console.print(
+            "[dim]Use /config set <key> <value> to change, /config get <key> to view[/dim]"
+        )
 
     async def _cmd_agent(self, args: str) -> None:
         """Handle /agent command for sub-agent lifecycle management."""
@@ -1313,16 +1365,15 @@ class CommandHandlersMixin:
         from ..personas import get_persona, list_personas
         from rich.table import Table
 
-        tokens = args.split() if args else []
         current = self._settings.get("persona") or "auto"
-        if not tokens:
+        action = args.strip().lower() if args else ""
+        if not action:
             p = get_persona(current)
             label = p["label"] if p else current
             console.print(
                 f"[dim]Current persona: [bold]{label}[/bold]. Usage: /persona list | /persona <name>[/dim]"
             )
             return
-        action = tokens[0].lower()
         if action == "list":
             table = Table(title="Available Personas", header_style="bold cyan")
             table.add_column("Name", style="cyan")
@@ -1338,6 +1389,9 @@ class CommandHandlersMixin:
             )
             table.add_row("none", "None", "No persona framing — LLM decides its own voice")
             console.print(table)
+            console.print(
+                "[dim]Tip: use underscores for multi-word names, e.g. /persona red_team[/dim]"
+            )
             return
         p = get_persona(action)
         if not p:
@@ -1560,6 +1614,49 @@ class CommandHandlersMixin:
         elif tokens[0] == "disable":
             opsec_manager.disable()
 
+    def _get_sorted_skills(self) -> list[Any]:
+        """Return all skills sorted by confidence desc."""
+        from ..learning_system import get_learning_system
+        cls = get_learning_system()
+        return sorted(cls._skills.values(), key=lambda s: s.confidence, reverse=True)
+
+    def _get_skill_by_sl(self, sl_no: str) -> Any | None:
+        """Get a skill by its 1-based Sl No in the sorted list."""
+        try:
+            idx = int(sl_no) - 1
+            if idx < 0:
+                return None
+            skills = self._get_sorted_skills()
+            return skills[idx] if idx < len(skills) else None
+        except (ValueError, IndexError):
+            return None
+
+    def _print_skill_detail(self, s: Any, sl_no: int) -> None:
+        """Print full detail for a single skill."""
+        from rich.table import Table
+        from rich import box
+        console.print()
+        console.print(Panel(
+            f"[bold cyan]Skill #{sl_no}[/bold cyan]  [dim]{s.skill_id[:12]}[/dim]",
+            border_style="cyan",
+        ))
+        console.print(f"[bold]Intent:[/bold] {s.intent_pattern}")
+        console.print(f"[bold]Confidence:[/bold] [green]{s.confidence:.0%}[/green]")
+        console.print(f"[bold]Uses:[/bold] {s.usage_count}  |  [bold]Success:[/bold] {s.success_count}")
+        console.print(f"[bold]Source:[/bold] {s.source}")
+        console.print(f"[bold]Notes:[/bold] {s.notes or '—'}")
+        if s.tags:
+            console.print(f"[bold]Tags:[/bold] {', '.join(s.tags)}")
+        if s.steps:
+            step_table = Table(box=box.SIMPLE)
+            step_table.add_column("#", justify="right", style="dim")
+            step_table.add_column("Tool", style="cyan")
+            step_table.add_column("Command", style="white")
+            for i, step in enumerate(s.steps, 1):
+                step_table.add_row(str(i), step.tool, step.command_template[:80])
+            console.print(step_table)
+        console.print()
+
     def _cmd_skills(self, args: str) -> None:
         """Handle /skills command to manage the Continuous Learning System."""
         from ..learning_system import get_learning_system
@@ -1584,16 +1681,17 @@ class CommandHandlersMixin:
                     border_style="cyan"
                 )
             )
-            # List top 10 skills by confidence
             if stats.get('total_skills', 0) > 0:
-                skills = sorted(cls._skills.values(), key=lambda s: s.confidence, reverse=True)
+                skills = self._get_sorted_skills()
                 table = Table(title="Top Learned Skills", box=box.SIMPLE)
-                table.add_column("Intent / Pattern", style="cyan", max_width=40)
+                table.add_column("Sl No", justify="right", style="dim", width=4)
+                table.add_column("Intent / Pattern", style="cyan", max_width=36)
                 table.add_column("Steps", justify="right")
                 table.add_column("Conf.", justify="right", style="green")
                 table.add_column("Uses", justify="right")
-                for s in skills[:10]:
+                for i, s in enumerate(skills[:10], 1):
                     table.add_row(
+                        str(i),
                         s.intent_pattern,
                         str(len(s.steps)),
                         f"{s.confidence:.0%}",
@@ -1602,26 +1700,101 @@ class CommandHandlersMixin:
                 console.print(table)
                 if len(skills) > 10:
                     console.print(f"[dim]... and {len(skills) - 10} more skills.[/dim]")
+                    console.print("[dim]Use /skills show <Sl No> to see a specific skill.[/dim]")
+
+        elif subcmd == "show":
+            if not subargs:
+                console.print("[yellow]Usage: /skills show <Sl No>[/yellow]")
+                return
+            skill = self._get_skill_by_sl(subargs)
+            if skill is None:
+                console.print("[red]✗ Invalid Sl No. Use /skills list to see available skills.[/red]")
+                return
+            self._print_skill_detail(skill, int(subargs))
+
+        elif subcmd == "edit":
+            if not subargs:
+                console.print("[yellow]Usage: /skills edit <Sl No>[/yellow]")
+                return
+            parts = subargs.split(maxsplit=1)
+            skill = self._get_skill_by_sl(parts[0])
+            if skill is None:
+                console.print("[red]✗ Invalid Sl No. Use /skills list to see available skills.[/red]")
+                return
+            self._print_skill_detail(skill, int(parts[0]))
+            edit_field = parts[1] if len(parts) > 1 else ""
+            if edit_field == "intent":
+                new_intent = input("  New intent pattern: ").strip()
+                if new_intent:
+                    skill.intent_pattern = new_intent[:200]
+                    cls._save_skill(skill)
+                    console.print("[green]✓ Intent pattern updated.[/green]")
+            elif edit_field == "notes":
+                new_notes = input("  New notes: ").strip()
+                if new_notes:
+                    skill.notes = new_notes[:500]
+                    cls._save_skill(skill)
+                    console.print("[green]✓ Notes updated.[/green]")
+            elif edit_field == "":
+                console.print("[dim]Editable fields: intent, notes[/dim]")
+            else:
+                console.print(f"[yellow]Unknown field '{edit_field}'. Editable: intent, notes[/yellow]")
+
+        elif subcmd == "remove":
+            if not subargs:
+                console.print("[yellow]Usage: /skills remove <Sl No>[/yellow]")
+                return
+            parts = subargs.split(maxsplit=1)
+            skill = self._get_skill_by_sl(parts[0])
+            if skill is None:
+                console.print("[red]✗ Invalid Sl No. Use /skills list to see available skills.[/red]")
+                return
+            self._print_skill_detail(skill, int(parts[0]))
+            from ..tool_installer import tty_confirm
+            if tty_confirm("Remove this skill?", default=False):
+                if cls.delete_skill(skill.skill_id):
+                    console.print("[green]✓ Skill removed.[/green]")
+                else:
+                    console.print("[red]✗ Failed to remove skill.[/red]")
 
         elif subcmd == "add":
             if not subargs:
-                console.print("[yellow]Usage: /skills add <workflow description...>[/yellow]")
+                console.print("[yellow]Usage: /skills add <Sl No. intent/pattern; step_a; step_b.>[/yellow]")
                 return
             from ..onboarding import OnboardingWizard
             added = OnboardingWizard._parse_and_add_manual_skills(cls, subargs)
             if added:
                 console.print(f"[green]✓ Successfully added {added} new skill(s)![/green]")
             else:
-                console.print("[yellow]⚠ Could not parse any valid skills from input. Use format: 1. step_a; step_b.[/yellow]")
+                console.print("[yellow]⚠ Could not parse any valid skills from input. Use format:\n"
+                              "  /skills add 1. intent/pattern; step_a; step_b.[/yellow]")
 
         elif subcmd == "export":
             if not subargs:
-                console.print("[yellow]Usage: /skills export <filepath.json>[/yellow]")
+                console.print("[yellow]Usage: /skills export <path>.json (or .xaml)[/yellow]")
                 return
             export_path = Path(subargs).expanduser().resolve()
+            suffix = export_path.suffix.lower()
+            def _xml(s: str) -> str:
+                return s.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
             try:
                 data = cls.export_skills()
-                export_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+                if suffix == ".xaml":
+                    lines = ['<?xml version="1.0" encoding="utf-8"?>',
+                             '<Skills xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">']
+                    for s in data["skills"]:
+                        lines.append(f'  <Skill ID="{_xml(s["skill_id"])}" Confidence="{s["confidence"]:.2f}">')
+                        lines.append(f'    <Intent>{_xml(s["intent_pattern"])}</Intent>')
+                        lines.append(f"    <Steps>")
+                        for step in s["steps"]:
+                            lines.append(f'      <Step Tool="{_xml(step["tool"])}">'
+                                         f'{_xml(step["command_template"])}</Step>')
+                        lines.append(f"    </Steps>")
+                        lines.append(f"  </Skill>")
+                    lines.append('</Skills>')
+                    export_path.write_text("\n".join(lines), encoding="utf-8")
+                else:
+                    export_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
                 console.print(f"[green]✓ Exported {len(data['skills'])} skills to {export_path}[/green]")
             except Exception as exc:
                 console.print(f"[red]✗ Export failed: {exc}[/red]")
@@ -1630,8 +1803,11 @@ class CommandHandlersMixin:
             console.print(
                 "[yellow]Unknown /skills sub-command.[/yellow]\n"
                 "[dim]Usage: /skills [stats|list]\n"
-                "       /skills add 1. step_a; step_b.\n"
-                "       /skills export /path/to/export.json[/dim]"
+                "       /skills show <Sl No>\n"
+                "       /skills edit <Sl No> [field]\n"
+                "       /skills remove <Sl No>\n"
+                "       /skills add <Sl No. intent/pattern; step_a; step_b.>\n"
+                "       /skills export <path>.json (or .xaml)[/dim]"
             )
 
     async def _cmd_siem(self, args: str) -> None:
