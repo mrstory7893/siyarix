@@ -1086,7 +1086,9 @@ class RegistryPlanner:
         avail_set = set(available_tools or [])
         try:
             from .learning_system import get_learning_system
-            step_dicts = get_learning_system().instantiate_skill(skill, target)
+            _ls = get_learning_system()
+            _raw_anon = _ls._anonymize_target(goal, target) if target else goal
+            step_dicts = _ls.instantiate_skill(skill, target, raw_anon_goal=_raw_anon)
         except Exception:
             return None
 

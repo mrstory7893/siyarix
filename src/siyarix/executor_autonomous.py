@@ -161,7 +161,9 @@ class AutonomousExecutor(BaseExecutor):
         )
 
         if self._on_step_progress:
-            self._on_step_progress(step)
+            res = self._on_step_progress(step)
+            if hasattr(res, "__await__"):
+                await res
 
         self.normalise_step(step)
 
@@ -231,7 +233,9 @@ class AutonomousExecutor(BaseExecutor):
             self._tracker.record(step.tool or "shell", step.command or str(step.args), False)
 
         if self._on_step_progress:
-            self._on_step_progress(step)
+            res = self._on_step_progress(step)
+            if hasattr(res, "__await__"):
+                await res
 
         return step, step.result
 
@@ -274,11 +278,10 @@ class AutonomousExecutor(BaseExecutor):
         if exec_result.exit_code in (126, 127) and sys.stdout and sys.stdout.isatty():
             tool_name = self._extract_tool_from_command(step.command or "")
             if tool_name:
-                from rich.prompt import Confirm
-                from .tool_installer import ToolInstaller
+                from .tool_installer import ToolInstaller, tty_confirm
                 from .tool_models import invalidate_which_cache
 
-                want = Confirm.ask(
+                want = tty_confirm(
                     f"\n[yellow]Tool [cyan]{tool_name}[/cyan] is required but not installed."
                     f"\nDo you want to install it now?[/yellow]",
                     default=True,

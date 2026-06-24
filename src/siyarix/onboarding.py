@@ -1969,11 +1969,11 @@ class OnboardingWizard:
 
         Supports the format::
 
-            1. step_a; step_b; step_c.
-            2. step_x; step_y.
+            1. intent/pattern; step_a; step_b.
+            2. intent/pattern; step_x; step_y.
 
-        Each numbered entry becomes one :class:`~siyarix.learning_system.LearnedSkill`.
-        Steps within an entry are separated by semicolons.
+        The first semicolon-separated part is the intent pattern (anonymised).
+        Subsequent parts are command steps.
         """
         from .learning_system import LearnedSkill, LearnedStep
         import time
@@ -1983,7 +1983,6 @@ class OnboardingWizard:
         # Match numbered entries: "1. ... ." or "1) ... ."
         entries = re.findall(r"(?:^|\n)\s*\d+[.):]\s*(.+?)(?=\n\s*\d+[.):)|$)", raw_text, re.DOTALL)
         if not entries:
-            # Fallback: treat the whole block as one skill
             entries = [raw_text]
 
         added = 0
@@ -1991,20 +1990,21 @@ class OnboardingWizard:
             entry = entry.strip().rstrip(".")
             if not entry:
                 continue
-            # Split into steps by semicolons
-            raw_steps = [s.strip() for s in entry.split(";") if s.strip()]
-            if not raw_steps:
+            parts = [p.strip() for p in entry.split(";") if p.strip()]
+            if not parts:
                 continue
 
-            # Build an intent_pattern from the first step's words (anonymised)
-            intent = raw_steps[0][:80]
+            # First part is the intent pattern
+            intent = parts[0][:200]
             tokens = [w.lower() for w in re.split(r"[\s\-_]+", intent) if len(w) > 1]
+
+            # Remaining parts are command steps
+            raw_steps = parts[1:] if len(parts) > 1 else parts
 
             steps: list[LearnedStep] = []
             for raw_step in raw_steps:
-                # Extract tool name (first word)
-                parts = raw_step.split()
-                tool = parts[0] if parts else ""
+                step_parts = raw_step.split()
+                tool = step_parts[0] if step_parts else ""
                 steps.append(
                     LearnedStep(
                         tool=tool,
@@ -2018,7 +2018,7 @@ class OnboardingWizard:
                 skill_id=str(uuid.uuid4()),
                 intent_pattern=intent,
                 steps=steps,
-                confidence=0.5,  # Manual skills start at 50% confidence
+                confidence=0.5,
                 usage_count=1,
                 success_count=1,
                 tokens=tokens,
@@ -2479,8 +2479,7 @@ class OnboardingWizard:
                 )
                 result = subprocess.run(
                     ["sh", "-c", "curl -fsSL https://ollama.com/install.sh | sh"],
-                    capture_output=True,
-                    text=True,
+                    stdin=sys.stdin,
                     timeout=600,
                     check=False,
                 )
@@ -2488,14 +2487,13 @@ class OnboardingWizard:
                 if ok:
                     self._console.print("  [green]\u2713 Ollama installed[/green]")
                 else:
-                    self._console.print(f"  [red]Install failed: {result.stderr.strip()}[/red]")
+                    self._console.print("  [red]Ollama install failed (see output above)[/red]")
                 return ok
             else:
                 self._console.print("  Installing via official script...")
                 result = subprocess.run(
                     ["sh", "-c", "curl -fsSL https://ollama.com/install.sh | sh"],
-                    capture_output=True,
-                    text=True,
+                    stdin=sys.stdin,
                     timeout=600,
                     check=False,
                 )
@@ -2503,7 +2501,7 @@ class OnboardingWizard:
                 if ok:
                     self._console.print("  [green]\u2713 Ollama installed[/green]")
                 else:
-                    self._console.print(f"  [red]Install failed: {result.stderr.strip()}[/red]")
+                    self._console.print("  [red]Ollama install failed (see output above)[/red]")
                 return ok
         except Exception as exc:
             self._console.print(f"  [red]Ollama installation error: {exc}[/red]")
@@ -2541,8 +2539,7 @@ if ($ollama) { $ollama.Uninstall() | Out-Null }
                 bin_path = shutil.which("ollama") or "/usr/local/bin/ollama"
                 r = subprocess.run(
                     ["sudo", "rm", "-f", bin_path],
-                    capture_output=True,
-                    text=True,
+                    stdin=sys.stdin,
                     timeout=30,
                     check=False,
                 )
@@ -2560,8 +2557,7 @@ sudo rm -rf /usr/local/lib/ollama /usr/lib/ollama /lib/ollama 2>/dev/null
 """
                 r = subprocess.run(
                     ["sh", "-c", script],
-                    capture_output=True,
-                    text=True,
+                    stdin=sys.stdin,
                     timeout=60,
                     check=False,
                 )
@@ -2571,8 +2567,7 @@ sudo rm -rf /usr/local/lib/ollama /usr/lib/ollama /lib/ollama 2>/dev/null
                 bin_path = shutil.which("ollama") or "/usr/local/bin/ollama"
                 r = subprocess.run(
                     ["sudo", "rm", "-f", bin_path],
-                    capture_output=True,
-                    text=True,
+                    stdin=sys.stdin,
                     timeout=30,
                     check=False,
                 )

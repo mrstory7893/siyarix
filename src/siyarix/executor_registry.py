@@ -142,7 +142,9 @@ class RegistryExecutor(BaseExecutor):
             )
         )
         if self._on_step_progress:
-            self._on_step_progress(step)
+            res = self._on_step_progress(step)
+            if hasattr(res, "__await__"):
+                await res
         start = __import__("time").monotonic()
         try:
             result = await asyncio.wait_for(
@@ -186,7 +188,9 @@ class RegistryExecutor(BaseExecutor):
             step.result = {"status": "error", "error": str(e)}
             self._tracker.record(step.tool, str(sorted(step.args.items())), False)
         if self._on_step_progress:
-            self._on_step_progress(step)
+            res = self._on_step_progress(step)
+            if hasattr(res, "__await__"):
+                await res
 
     async def _try_execute(
         self, step: PlanStep, executor_fn: StepExecutor | None
@@ -282,8 +286,7 @@ class RegistryExecutor(BaseExecutor):
                 import sys as _sys
 
                 if _sys.stdout and _sys.stdout.isatty():
-                    from rich.prompt import Confirm
-                    from .tool_installer import ToolInstaller
+                    from .tool_installer import ToolInstaller, tty_confirm
                     from .subprocess_utils import _format_not_found
 
                     # Show a clear pre-install message with install hint
@@ -291,7 +294,7 @@ class RegistryExecutor(BaseExecutor):
                     console = __import__("rich").console.Console(stderr=True)
                     console.print(f"\n[yellow]{hint}[/yellow]")
 
-                    want = Confirm.ask(
+                    want = tty_confirm(
                         f"\n[yellow]Install [cyan]{step.tool}[/cyan] now?[/yellow]",
                         default=True,
                     )

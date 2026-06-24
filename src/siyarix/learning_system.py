@@ -303,6 +303,7 @@ class ContinuousLearningSystem:
             ).fetchall()
             for row in rows:
                 skill = self._row_to_skill(row)
+                skill.recalculate_confidence()
                 self._skills[skill.skill_id] = skill
         except Exception as exc:
             logger.warning("CLS: failed to load skills: %s", exc)
@@ -485,7 +486,7 @@ class ContinuousLearningSystem:
             "for", "of", "with", "by", "from", "up", "about", "into", "please",
             "can", "you", "do", "i", "want", "need", "run", "execute", "perform",
             "start", "show", "find", "get", "tell", "is", "are", "was", "were",
-            "all", "any", "some", "just", "now", "target", "on",
+            "all", "any", "some", "just", "now", "on",
         })
         text = text.lower()
         text = re.sub(r"[^\w\s-]", " ", text)
@@ -651,29 +652,34 @@ class ContinuousLearningSystem:
     def _merge_steps(
         self, existing_steps: list[LearnedStep], incoming_steps: list[dict[str, Any]]
     ) -> list[LearnedStep]:
-        """Merge incoming steps into existing steps, avoiding tool-level duplicates.
+        """Merge incoming steps into existing steps, preserving all steps.
 
-        When the same tool appears in both lists the newer command_template and
-        description are kept (most recent observation wins).
+        Steps are matched by (tool, command) uniqueness, not by tool alone,
+        so the same tool can appear multiple times with different commands.
+        Empty-tool steps are preserved in their original order.
         """
-        merged: dict[str, LearnedStep] = {}
+        existing_cmds: set[tuple[str, str]] = set()
         for s in existing_steps:
-            if s.tool:
-                merged[s.tool] = s
+            existing_cmds.add((s.tool, s.command_template))
+
+        merged: list[LearnedStep] = list(existing_steps)
+
         for s in incoming_steps:
             tool = s.get("tool", "")
             cmd = s.get("command") or s.get("command_template") or ""
             desc = s.get("description", "")
             args = s.get("args", {})
-            # Always prefer the incoming (newer) version of each tool step
-            if tool:
-                merged[tool] = LearnedStep(
-                    tool=tool,
-                    command_template=cmd,
-                    description=desc,
-                    args=args,
-                )
-        return list(merged.values())
+            key = (tool, cmd)
+            if key in existing_cmds:
+                continue
+            merged.append(LearnedStep(
+                tool=tool,
+                command_template=cmd,
+                description=desc,
+                args=args,
+            ))
+
+        return merged
 
     def _abstract_parameters(self, old_pattern: str, new_pattern: str) -> tuple[str, dict[str, str], dict[str, str]]:
         """Compare two patterns, extract differing tokens as {param_N}, and return maps."""
@@ -855,11 +861,17 @@ class ContinuousLearningSystem:
                     args = dict(getattr(s, "args", {}) or {})
                     if not (cmd or tool):
                         continue
+                    sanitized_args: dict[str, Any] = {}
+                    for ak, av in args.items():
+                        if isinstance(av, str):
+                            sanitized_args[ak] = self._anonymize_target(av, target)
+                        else:
+                            sanitized_args[ak] = av
                     steps.append({
                         "tool": tool,
                         "command": self._anonymize_target(cmd, target),
                         "description": self._anonymize_target(desc, target),
-                        "args": args,
+                        "args": sanitized_args,
                     })
 
             if not steps:
@@ -924,11 +936,17 @@ class ContinuousLearningSystem:
                     # Build a synthetic command template from the tool + flags
                     flags = args.get("flags", "")
                     cmd_template = f"{tool} {flags} {{target}}".strip()
+                    sanitized_args: dict[str, Any] = {}
+                    for ak, av in args.items():
+                        if isinstance(av, str):
+                            sanitized_args[ak] = self._anonymize_target(av, target)
+                        else:
+                            sanitized_args[ak] = av
                     steps.append({
                         "tool": tool,
                         "command": self._anonymize_target(cmd_template, target),
                         "description": self._anonymize_target(desc, target),
-                        "args": args,
+                        "args": sanitized_args,
                     })
 
             if not steps:
@@ -1098,14 +1116,13 @@ class ContinuousLearningSystem:
                 goal_tokens, skill.tokens,
                 pattern_a=anon_goal, pattern_b=skill.intent_pattern,
             )
-            # Combined score: penalise low-usage skills slightly
-            volume_factor = min(1.0, math.log(1 + skill.usage_count) / math.log(6))
-            combined = sim * skill.confidence * (0.7 + 0.3 * volume_factor)
+            # Combined score: similarity × confidence with no usage penalty
+            combined = sim * skill.confidence
             if combined > best_score:
                 best_score = combined
                 best_skill = skill
 
-        if best_skill and best_score >= threshold * 0.75:
+        if best_skill and best_score >= threshold * 0.80:
             logger.info(
                 "CLS: high-confidence match '%s' (conf=%.2f, score=%.2f, threshold=%.2f)",
                 best_skill.intent_pattern[:55],
@@ -1474,8 +1491,11 @@ class ContinuousLearningSystem:
             "negligible (< 0.10)": sum(1 for s in skills if s.confidence < 0.10),
         }
 
+        high_conf_count = sum(1 for s in skills if s.confidence >= 0.80)
+
         return {
             "total_skills": total,
+            "high_confidence": high_conf_count,
             "confidence_distribution": conf_buckets,
             "avg_confidence": round(avg_conf, 3),
             "total_observations": total_obs,
