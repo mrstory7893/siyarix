@@ -43,12 +43,6 @@ def update_links(content: str, path_map: dict[str, str]) -> str:
         anchor = f"#{original_link.split('#')[1]}" if "#" in original_link else ""
         
         # If the link is in our map, replace it
-        # We need to normalize the link path relative to the current file or project root
-        # For simplicity, we'll try to match it against our path_map keys
-        
-        # Try to find the matching path in our map
-        # This is a bit tricky as links can be relative. 
-        # We'll try to find a key that ends with the normalized base_link
         matched_key = None
         for key in path_map:
             if key.endswith(base_link.replace("/", os.sep)) or base_link.replace("/", os.sep) == key:
@@ -57,7 +51,6 @@ def update_links(content: str, path_map: dict[str, str]) -> str:
         
         if matched_key:
             new_name = path_map[matched_key]
-            # Remove .md for GitHub Wiki links
             wiki_link_name = os.path.splitext(new_name)[0]
             return f"[{text}]({wiki_link_name}{anchor})"
         

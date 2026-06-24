@@ -13,7 +13,6 @@ with open(json_path, "r", encoding="utf-8") as f:
 
 # ── 1. GENERIC UTILITIES TO REMOVE ──────────────────────────────────────────
 generic_utilities = {
-    # Coreutils / base system
     "kill", "pkill", "pgrep", "pidof", "renice", "nice", "nohup", "taskset",
     "fdisk", "parted", "mkfs", "blkid", "lsblk", "chmod", "chown", "chgrp",
     "date", "cal", "hostname", "uptime", "last", "lastlog", "who", "w", "id",
@@ -28,42 +27,26 @@ generic_utilities = {
     "dirname", "basename", "mktemp", "touch", "rename",
     "nproc", "type", "whereis", "locate", "updatedb",
     "mesg", "write", "wall", "pinky", "stdbuf", "env", "printenv", "set",
-    # File transfer (generic)
     "scp", "ftp", "lftp", "aria2c", "axel",
-    # Filesystem / disk
     "mount", "umount", "df", "du", "stat",
-    # System monitoring
     "ps", "top", "sar", "iostat", "vmstat", "mpstat",
-    # Network config
     "ip", "route", "ifconfig", "iwconfig", "iwlist", "iw", "ethtool", "nmcli",
-    # Hardware / system info
     "uname", "systemctl", "journalctl", "dmesg", "lspci", "lsusb",
     "lscpu", "lshw", "dmidecode", "sensors",
-    # Shells / interpreters
     "bash", "powershell", "python", "ruby", "golang",
-    # Text editors / viewers
     "nano", "vim",
-    # Text processing
     "cat", "find", "grep", "awk", "sed", "xxd", "hexdump", "watch", "file", "which",
-    # Compression / archive
     "7z", "gzip", "unzip",
-    # Terminal multiplexers
     "screen", "tmux",
-    # Process / system monitoring (generic)
     "htop", "iotop", "iperf3", "ncdu", "tree", "bmon", "nload", "iftop", "nethogs",
     "darkstat", "jnettop",
-    # Build / dev tools
     "timeout", "xargs", "parallel", "entr", "make", "cmake", "ninja",
     "pkg-config", "patch", "diff", "colordiff",
-    # Non-security miscellaneous
     "cockpit", "librecad", "ltp", "neofetch", "ola", "peach", "riak",
     "torbrowser", "virtualbox", "screenedgeutil", "jcat",
-    # Generic network monitoring
     "bpf", "libpcap",
-    # Database clients (generic)
     "redis-cli", "mongosh", "mysql", "psql", "sqlite3",
-    # These are too generic
-    "ss", "nmap"  # NO - nmap is essential. Leave it.
+    "ss",
 }
 
 # Re-add essential ones accidentally included
