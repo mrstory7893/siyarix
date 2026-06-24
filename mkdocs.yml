@@ -1,5 +1,5 @@
 site_name: Siyarix
-site_description: AI-Native Cybersecurity Orchestration Agent — 24 AI providers, 114+ tool parsers, 50+ CLI commands
+site_description: AI-Native Cybersecurity Orchestration Platform — 25+ AI providers, 80+ tool parsers, 50+ CLI commands, 4 execution modes
 site_url: https://siyarix.dev
 repo_url: https://github.com/mufthakherul/siyarix
 repo_name: mufthakherul/siyarix
@@ -108,6 +108,7 @@ nav:
       - Security Model: architecture/security-model.md
       - Interaction Modes: architecture/interaction-modes.md
       - Intent Routing: architecture/intent-routing.md
+      - Multi-Agent Framework: architecture/multi-agent-framework.md
   - AI Internals:
       - Multi-Provider Routing: ai/multi-provider-routing.md
       - Persona System: ai/persona-system.md
@@ -132,3 +133,4 @@ nav:
       - Disclaimer: legal/disclaimer.md
       - Trademark Policy: legal/trademark-policy.md
       - Responsible AI: legal/responsible-ai-usage.md
+  - Docs Map: DOCS_MAP.md

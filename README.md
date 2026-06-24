@@ -5,7 +5,7 @@
 <h1 align="center">Siyarix</h1>
 
 <p align="center">
-  <strong>AI Cybersecurity Orchestration Agent</strong><br/>
+  <strong>AI Cybersecurity Orchestration Platform</strong><br/>
   CLI-native, multi-provider AI orchestration platform for modern security operations.<br/>
   Translate natural language objectives into precise, multi-tool security workflows.
 </p>
@@ -65,9 +65,9 @@
 
 ## Overview
 
-Siyarix is a production-grade **AI Cybersecurity Orchestration Agent** that bridges natural language security objectives with deterministic multi-tool execution. Describe your goal in plain English -- "scan this subnet for open ports" or "enumerate services on the web server" -- and Siyarix plans, executes, analyzes, and reports using an extensible multi-provider AI core and a comprehensive security tool registry.
+Siyarix is a production-grade **AI Cybersecurity Orchestration Platform** that bridges natural language security objectives with deterministic multi-tool execution. Describe your goal in plain English -- "scan this subnet for open ports" or "enumerate services on the web server" -- and Siyarix plans, executes, analyzes, and reports using an extensible multi-provider AI core and a comprehensive security tool registry.
 
-Built on **Python 3.11+** with **Typer CLI**, **Rich** terminal output, and **Pydantic** data models, Siyarix delivers a modern, type-safe security operations experience.
+Built on **Python 3.11+** with **Typer CLI**, **Rich** terminal output, and **Pydantic** data models, Siyarix delivers a modern, type-safe security operations experience. With 80+ source modules, 110+ test files, 47 CI/CD workflows, and support for 24 AI providers, Siyarix is designed for serious security operations at scale.
 
 ### Agent Modes
 
@@ -112,39 +112,42 @@ Intent Router --> Context Manager --> AI Planner --> Permission Gate
 
 ### AI Orchestration
 
-- **24+ AI Providers**: OpenAI, Anthropic (Claude), Google Gemini, Groq, Mistral AI, Together AI, OpenRouter, DeepSeek, xAI (Grok), Perplexity, Cerebras, Fireworks AI, HuggingFace Inference, Azure OpenAI, NVIDIA Nemotron, MiniMax, Moonshot (Kimi), vLLM, Ollama, LM Studio, llama.cpp, LocalAI, OpenCodeZen, ZAI, plus offline heuristic registry
+- **24+ AI Providers**: OpenAI, Anthropic (Claude), Google Gemini, Groq, Mistral AI, Together AI, OpenRouter, DeepSeek, xAI (Grok), Perplexity, Cerebras, Fireworks AI, HuggingFace Inference, Azure OpenAI, NVIDIA Nemotron, MiniMax, Moonshot (Kimi), vLLM, Ollama, LM Studio, llama.cpp, LocalAI, OpenCode Zen, ZAI, plus offline heuristic registry
 - **Multi-Provider Failover**: Automatic circuit breaker pattern with exponential backoff across configured providers
-- **Multi-Model Ensemble**: Parallel LLM voting (MAJORITY, CONSENSUS, WEIGHTED, BEST_SCORE) for critical decisions
-- **Swarm Multi-Agent Orchestration**: Decompose complex objectives across specialized sub-agents
-- **Continuous Learning**: Semantic memory via vector embeddings with cosine similarity search and experience recording
+- **Swarm Multi-Agent Orchestration**: Decompose complex objectives across specialized sub-agents (Recon, Exploit, Report)
+- **Continuous Learning**: Privacy-preserving skill library via BM25-style similarity with Bayesian confidence scoring
 - **Semantic Memory**: Persistent knowledge graph for cross-session infrastructure modeling
 - **Agent Core**: LLM-first planning, parallel tool execution, and LLM synthesis in a closed feedback loop
+- **Multi-Wave Execution**: Up to 25 plan-execute-measure waves per goal with budget checking and automatic compaction
 
 ### Security Tool Integration
 
 - **80+ Tool Parsers**: Structured output extraction for nmap, nuclei, masscan, gobuster, ffuf, hydra, nikto, metasploit, burpsuite, zaproxy, sqlmap, wpscan, trivy, grype, semgrep, gitleaks, trufflehog, theHarvester, Amass, Subfinder, Sublist3r, assetfinder, findomain, dnsrecon, dnsenum, massdns, shuffledns, dnsx, httpx, katana, hakrawler, gospider, waybackurls, gau, wfuzz, dirb, dirsearch, feroxbuster, kiterunner, arjun, paramspider, corsy, dalfox, kxss, xsstrike, commix, jwt_tool, wafw00f, whatweb, aquatone, gowitness, bettercap, responder, crackmapexec, impacket, mimikatz, pypykatz, bloodhound, sharphound, certipy, kerbrute, ldapsearch, enum4linux, smbclient, smbmap, evil-winrm, ssh_audit, sslscan, sslyze, testssl, dig, whois, shodan, searchsploit, lynis, scoutsuite, prowler, checkov, kubectl, aws, volatility, yara, tcpdump, dmitry, finger, ike_scan, netcat, smtp_user_enum, hashcat, hash_identifier, john, exiftool, s3scanner, zmap, zgrab, rustscan, naabu, interactsh, recon-ng, aircrack-ng, ettercap, and more
 - **Command Pipeline**: Chain tool executions with `|` / `then` / `and then` operators
 - **Plugin System**: Dynamic discovery and loading from `~/.siyarix/plugins/`
+- **Deep Scan Engine**: Multi-layered reconnaissance with OS fingerprinting, vulnerability detection, and comprehensive reporting
 
 ### CLI & Interface
 
 - **50+ CLI Commands** across 12 command groups: `scan`, `recon`, `exploit`, `report`, `config`, `security`, `incidents`, `vulns`, `hunt`, `mitre`, `playbooks`, `dashboard`
-- **Interactive REPL** with 40+ slash commands (`/model`, `/persona`, `/review`, `/key`, etc.)
+- **Interactive REPL** with 40+ slash commands (`/model`, `/persona`, `/review`, `/key`, etc.), split-pane view, and SmartAutocomplete
 - **12 Color Themes**: CYBER_NOIR, MATRIX, BLOODMOON, ARCTIC, GOLDENROD, ECLIPSE, SYNTHWAVE, DARK, LIGHT, NEON, MINIMAL, DEFAULT
-- **REST API (FastAPI)** + WebSocket at `/v1/*` endpoints with JWT authentication
 - **8 Output Formats**: TABLE, JSON, YAML, CSV, HTML, XML, RAW, QUIET
 - **4 Report Engine Formats**: MARKDOWN, HTML, JSON, SARIF
 - **Shell Completions**: bash, zsh, fish, PowerShell
-- **Session Branching**: Fork and explore alternate execution paths concurrently
+- **Session Branching**: Fork and explore alternate execution paths concurrently with JSONL tree format
+- **Offline Mode**: Full heuristic planning without AI provider -- always available
 
 ### Security & Safety
 
-- **Permission Gate**: Two-stage AI-driven danger analysis before command execution
-- **Credential Store**: AES-256-GCM encrypted vault for API keys and secrets
-- **Stealth Engine**: TOR routing support and honeypot detection
-- **DLP Engine**: Data loss prevention with pattern-based sensitive data detection
-- **OPSEC Manager**: Operational security controls and countermeasures
+- **Permission Gate**: Two-stage AI-driven danger analysis before command execution (38+ patterns)
+- **Credential Store**: AES-256-GCM encrypted vault with OS keyring integration and KMS support
+- **Stealth Engine**: TOR routing, user-agent rotation, request jitter, pacing, decoy traffic, honeypot detection
+- **DLP Engine**: Bidirectional data loss prevention with 40+ pattern-based sensitive data detection
+- **OPSEC Manager**: Session isolation, secure cleanup, cooldown tracking, cover operations
 - **Tamper-Evident Audit Log**: SHA-256 chained cryptographic audit trail with verify command
+- **Security Hardening**: System-level hardening, file integrity monitoring, container security checks
+- **Input Validator**: Comprehensive injection detection (shell, SQL, path traversal, SSRF)
 - **Health Checker**: System diagnostics with `siyarix health` command
 - **Event Bus**: Asynchronous event-driven architecture for internal communication
 - **Metrics**: Performance and usage metrics collection
@@ -152,10 +155,11 @@ Intent Router --> Context Manager --> AI Planner --> Permission Gate
 ### Compliance & Intelligence
 
 - **Compliance Engine**: Framework-based compliance checking (PCI-DSS, HIPAA, ISO 27001, SOC 2)
-- **Threat Intel**: Structured threat intelligence consumption and correlation
+- **Threat Intel**: Structured threat intelligence consumption and correlation (AlienVault OTX, NVD, MITRE)
 - **Knowledge Graph**: In-memory relationship model of scanned infrastructure
 - **Report Engine**: Multi-format report generation (MARKDOWN, HTML, JSON, SARIF)
 - **Output Engine**: Structured output in 8 formats with customizable verbosity
+- **Workflow Engine**: DAG-based workflow execution with conditional branching and pause/resume
 
 ### Deployment
 
@@ -179,11 +183,17 @@ siyarix
 # Quick scan
 siyarix scan quick example.com
 
+# Deep scan
+siyarix scan deep example.com
+
 # Natural language command
 siyarix run "enumerate services on 10.0.0.1"
 
 # Goal-driven autonomous agent
 siyarix agent "find all vulnerabilities on our web server"
+
+# Offline mode (no AI provider needed)
+siyarix --mode offline run "scan example.com"
 
 # System health check
 siyarix health

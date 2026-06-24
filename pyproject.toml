@@ -120,6 +120,7 @@ dev = [
   "bandit>=1.7.9",
   "safety>=3.2.0",
   "pip-audit>=2.7.0",
+  "hypothesis>=6.100",
 ]
 
 [project.scripts]
