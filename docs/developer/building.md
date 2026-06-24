@@ -8,8 +8,8 @@ Siyarix supports multiple distribution formats using **hatchling** as the build 
 pip install build hatchling
 python -m build
 # Output in dist/
-# dist/siyarix-3.0.0-py3-none-any.whl
-# dist/siyarix-3.0.0.tar.gz
+# dist/siyarix-1.0.0-py3-none-any.whl
+# dist/siyarix-1.0.0.tar.gz
 ```
 
 ## Development installation
@@ -79,7 +79,7 @@ choco install siyarix
 ### Debian/Ubuntu
 
 ```bash
-sudo dpkg -i packages/deb/siyarix_3.0.0-1_all.deb
+sudo dpkg -i packages/deb/siyarix_1.0.0-1_all.deb
 ```
 
 ## Docker
@@ -127,7 +127,7 @@ docker run -v ~/.siyarix:/root/.siyarix siyarix:latest run "scan x"  # With conf
 7. Upload to TestPyPI: `twine upload --repository testpypi dist/*`
 8. Test install from TestPyPI
 9. Upload to PyPI: `twine upload dist/*`
-10. Tag release: `git tag v3.0.0 && git push --tags`
+10. Tag release: `git tag v1.0.0 && git push --tags`
 11. Build and publish Docker image
 12. Update Homebrew formula
 13. Update Winget/Chocolatey manifests

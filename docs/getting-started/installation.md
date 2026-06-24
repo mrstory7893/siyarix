@@ -1,6 +1,6 @@
 # Installation Guide
 
-Siyarix v3.0.0 requires **Python 3.11 or later** and supports Linux, macOS, Windows (PowerShell 5.1+), and HarmonyOS. Minimum 512 MB RAM (4 GB+ recommended for AI operations), ~500 MB disk for tool dependencies.
+Siyarix v1.0.0 requires **Python 3.11 or later** and supports Linux, macOS, Windows (PowerShell 5.1+), and HarmonyOS. Minimum 512 MB RAM (4 GB+ recommended for AI operations), ~500 MB disk for tool dependencies.
 
 ## PyPI (recommended)
 
@@ -54,7 +54,7 @@ npx @mufthakherul/siyarix --help
 
 **Debian/Ubuntu**
 ```bash
-sudo dpkg -i siyarix_3.0.0-1_all.deb
+sudo dpkg -i siyarix_1.0.0-1_all.deb
 ```
 
 **Docker**

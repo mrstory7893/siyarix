@@ -1,6 +1,6 @@
 # CLI Commands Reference
 
-Siyarix v3.0.0 is a CLI-first security operations platform built on **Typer**. All functionality is accessible via the `siyarix` binary with subcommands and command groups.
+Siyarix v1.0.0 is a CLI-first security operations platform built on **Typer**. All functionality is accessible via the `siyarix` binary with subcommands and command groups.
 
 ---
 

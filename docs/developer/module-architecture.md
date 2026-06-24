@@ -1,6 +1,6 @@
 # Module Architecture
 
-This document describes the internal architecture of key Siyarix v3.0.0 modules — how they interact, their data flows, and design patterns.
+This document describes the internal architecture of key Siyarix v1.0.0 modules — how they interact, their data flows, and design patterns.
 
 ## Execution Engine (`executor.py`, `executor_registry.py`, `executor_autonomous.py`)
 

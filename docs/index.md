@@ -1,4 +1,4 @@
-# Siyarix v3.0.0 Documentation
+# Siyarix v1.0.0 Documentation
 
 **Siyarix** is an AI-native cybersecurity operations agent that translates natural language into deterministic security workflows. It lives in your terminal, routes tasks across 24 AI providers, and orchestrates 80+ security tools with automatic output parsing.
 
@@ -36,6 +36,6 @@ siyarix                     # Interactive REPL (default)
 
 ## Project status
 
-**Stable release** — v3.0.0 is production-ready. Breaking changes follow semantic versioning and are documented in the [Changelog](../CHANGELOG.md).
+**Stable release** — v1.0.0 is production-ready. Breaking changes follow semantic versioning and are documented in the [Changelog](../CHANGELOG.md).
 
 > **Ethics & safety**: Siyarix is designed for authorized security testing only. Review the [Ethical Hacking Policy](security/ethical-hacking-policy.md) before use.
