@@ -17,9 +17,9 @@ import os
 import platform as _platform
 import shutil
 import sys
-import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -44,9 +44,9 @@ def _import_siyarix_modules() -> dict[str, bool]:
         try:
             __import__(mod_name)
             results[mod_name] = True
-        except ImportError as e:
+        except ImportError:
             results[mod_name] = False
-        except Exception as e:
+        except Exception:
             results[mod_name] = False
     return results
 
@@ -131,7 +131,7 @@ def _test_subprocess_utils() -> dict[str, bool | str]:
     shell_cmd = get_platform_shell_cmd("echo test")
     results["platform_shell_cmd"] = " ".join(shell_cmd)
 
-    from siyarix.subprocess_utils import detect_package_manager, get_platform_shell_cmd as gp
+    from siyarix.subprocess_utils import detect_package_manager
 
     pm = detect_package_manager()
     results["package_manager"] = pm
@@ -254,7 +254,6 @@ def _test_chat_platform_utils() -> dict[str, bool | str]:
         from siyarix.chat.platform_utils import (
             is_kali_linux, pip_install_args, detect_shell,
             get_shell_platform, build_platform_context,
-            load_env_file,
         )
         shell = detect_shell()
         ctx = build_platform_context()
@@ -355,7 +354,7 @@ def print_human_report(results: dict[str, Any]) -> None:
         print(f"    Shell:         {cpu.get('detected_shell')}")
 
     # Tools
-    print(f"\n  Available Tools:")
+    print("\n  Available Tools:")
     tools = results["tools_availability"]
     found = [t for t, ok in tools.items() if ok]
     missing = [t for t, ok in tools.items() if not ok]
@@ -367,19 +366,19 @@ def print_human_report(results: dict[str, Any]) -> None:
     # Platform-specific
     ws = results["windows_specific"]
     if "skipped" not in ws:
-        print(f"\n  Windows Specific:")
+        print("\n  Windows Specific:")
         for k, v in ws.items():
             print(f"    {k}: {'✓' if v else '✗'}" if isinstance(v, bool) else f"    {k}: {v}")
 
     ts = results.get("termux_specific", {})
     if "skipped" not in ts:
-        print(f"\n  Termux Specific:")
+        print("\n  Termux Specific:")
         for k, v in ts.items():
             print(f"    {k}: {v}")
 
     ish = results.get("ish_specific", {})
     if "skipped" not in ish:
-        print(f"\n  iSH Specific:")
+        print("\n  iSH Specific:")
         for k, v in ish.items():
             print(f"    {k}: {v}")
 

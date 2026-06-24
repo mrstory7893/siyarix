@@ -3,7 +3,6 @@ import re
 import shutil
 import argparse
 from pathlib import Path
-from typing import Any
 
 def flatten_name(path: str, root_dir: str) -> str:
     """

@@ -404,7 +404,7 @@ def render_welcome_banner(
 
     header_text = Text.assemble(
         (" █▓▒░ ", f"bold {accent}"),
-        ("SIYARIX ORCHESTRATOR ", f"bold white"),
+        ("SIYARIX ORCHESTRATOR ", "bold white"),
         (f"v{ver} ", "bold green"),
         ("░▒▓█ ", f"bold {accent}"),
         ("\n\n", ""),

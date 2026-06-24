@@ -882,7 +882,7 @@ class CommandHandlersMixin:
             console.print(f"[red]Invalid mode: {args}. Valid modes: {', '.join(core_modes)}[/red]")
             return
 
-        old_mode = self._mode
+        self._mode = args
         self._mode = args
         self._session.mode = args
 

@@ -125,6 +125,7 @@ def make_prompt_bar(
     msg_count: int,
     uptime_seconds: float,
     theme: str = "cyber-noir",
+    persona: str | None = None,
     show_hint: bool = True,
 ) -> RenderableType:
     """Combined professional prompt with top bar and input line."""
