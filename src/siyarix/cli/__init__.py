@@ -22,6 +22,7 @@ import json
 import logging
 import os
 import shutil
+from typing import Any
 
 # Windows event loop policy for subprocess compatibility
 if os.name == "nt" and hasattr(asyncio, "WindowsSelectorEventLoopPolicy"):
@@ -44,8 +45,6 @@ from rich.panel import Panel
 from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 from rich.prompt import Prompt
 from rich.table import Table
-
-from typing import Any
 
 from .. import __version__
 
@@ -212,6 +211,57 @@ def _get_creds() -> Any:
             logger.debug("CredentialStore not available")
             _creds_store = False
     return _creds_store if _creds_store else None
+
+
+def _execute_deep_scan(target: str, output: str = "table", save: bool = False) -> None:
+    """Execute a deep scan using the DeepScanEngine."""
+    from ..deep_scan import DeepScanEngine
+
+    engine = DeepScanEngine(registry=registry)
+    result = run_async(engine.scan(target, persist=save))
+
+    if output == "json":
+        import json
+        console.print_json(json.dumps(result, indent=2, default=str))
+        return
+
+    severity_colors = {"critical": "red", "high": "orange1", "medium": "yellow", "low": "cyan", "info": "dim"}
+    summary = result["severity_summary"]
+    console.print(f"\n[bold cyan]Deep Scan Complete — {result['target']}[/bold cyan]")
+    console.print(f"  Risk Score: [bold]{result['risk_score']}[/bold]")
+    console.print(f"  Findings: {result['total_findings']} total")
+    for sev in ("critical", "high", "medium", "low", "info"):
+        color = severity_colors.get(sev, "white")
+        count = summary.get(sev, 0)
+        if count:
+            console.print(f"    [{color}]{sev}: {count}[/{color}]")
+    console.print(f"  Passes: {', '.join(result['passes_completed'])}")
+    console.print(f"  Tools: {', '.join(result['tools_used'])}")
+    console.print()
+
+    if output == "table":
+        from ..branding import severity_label, resolve_theme
+        from ..config import SettingsStore
+        from rich.table import Table
+
+        settings = SettingsStore()
+        theme = resolve_theme(settings.get("color_theme"))
+        ftable = Table(title="Findings", header_style="bold", border_style="dim")
+        ftable.add_column("Severity", width=10)
+        ftable.add_column("Pass", width=14)
+        ftable.add_column("Tool", width=14)
+        ftable.add_column("Detail", style="white")
+        for f in result["all_findings"][:30]:
+            sev = f.get("severity", "info")
+            ftable.add_row(
+                severity_label(theme, sev),
+                f.get("pass", "—"),
+                f.get("tool", "—"),
+                str(f.get("detail", f.get("description", "")))[:80],
+            )
+        if len(result["all_findings"]) > 30:
+            ftable.add_row("", "", f"[dim]... and {len(result['all_findings']) - 30} more[/dim]", "")
+        console.print(ftable)
 
 
 def _resolve_key(provider: str) -> str:
@@ -990,6 +1040,39 @@ def scan_full(
     )
 
 
+@app.command(name="scan-deep", hidden=False)
+def scan_deep(
+    targets: list[str] = typer.Argument(..., help="Target IPs, hostnames, or @file.txt"),
+    save: bool = typer.Option(False, "--save", "-s", help="Save results to offline store"),
+    output: str = typer.Option("table", "--output", "-o", help="Output: table|json"),
+) -> None:
+    """Deep scan preset — multi-pass OS detection, service fingerprinting, and vulnerability scanning.
+
+    Runs 4 progressive passes: discovery → fingerprint → vulnerability → enumeration.
+    """
+    expanded_targets: list[str] = []
+    for t in targets:
+        if t.startswith("@"):
+            target_file = Path(t[1:])
+            if target_file.exists():
+                lines = [
+                    line.strip()
+                    for line in target_file.read_text(encoding="utf-8").splitlines()
+                    if line.strip()
+                ]
+                expanded_targets.extend(lines)
+                console.print(f"[dim]Loaded {len(lines)} targets from {target_file}[/dim]")
+            else:
+                console.print(f"[red]Target file not found: {target_file}[/red]")
+                raise typer.Exit(3)
+        else:
+            expanded_targets.append(t)
+
+    for target in expanded_targets:
+        console.print(f"\n[bold cyan]Starting deep scan of {target}...[/bold cyan]")
+        _execute_deep_scan(target, output=output, save=save)
+
+
 @app.command(name="scan-web", hidden=False)
 def scan_web(
     targets: list[str] = typer.Argument(..., help="Target URLs or domains"),
@@ -1029,10 +1112,29 @@ def discover(
         console.print(f"[red]Invalid target '{target}': {exc}[/red]")
         raise typer.Exit(1)
 
-    instruction = f"scan and discover all services on {target}"
     if deep:
-        instruction += " with deep OS and vulnerability detection"
+        from ..deep_scan import DeepScanEngine
 
+        engine = DeepScanEngine(registry=registry)
+        result = run_async(engine.scan(target, persist=True))
+
+        if export:
+            import json
+            Path(export).write_text(
+                json.dumps(result, indent=2, default=str), encoding="utf-8"
+            )
+            console.print(f"[dim]Deep scan results exported to {export}[/dim]")
+
+        severity_counts = result.get("severity_summary", {})
+        console.print(f"\n[bold cyan]Deep discovery complete for {target}[/bold cyan]")
+        console.print(f"  Total findings: {result.get('total_findings', 0)}")
+        for sev in ("critical", "high", "medium", "low", "info"):
+            count = severity_counts.get(sev, 0)
+            if count:
+                console.print(f"    {sev}: {count}")
+        return
+
+    instruction = f"scan and discover all services on {target}"
     engine = _get_engine("integrated")
     result = run_async(engine.execute(instruction, interactive=True))
 
