@@ -1,133 +1,36 @@
-# Offline Response Registry
+# Offline / Registry Mode
 
-When no AI provider is connected, Siyarix uses the **Offline Response Registry** to provide natural, context-aware replies. The registry is a collection of response templates stored in JSON files that can be extended, edited, or replaced without modifying core code.
-
----
+When no AI provider is connected or `--mode offline` / `--mode registry` is specified,
+Siyarix operates using heuristic planning and a local tool registry — no LLM required.
 
 ## How It Works
 
-1. User types a message in the REPL
-2. The engine finds no matching tools — falls back to `_generate_text_response`
-3. `OfflineResponder` matches the input against registry entries (exact → regex → fuzzy)
-4. The best-matching template is resolved with dynamic variables and returned
+1. The **RegistryPlanner** matches your instruction against 500+ keyword patterns and 20+ workflow templates using NLP intent parsing
+2. The **RegistryExecutor** executes each step through the `ToolRegistry` with full guardrails, DLP, and alternative tool fallback
+3. Results are persisted to the **OfflineStore** (SQLite) for later review and diffing across scans
 
----
+## Deep Scan
 
-## Response Pack Format
+The `siyarix scan-deep` command runs 4 progressive passes:
+1. **Discovery** — host discovery and full port sweep
+2. **Fingerprint** — OS detection, service versioning, default scripts
+3. **Vulnerability** — template-based vulnerability scanning (nuclei, nikto)
+4. **Enumeration** — directory, subdomain, and DNS enumeration
 
-Each pack is a JSON file with a `responses` array. Each entry supports:
-
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `id` | `str` | required | Unique identifier |
-| `priority` | `int` | `50` | Higher value preferred on tie |
-| `triggers` | `[str]` | `[]` | Exact-match trigger phrases |
-| `patterns` | `[str]` | `[]` | Regex patterns (matched case-insensitive) |
-| `template` | `str` | `""` | Response text with `{variable}` placeholders |
-| `match_threshold` | `float` | `0.75` | Minimum fuzzy similarity (0.0–1.0) |
-| `locale` | `str` | `"en"` | Language tag for localization |
-
-### Example Entry
-
-```json
-{
-  "id": "greeting",
-  "priority": 100,
-  "triggers": ["hello", "hi", "hey"],
-  "patterns": [],
-  "template": "Hello {username}. Good {time_of_day}.",
-  "match_threshold": 0.7
-}
-```
-
----
-
-## Dynamic Variables
-
-These placeholders are resolved at response time:
-
-| Variable | Resolves To |
-|----------|-------------|
-| `{username}` | Current OS username |
-| `{hostname}` | Device hostname |
-| `{platform}` | `Linux`, `Windows`, or `macOS` |
-| `{time_of_day}` | `morning` / `afternoon` / `evening` / `night` |
-| `{current_time}` | Current time (`HH:MM`) |
-| `{current_date}` | Current date (`YYYY-MM-DD`) |
-| `{version}` | Installed Siyarix version |
-| `{repo_url}` | GitHub repository URL |
-| `{docs_url}` | Documentation URL |
-| `{contribute_url}` | Contributing guide URL |
-
----
-
-## Matching Order
-
-For each query, entries are evaluated in priority order:
-
-1. **Exact match** against any trigger (case-insensitive) → score `1.0`
-2. **Regex match** against any pattern → score `1.0`
-3. **Fuzzy match** using `difflib.SequenceMatcher` — requires score >= `match_threshold`
-
-The highest-scoring entry wins. On equal score, higher `priority` wins.
-
----
-
-## Adding Responses
-
-### Default Pack
-
-Edit `src/siyarix/offline_registry/responses.json`.
-
-### Community Packs
-
-Place additional `.json` files in `src/siyarix/offline_registry/responses/`. They are loaded automatically on startup.
-
-Example community pack (`responses/community.json`):
-
-```json
-{
-  "version": "1.0",
-  "locale": "en",
-  "responses": [
-    {
-      "id": "my_custom",
-      "priority": 50,
-      "triggers": ["my trigger phrase"],
-      "template": "My custom response for {username}."
-    }
-  ]
-}
-```
-
-### Hot-Reloading
-
-The registry checks file modification times before each response. Edit a pack file while the REPL is running — changes take effect immediately without restart.
-
----
+Each pass runs tools in parallel with automatic alternative fallback.
 
 ## Programmatic Usage
 
 ```python
-from siyarix.offline_registry import OfflineResponder
+from siyarix.offline_registry import offline_instruction_hint, no_provider_message
 
-responder = OfflineResponder()
-reply = responder.respond("hello")
-print(reply)
+hint = offline_instruction_hint("scan example.com")
+msg = no_provider_message()
 ```
 
-To use a custom pack directory:
+## Related Commands
 
-```python
-responder = OfflineResponder(pack_dir="/path/to/my/packs")
-```
-
----
-
-## Best Practices
-
-- Keep response IDs unique across all packs
-- Use `priority` 0–100; reserve 80+ for core system responses
-- Add multiple trigger variations to catch typos ("helo", "helloo")
-- Use regex `patterns` only when `triggers` are insufficient
-- Set appropriate `match_threshold` — too low causes false positives
+- `siyarix scan <target> --mode offline`
+- `siyarix scan-deep <target>`
+- `siyarix discover <target> --deep`
+- `siyarix run "<instruction>" --mode registry`
