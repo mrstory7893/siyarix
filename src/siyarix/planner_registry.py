@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -482,6 +483,42 @@ _MULTI_WORD_CHECKS = [
             ("failover test", "cat", "Failover test", ""),
             ("canary token", "cat", "Canary token deployment", ""),
             ("database backup encryption", "cryptsetup", "Database backup encryption check", "luksStatus"),
+            # ── Common utility patterns ───────────────────────────────────
+            ("check if server", "ping", "ICMP connectivity check", "-c 4"),
+            ("is server up", "ping", "ICMP connectivity check", "-c 4"),
+            ("server up", "ping", "ICMP connectivity check", "-c 4"),
+            ("server alive", "ping", "ICMP connectivity check", "-c 4"),
+            ("connectivity test", "ping", "ICMP connectivity check", "-c 4"),
+            ("check connectivity", "ping", "ICMP connectivity check", "-c 4"),
+            ("what is my ip", "dig", "Public IP address lookup", "TXT +short o-o.myaddr.l.google.com @ns1.google.com"),
+            ("my public ip", "dig", "Public IP address lookup", "TXT +short o-o.myaddr.l.google.com @ns1.google.com"),
+            ("my ip address", "dig", "Public IP address lookup", "TXT +short o-o.myaddr.l.google.com @ns1.google.com"),
+            ("public ip", "dig", "Public IP address lookup", "TXT +short o-o.myaddr.l.google.com @ns1.google.com"),
+            ("list files", "ls", "List directory contents", "-la"),
+            ("list directory", "ls", "List directory contents", "-la"),
+            ("show files", "ls", "List directory contents", "-la"),
+            ("show directory", "ls", "List directory contents", "-la"),
+            ("directory listing", "ls", "List directory contents", "-la"),
+            ("current date", "date", "Show current date and time", ""),
+            ("current time", "date", "Show current date and time", ""),
+            ("what time", "date", "Show current date and time", ""),
+            ("what date", "date", "Show current date and time", ""),
+            ("disk usage", "df", "Show disk usage", "-h"),
+            ("disk space", "df", "Show disk space", "-h"),
+            ("memory usage", "free", "Show memory usage", ""),
+            ("free memory", "free", "Show memory usage", "-h"),
+            ("how much ram", "free", "Show memory usage", "-h"),
+            ("who is logged in", "who", "List logged-in users", ""),
+            ("who logged", "who", "List logged-in users", ""),
+            ("logged in users", "who", "List logged-in users", ""),
+            ("system uptime", "uptime", "Show system uptime", ""),
+            ("uptime", "uptime", "Show system uptime", ""),
+            ("process list", "ps", "List running processes", "aux"),
+            ("running processes", "ps", "List running processes", "aux"),
+            ("cpu usage", "top", "Show CPU usage", "-bn1"),
+            ("check cpu", "top", "Show CPU usage", "-bn1"),
+            ("battery status", "acpi", "Show battery status", ""),
+            ("battery level", "acpi", "Show battery level", ""),
         ]
 
 
@@ -627,8 +664,30 @@ class RegistryPlanner:
                     "args": {},
                 },
                 {
-                    "description": "Offline hash cracking of captured credentials",
+                    "description": "Offline password cracking of captured credentials",
                     "tool": "hashcat",
+                    "args": {},
+                },
+            ],
+            "file_hash": [
+                {
+                    "description": "Compute MD5 hash of a file",
+                    "tool": "md5sum",
+                    "args": {},
+                },
+                {
+                    "description": "Compute SHA-1 hash of a file",
+                    "tool": "sha1sum",
+                    "args": {},
+                },
+                {
+                    "description": "Compute SHA-256 hash of a file",
+                    "tool": "sha256sum",
+                    "args": {},
+                },
+                {
+                    "description": "Compute SHA-512 hash of a file",
+                    "tool": "sha512sum",
                     "args": {},
                 },
             ],
@@ -988,25 +1047,12 @@ class RegistryPlanner:
     def plan(self, goal: str, available_tools: list[str] | None = None) -> ExecutionPlan:
         """Main entry point — decompose a user goal into an execution plan.
 
-        Priority order:
-        1. **CLS high-confidence skill** (≥ 70% confidence) — fastest path, uses learned patterns.
-        2. **NLP-guided decomposition** via :meth:`decompose_goal`.
+        Uses NLP-guided intent parsing, template matching, keyword index,
+        and tool registry. Skills are NOT used in offline planning —
+        they only influence LLM mode (integrated/autonomous) via
+        :meth:`~siyarix.chat.engine.LLMEngineMixin._execute_agent`.
         """
-        # ── CLS Learned Skill Pre-check ───────────────────────────────────────────
-        try:
-            from .learning_system import get_learning_system
-            _cls = get_learning_system()
-            _skill = _cls.query_skill(goal, min_confidence=0.70)
-            if _skill:
-                _plan = self._plan_from_learned_skill(_skill, goal, available_tools)
-                if _plan and _plan.steps:
-                    _plan.context["cls_source"] = _skill.skill_id
-                    _plan.context["cls_confidence"] = _skill.confidence
-                    return _plan
-        except Exception as _exc:  # pragma: no cover
-            import logging as _log
-            _log.getLogger(__name__).debug("CLS pre-check failed (registry): %s", _exc)
-        return self.decompose_goal(goal, available_tools)
+        return self.smart_plan(goal, available_tools)
 
     def smart_plan(self, text: str, available_tools: list[str] | None = None) -> ExecutionPlan:
         """Plan using NLP analysis for smarter intent understanding.
@@ -1014,18 +1060,8 @@ class RegistryPlanner:
         Uses the trained NaturalLanguageParser to extract intent, target,
         and parameters from natural language. Falls back to decompose_goal()
         when confidence is low or no template matches.
-
-        The NLP parser is injected with CLS-learned synonyms and corpus entries
-        before scoring so that learned vocabulary improves intent matching.
         """
         avail_set = set(available_tools or [])
-
-        # Inject CLS knowledge into NLP before parsing
-        try:
-            from .learning_system import get_learning_system
-            get_learning_system().inject_into_nlp(self._nlp)
-        except Exception:
-            pass
 
         intent = self._nlp.parse(text)
 
@@ -1037,7 +1073,7 @@ class RegistryPlanner:
             "nlp_parameters": intent.parameters,
         }
 
-        if intent.template_name and intent.confidence > 0.15:
+        if intent.template_name and intent.confidence > 12.0:
             target = intent.target or text
             overrides = {"args": intent.parameters} if intent.parameters else None
             try:
@@ -1129,13 +1165,21 @@ class RegistryPlanner:
         context: dict[str, Any] | None = None,
     ) -> ExecutionPlan:
         plan_steps = []
+        seen_steps: set[tuple[str, str]] = set()
         if steps:
             for i, step_def in enumerate(steps):
+                tool = step_def.get("tool", "")
+                args_str = json.dumps(step_def.get("args", {}), sort_keys=True)
+                cmd = step_def.get("command", "") or ""
+                key = (tool, args_str + cmd)
+                if key in seen_steps:
+                    continue
+                seen_steps.add(key)
                 plan_steps.append(
                     PlanStep(
                         id=step_def.get("id", f"step_{i:03d}"),
                         description=step_def.get("description", f"Step {i + 1}"),
-                        tool=step_def.get("tool", ""),
+                        tool=tool,
                         args=step_def.get("args", {}),
                         command=step_def.get("command"),
                         dependencies=step_def.get("dependencies", []),

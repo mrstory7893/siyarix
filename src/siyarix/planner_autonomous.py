@@ -262,7 +262,7 @@ Respond with ONLY valid JSON:
                 goal=goal,
                 context={
                     "reasoning": "",
-                    "response": str(raw) if raw else "",
+                    "response": raw.get("content", "") if isinstance(raw, dict) else str(raw) if raw else "",
                     "llm_planned": True,
                 },
             )
@@ -442,6 +442,14 @@ Respond with ONLY valid JSON:
                     "steps": steps,
                     "response": cleaned
                 }
+
+        # 6. Conversational response — LLM answered without structured JSON
+        if cleaned:
+            return {
+                "needs_tools": False,
+                "reasoning": "",
+                "response": cleaned,
+            }
 
         return None
 
