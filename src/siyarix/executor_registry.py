@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import time
 from typing import Any
 
 from .events import Event, EventType
@@ -144,13 +145,13 @@ class RegistryExecutor(BaseExecutor):
             res = self._on_step_progress(step)
             if hasattr(res, "__await__"):
                 await res  # type: ignore[misc]
-        start = __import__("time").monotonic()
+        start = time.monotonic()
         try:
             result = await asyncio.wait_for(
                 self._try_execute(step, executor_fn),
                 timeout=step.timeout,
             )
-            step.duration_ms = (__import__("time").monotonic() - start) * 1000
+            step.duration_ms = (time.monotonic() - start) * 1000
             step.result = result
             if result.get("status") == "error":
                 step.status = StepStatus.FAILED
@@ -173,7 +174,7 @@ class RegistryExecutor(BaseExecutor):
                     )
                 )
         except asyncio.TimeoutError:
-            step.duration_ms = (__import__("time").monotonic() - start) * 1000
+            step.duration_ms = (time.monotonic() - start) * 1000
             step.status = StepStatus.FAILED
             step.result = {"status": "error", "error": f"Step timed out after {step.timeout}s"}
             self._tracker.record(step.tool, str(sorted(step.args.items())), False)
@@ -182,7 +183,7 @@ class RegistryExecutor(BaseExecutor):
             step.status = StepStatus.SKIPPED
             raise
         except Exception as e:
-            step.duration_ms = (__import__("time").monotonic() - start) * 1000
+            step.duration_ms = (time.monotonic() - start) * 1000
             step.status = StepStatus.FAILED
             step.result = {"status": "error", "error": str(e)}
             self._tracker.record(step.tool, str(sorted(step.args.items())), False)
