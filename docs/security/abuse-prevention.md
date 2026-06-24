@@ -1,10 +1,10 @@
 # 🛡️ Abuse Prevention
 
-Siyarix is a powerful cybersecurity tool, which means it must be handled with care. To prevent malicious use or accidental damage, we've implemented multiple layers of abuse prevention. These layers work together to provide **Defense in Depth**—protecting everything from input validation to comprehensive audit logging.
+Siyarix is a powerful tool, and I want to make sure it's used safely. To help prevent accidental damage or misuse, I've built in some layers of abuse prevention. These layers operate to try to catch mistakes and keep things reasonable.
 
 ## 🍰 The Layers of Prevention
 
-Think of our security model like a multi-layered cake. Every layer adds a new level of protection!
+Think of it like a multi-layered cake:
 
 ```text
 ┌─────────────────────────────────────────┐
@@ -22,19 +22,19 @@ Think of our security model like a multi-layered cake. Every layer adds a new le
 │  └──────────┘ └──────────┘ └──────────┘ │
 ├─────────────────────────────────────────┤
 │        Audit-Level Prevention           │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ │
-│  │Audit Log │ │ Session  │ │   SIEM   │ │
-│  │(chain)   │ │   Log    │ │ Forward  │ │
-│  └──────────┘ └──────────┘ └──────────┘ │
+│  ┌──────────┐ ┌──────────┐              │
+│  │Audit Log │ │ Session  │              │
+│  │(chain)   │ │   Log    │              │
+│  └──────────┘ └──────────┘              │
 └─────────────────────────────────────────┘
 ```
 
 > [!TIP]
-> Each of these layers operates automatically. You don't need to configure them for them to protect you, though advanced users can fine-tune their behavior.
+> These layers mostly operate automatically, so you don't need to configure much out of the box.
 
 ## 1. 🛑 Danger Analysis
 
-Before any command is executed, it passes through `permission_gate.py`, where it is checked against **38+ dangerous command patterns**. 
+Before a command runs, `permission_gate.py` checks it against some common dangerous patterns. 
 
 ```python
 PATTERNS = {
@@ -46,81 +46,57 @@ PATTERNS = {
 }
 ```
 
-**What does it block?** Everything from accidental disk destruction and recursive file deletion, to network floods, fork bombs, and unintended privilege escalation. 
+It blocks things like accidental disk formatting or recursive file deletion.
 
 ## 2. 🚧 The Permission Gate
 
-Every command faces a strict two-stage review process:
+Commands go through a review process:
 
 `Command → Syntax Gate → Danger Analysis → Result`
 
-The gate will return one of three results: `ALLOW`, `FLAG` (prompting the user), or `DENY`.
-
-- **Syntax Gate:** Checks the overall structure, limits length, and scans for shell injection attempts.
-- **Danger Analysis:** Checks against the specific destructive patterns mentioned above.
-- **Input Validator:** Provides an extra layer of protection against SQL injection, path traversal, SSRF, and null-byte attacks.
+The gate returns `ALLOW`, `FLAG` (asking you), or `DENY`.
 
 ## 3. 🤐 Data Loss Prevention (DLP) Engine
 
-To ensure you never accidentally leak sensitive data to third-party cloud AI providers, our **DLP Engine** (`dlp.py`) uses bidirectional token masking.
-
-- **Masks 40+ Patterns:** Redacts IPs, hostnames, emails, passwords, SSH keys, credit cards, and API keys (AWS, GCP, GitHub, Slack, etc.) before the data leaves your machine.
-- **Bidirectional:** Data is masked going to the cloud, but unmasked when displayed on your local terminal so you can still read it.
-- **Session-Scoped:** Masks remain consistent throughout your session, so the AI doesn't get confused.
+To help avoid accidentally sending your local secrets to cloud AI providers, the `dlp.py` engine tries to mask basic patterns (like SSH keys or AWS keys) locally before the prompt is sent.
 
 > [!IMPORTANT]
-> Your secrets belong to you. Siyarix ensures they never end up in a cloud provider's training data.
+> The DLP is a helpful safety net, but always be careful what you type into chat prompts!
 
 ## 4. 🚨 Emergency Stop (Kill Switch)
 
-Things getting out of hand? You're always in control.
-
-- **Press `Ctrl+C` once:** Cancels the current task gracefully.
-- **Press `Ctrl+C` twice:** Instantly halts Siyarix, killing all active subprocesses and cleaning up the environment.
+If things get out of hand:
+- **Press `Ctrl+C` once:** Cancels the current task.
+- **Press `Ctrl+C` twice:** Halts Siyarix completely.
 
 ## 5. 🦺 Safe Mode
 
-Need to run Siyarix in a highly restricted environment? Turn on Safe Mode:
+If you just want to run passive tools:
 
 ```bash
 export SIYARIX_SAFE_MODE=1
 ```
 
 **In Safe Mode:**
-- Only reconnaissance is allowed (e.g., `nmap`, passive `nuclei`).
-- Exploitation tools (e.g., `metasploit`, active `sqlmap`) are disabled.
-- Destructive commands are hard-blocked.
-- The Permission Gate operates at maximum strictness.
+- Only reconnaissance is allowed.
+- Destructive commands are blocked.
+- The Permission Gate is stricter.
 
 ## 6. 🥷 OPSEC Controls
 
-Siyarix respects your operational security. The `opsec.py` module provides robust evasion controls:
-
-| Control | What it does |
-|---------|-------------|
-| **TOR Routing** | Routes all outbound traffic through the TOR network. |
-| **DNS over HTTPS** | Prevents DNS leakage by encrypting your lookups. |
-| **Session Burning** | Securely wipes all artifacts and logs when you're done. |
-| **Request Jitter** | Adds random delays to connections to defeat pattern detection. |
-| **Proxy Rotation** | Continuously shifts traffic through a pool of proxies. |
+Siyarix has some built-in evasion controls via `opsec.py` for testing, such as TOR routing or jittered requests.
 
 ## 7. 🔒 System-Level Security Hardening
 
-For advanced deployments, `security_hardening.py` provides OS-level protections:
-- **File Integrity Monitoring:** Uses SHA-256 to ensure Siyarix hasn't been tampered with.
-- **Seccomp-BPF:** Generates strict sandbox profiles for Docker deployments.
-- **Privilege Checking:** Ensures Siyarix is never inadvertently run with dangerous excessive permissions.
+For advanced setups, `security_hardening.py` adds basic OS protections like checking for excessive permissions.
 
 ## 8. 📜 The Audit Trail
 
-Transparency is key. Every safety-related event is logged in a tamper-evident, SHA-256 hash-chained log (`audit_log.py`).
+Transparency is key. Safety events are logged in an audit log.
 
 | Event Type | What gets logged |
 |-------|-------------|
-| **Blocked Command** | The command, the reason it was blocked, and the matched pattern. |
-| **Emergency Stop** | The trigger reason and the exact timestamp. |
-| **Safe Mode Violation** | The attempted command, the active persona, and the target. |
-| **DLP Redaction** | The *type* of pattern redacted (e.g., "AWS Key"), but **never** the actual key. |
-
-> [!NOTE]
-> The audit log is mathematically linked. Modifying a past entry breaks the cryptographic chain, immediately alerting administrators to tampering.
+| **Blocked Command** | The command and the matched pattern. |
+| **Emergency Stop** | The trigger reason and timestamp. |
+| **Safe Mode Violation** | The attempted command. |
+| **DLP Redaction** | The *type* of pattern redacted, but never the actual secret. |
