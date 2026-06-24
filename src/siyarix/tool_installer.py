@@ -28,8 +28,9 @@ logger = logging.getLogger(__name__)
 def tty_confirm(prompt: str, default: bool = True) -> bool:
     """Ask a yes/no question via /dev/tty, bypassing prompt_toolkit's raw mode."""
     import sys as _sys
+    from rich.console import Console
     suffix = " [Y/n]" if default else " [y/N]"
-    print(prompt + suffix, file=_sys.stderr, end=" ", flush=True)
+    Console(stderr=True).print(prompt + suffix, end=" ")
     try:
         with open("/dev/tty") as _tty:
             answer = _tty.readline().strip().lower()
