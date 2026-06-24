@@ -1,8 +1,8 @@
 # Responsible AI Use Policy
 
 **Effective Date:** June 2026  
-**Version:** 3.0.0  
-**Applies to:** All AI-powered features of Siyarix v3.0.0
+**Version:** 1.0.0  
+**Applies to:** All AI-powered features of Siyarix v1.0.0
 
 Siyarix integrates artificial intelligence models from multiple providers to assist with cybersecurity tasks including planning, analysis, code generation, and automation. This policy defines the principles, expectations, limitations, and responsibilities governing the use of Siyarix's AI-powered features.
 
@@ -187,3 +187,4 @@ Organizations deploying Siyarix's AI features should:
 ---
 
 *SPDX-License-Identifier: AGPL-3.0-or-later*
+

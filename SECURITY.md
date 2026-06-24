@@ -1,8 +1,8 @@
 # Security Policy
 
 **Effective Date:** June 2026
-**Version:** 3.0.0
-**Applies to:** Siyarix v3.0.x and all earlier supported versions
+**Version:** 1.0.0
+**Applies to:** Siyarix v1.0.x and all earlier supported versions
 
 Siyarix is built by security professionals for security professionals. The platform handles sensitive operations, API credentials, target data, and privileged command execution. The security of the platform itself is our highest priority. We deeply value the role of the security community in keeping Siyarix robust and trustworthy.
 
@@ -14,9 +14,9 @@ We actively provide security patches for the following versions:
 
 | Version | Status | Security Patches | Recommended Action |
 |---------|--------|------------------|--------------------|
-| **v3.0.x (Latest)** | Active | Full priority support | Run latest patch |
-| **v2.0.x** | Maintenance | Critical patches only (until 2026-12-17) | Upgrade to v3.0 |
-| **< v2.0** | End of Life | No patches | Upgrade immediately |
+| **v1.0.x (Latest)** | Active | Full priority support | Run latest patch |
+| **v0.2.x** | Maintenance | Critical patches only (until 2026-12-17) | Upgrade to v1.0 |
+| **< v0.2** | End of Life | No patches | Upgrade immediately |
 
 We recommend always running the latest available release to benefit from the most up-to-date security features and patches.
 
@@ -137,3 +137,5 @@ We encourage good-faith security research. If you follow this coordinated disclo
 ---
 
 *SPDX-License-Identifier: AGPL-3.0-or-later*
+
+

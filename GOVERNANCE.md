@@ -1,8 +1,8 @@
 # Siyarix Project Governance
 
 **Effective Date:** June 2026  
-**Version:** 3.0.0  
-**Applies to:** Siyarix v3.0.0 and all future versions
+**Version:** 1.0.0  
+**Applies to:** Siyarix v1.0.0 and all future versions
 
 ---
 
@@ -95,7 +95,7 @@ Siyarix follows [Semantic Versioning 2.0.0](https://semver.org/):
 
 | Component | Meaning |
 |-----------|---------|
-| **Major (3.x.x)** | Breaking changes to public API, CLI, or data formats |
+| **Major (1.x.x)** | Breaking changes to public API, CLI, or data formats |
 | **Minor (x.1.x)** | New features, non-breaking additions, deprecation notices |
 | **Patch (x.x.2)** | Bug fixes, security patches, performance improvements |
 | **Pre-release (x.x.x-alpha/beta/rc.N)** | Development, testing, and release candidate builds |
@@ -164,3 +164,4 @@ This governance model draws inspiration from established open-source governance 
 ---
 
 *SPDX-License-Identifier: AGPL-3.0-or-later*
+
