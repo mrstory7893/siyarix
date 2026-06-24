@@ -119,6 +119,12 @@ _CURATED_TOOL_NAMES: tuple[str, ...] = (
     "whois",
     "graph_analyzer",
     "threat_intel",
+    "md5sum",
+    "sha1sum",
+    "sha256sum",
+    "sha512sum",
+    "b2sum",
+    "cksum",
 )
 
 _INTERPRETER_NAMES: tuple[str, ...] = (
