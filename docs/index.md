@@ -1,43 +1,78 @@
-# Siyarix v1.0.0 Documentation
+# 📚 Siyarix Documentation (v1.0.0)
 
-**Siyarix** is an AI-native cybersecurity operations platform that translates natural language into deterministic security workflows. It lives in your terminal, routes tasks across 24 AI providers, and orchestrates 80+ security tools with automatic output parsing. Built for penetration testers, security engineers, SOC analysts, and cloud architects.
+Welcome to the official documentation for **Siyarix**! 👋 
 
-## Quick Start
+Whether you are here to run your first automated scan, build an advanced incident response playbook, or contribute to our core AI engine, you are in the right place. 
+
+## 🌟 What is Siyarix?
+
+At its core, Siyarix is an **AI-native cybersecurity orchestration platform**. 
+
+What does that mean? It means we bridge the gap between human intent and machine execution. Instead of memorizing obscure CLI flags or manually parsing text outputs, Siyarix allows you to state your security goals in plain English. It then uses advanced AI to plan the steps, orchestrates over **80+ security tools**, automatically parses their outputs, and generates beautiful, structured reports.
+
+It lives right in your terminal, acting as your tireless, highly-intelligent security co-pilot.
+
+---
+
+## 🚀 Quick Start
+
+Ready to dive right in? Here are a few quick commands to get you rolling. 
+
+*(Note: On your very first run, a friendly Onboarding Wizard will help you set up your AI providers!)*
 
 ```bash
+# 1. Install via pip
 pip install siyarix
-siyarix                          # Launch the onboarding wizard
-siyarix scan quick example.com   # Run a quick port scan
-siyarix scan deep example.com    # Run a deep reconnaissance scan
-siyarix run "enumerate services on 10.0.0.1"  # Natural language
-siyarix --mode offline run "scan example.com"  # Offline mode (no AI needed)
-siyarix                          # Interactive REPL (default)
+
+# 2. Launch the interactive REPL shell
+siyarix
+
+# 3. Run a quick, pre-configured port scan
+siyarix scan quick example.com
+
+# 4. Use natural language to get things done!
+siyarix run "enumerate services on 10.0.0.1 and output to markdown"
+
+# 5. Working in a secure, air-gapped environment? Use offline mode!
+siyarix --mode offline run "scan example.com"
 ```
 
-## Documentation Sections
+---
 
-| Section | Description |
-|---------|-------------|
-| [Getting Started](getting-started/installation.md) | Install, onboard, configure, first run |
-| [User Guide](user/cli-commands.md) | CLI reference, workflows, playbooks |
-| [Developer Guide](developer/codebase-overview.md) | Code structure, contribution guide, building |
-| [Architecture](architecture/overview.md) | System design, data flow, internals |
-| [AI System](ai/multi-provider-routing.md) | Providers, agent reasoning, multi-model |
-| [Security](security/threat-model.md) | Threat model, OPSEC, abuse prevention |
-| [Legal](legal/agpl-license-guide.md) | License, trademark, responsible AI |
+## 🗺️ Documentation Directory
 
-## Who Is This For?
+We have organized our documentation to help you find exactly what you need. Choose your path below:
 
-| Role | How Siyarix helps |
-|------|-------------------|
-| **Penetration Testers** | Automate recon, chain tools, generate structured reports |
-| **Security Engineers** | Build playbooks, integrate into CI/CD, automate compliance |
-| **SOC Analysts** | Streamline incident response, accelerate threat hunting, map to MITRE ATT&CK |
-| **Cloud Architects** | Validate IaC, perform multi-cloud posture scanning |
-| **Researchers** | Leverage AI-assisted analysis, build on the parser framework |
+| Section | What You'll Find Inside |
+|---------|-------------------------|
+| 🛠️ **[Getting Started](getting-started/installation.md)** | Everything you need to install, set up your credentials, and run your very first scan. |
+| 📖 **[User Guide](user/cli-commands.md)** | Your daily manual. Covers all CLI commands, interactive chat, and advanced security workflows. |
+| 🧠 **[AI System](ai/multi-provider-routing.md)** | A deep dive into how our AI reasons, routes requests across 24+ providers, and keeps operations safe. |
+| 🏗️ **[Architecture](architecture/overview.md)** | For the curious minds: how the execution engine, Knowledge Graph, and data flows actually work. |
+| 🛡️ **[Security & Ethics](security/threat-model.md)** | Critical reading on our OPSEC controls, threat models, and mandatory ethical hacking policies. |
+| 💻 **[Developer Guide](developer/codebase-overview.md)** | Want to contribute? Learn about our codebase structure, testing standards, and how to build Siyarix. |
+| ⚖️ **[Legal & Governance](legal/agpl-license-guide.md)** | Licensing details (AGPL-3.0), trademark policies, and our Responsible AI framework. |
 
-## Project Status
+---
 
-**Stable release** — v1.0.0 is production-ready. Breaking changes follow semantic versioning and are documented in the project Changelog.
+## 🎯 Who Is Siyarix Built For?
 
-> **Ethics & safety**: Siyarix is designed for authorized security testing only. Review the [Ethical Hacking Policy](security/ethical-hacking-policy.md) before use.
+Siyarix is designed to empower a wide variety of security professionals:
+
+| If you are a... | Siyarix helps you by... |
+|-----------------|-------------------------|
+| **Penetration Tester** | Automating tedious recon phases, intelligently chaining tools together, and generating perfectly structured reports for your clients. |
+| **Security Engineer** | Allowing you to build repeatable, YAML-based playbooks, integrate security into CI/CD pipelines, and automate routine compliance checks. |
+| **SOC Analyst** | Streamlining incident response, accelerating your threat hunting, and automatically mapping findings to the MITRE ATT&CK framework. |
+| **Cloud Architect** | Validating your Infrastructure as Code (IaC) and performing consistent, multi-cloud posture scanning. |
+| **Security Researcher** | Providing a robust parser framework and AI-assisted analysis so you can focus on finding novel vulnerabilities rather than writing glue code. |
+
+---
+
+## 📢 Project Status
+
+**Stable Release** — Version `1.0.0` is currently production-ready! We strictly follow semantic versioning, and any breaking changes are always thoroughly documented in our project Changelog.
+
+> [!WARNING]
+> ## Ethics & Safety Reminder
+> Siyarix is an incredibly powerful tool designed **exclusively for authorized security testing and defensive operations**. You must review and agree to our [Ethical Hacking Policy](security/ethical-hacking-policy.md) before using it. Never scan systems without explicit permission.
