@@ -15,7 +15,7 @@
     <img src="https://img.shields.io/badge/Stars-See%20GitHub-blue?style=for-the-badge&logo=github" alt="Stars"/>
   </a>
   <a href="https://github.com/mufthakherul/siyarix/releases">
-    <img src="https://img.shields.io/badge/Release-v3.0.0-blue?style=for-the-badge&logo=github" alt="Release"/>
+    <img src="https://img.shields.io/badge/Release-v1.0.0-blue?style=for-the-badge&logo=github" alt="Release"/>
   </a>
   <a href="https://github.com/mufthakherul/siyarix/blob/main/LICENSE">
     <img src="https://img.shields.io/badge/License-AGPL--3.0--or--later-blue?style=for-the-badge&logo=gnu" alt="License"/>
@@ -24,7 +24,7 @@
     <img src="https://github.com/mufthakherul/siyarix/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"/>
   </a>
   <a href="https://pypi.org/project/siyarix/">
-    <img src="https://img.shields.io/badge/PyPI-v3.0.0-blue?style=for-the-badge&logo=pypi" alt="PyPI"/>
+    <img src="https://img.shields.io/badge/PyPI-v1.0.0-blue?style=for-the-badge&logo=pypi" alt="PyPI"/>
   </a>
   <a href="https://www.codefactor.io/repository/github/mufthakherul/siyarix">
     <img src="https://img.shields.io/badge/Quality-A%2B-brightgreen?style=for-the-badge" alt="Quality"/>
@@ -71,7 +71,7 @@ Built on **Python 3.11+** with **Typer CLI**, **Rich** terminal output, and **Py
 
 ### Agent Modes
 
-Siyarix v3.0.0 operates in four distinct modes:
+Siyarix v1.0.0 operates in four distinct modes:
 
 | Mode | Description |
 |------|-------------|

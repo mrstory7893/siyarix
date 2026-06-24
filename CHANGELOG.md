@@ -5,7 +5,7 @@ All notable changes to Siyarix are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [3.0.0] - 2026-06-17
+## [1.0.0] - 2026-06-17
 
 ### Added
 
@@ -108,7 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stale and consolidated test files after reorganization
 - Unprofessional naming conventions and AI-generated comments
 
-## [2.0.0] - 2026-06-01
+## [0.2.0] - 2026-06-01
 
 ### Added
 
@@ -161,7 +161,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unused `tool_schema.py`, `tool_executor.py`, `interpreter.py`, `kill_switch.py` modules
 - Stale test files: `test_mode_dispatcher.py`, `test_tool_registry.py`, `test_offline_registry.py`, `test_tool_registry_wsl.py`
 
-## [1.0.0] - 2026-05-30
+## [0.1.0] - 2026-05-30
 
 ### Added
 
