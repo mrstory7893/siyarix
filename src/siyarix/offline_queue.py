@@ -5,11 +5,12 @@ import json
 import logging
 import sqlite3
 import threading
+import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 from siyarix.config import get_config_dir
 
@@ -38,31 +39,31 @@ class OfflineCommandQueue:
         path = Path(db_path) if db_path else self._DB_PATH
         path.parent.mkdir(parents=True, exist_ok=True)
         self._db_path = str(path)
-        self._conn_instance: sqlite3.Connection | None = None
+        self._local = threading.local()
         self._lock = threading.Lock()
         try:
             self._init_db()
         except sqlite3.OperationalError:
-            import time
             time.sleep(0.1)
             self._init_db()
 
     def close(self) -> None:
-        if self._conn_instance is not None:
+        conn = getattr(self._local, "conn", None)
+        if conn is not None:
             try:
-                self._conn_instance.close()
+                conn.close()
             except Exception:
                 pass
-            self._conn_instance = None
+            self._local.conn = None
 
     def _conn(self) -> sqlite3.Connection:
-        if self._conn_instance is None:
-            self._conn_instance = sqlite3.connect(self._db_path, timeout=30, check_same_thread=False)
-            self._conn_instance.row_factory = sqlite3.Row
-            self._conn_instance.execute("PRAGMA journal_mode=WAL")
-            self._conn_instance.execute("PRAGMA busy_timeout=30000")
-            self._conn_instance.execute("PRAGMA synchronous=NORMAL")
-        return self._conn_instance
+        if not hasattr(self._local, "conn") or self._local.conn is None:
+            self._local.conn = sqlite3.connect(self._db_path, timeout=30, check_same_thread=False)
+            self._local.conn.row_factory = sqlite3.Row
+            self._local.conn.execute("PRAGMA journal_mode=WAL")
+            self._local.conn.execute("PRAGMA busy_timeout=30000")
+            self._local.conn.execute("PRAGMA synchronous=NORMAL")
+        return cast(sqlite3.Connection, self._local.conn)
 
     def _init_db(self) -> None:
         conn = self._conn()
