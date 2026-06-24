@@ -617,7 +617,6 @@ class TestCompactionEngineCompact:
     async def test_compaction_history_trims(self) -> None:
         llm = AsyncMock(return_value={"content": "x"})
         engine = CompactionEngine(llm_call=llm)
-        # Fill to just under max
         for _ in range(MAX_COMPACTION_HISTORY):
             engine._compaction_history.append(CompactResult(ok=True, compacted=False))
         msgs = [{"role": "user", "content": "a" * 600}] * 30

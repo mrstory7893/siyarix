@@ -36,7 +36,6 @@ async def test_e2e_simulation_network_scan_and_enum():
     with patch.object(agent._planner_autonomous, "plan", new_callable=AsyncMock) as mock_plan:
         mock_plan.return_value = plan
 
-        # We will mock executor_autonomous.execute_plan directly to avoid subprocess calls
         async def mock_execute_plan(plan, *args, **kwargs):
             for step in plan.steps:
                 await mock_execute_step(step, {})

@@ -489,9 +489,7 @@ class TestGetEdgeWeight:
         kg.add_edge(host_a.node_id, host_b.node_id, EdgeType.CONNECTS_TO)  # 10.0
         vuln = kg.add_node(NodeType.VULNERABILITY, "crit", "vc", severity="critical")
         kg.add_edge(host_a.node_id, vuln.node_id, EdgeType.HAS_VULN)
-        # Actually test multiple edges between same nodes
-        # We can't directly add two edges between same nodes with different types
-        # because they have different edge_types. Let's test real scenario:
+
         kg.add_edge(host_a.node_id, host_b.node_id, EdgeType.AUTHENTICATED_BY)  # 2.0
         weight = kg._get_edge_weight(host_a.node_id, host_b.node_id)
         assert weight == 2.0

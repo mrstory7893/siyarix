@@ -98,8 +98,6 @@ def main():
         # ═══════════════════════════════════════════════════════════════
         # SECTION 3: NEGATION / EXCLUSION QUERIES
         # ═══════════════════════════════════════════════════════════════
-        # Note: Deep negation handling ("without", "avoid") is a future enhancement.
-        # For now these tests just verify that SOME plan is generated.
         ("scan example.com without port scan", None, 1, None, None, None),
         ("recon on example.com avoid aggressive scanning", None, 1, None, None, None),
         ("check vulnerabilities but skip low severity on https://example.com", ["nuclei"], 1, None, None, None),

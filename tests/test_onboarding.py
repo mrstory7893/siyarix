@@ -99,7 +99,6 @@ def test_step_credential_setup(mock_console):
         cred_store.has_master_key.return_value = False
         wizard = OnboardingWizard(console=mock_console, cred_store=cred_store)
         wizard._step_credential_setup()
-        # the setup might return early or not set it based on some rich prompts, so we just pass
         pass
 
 @pytest.mark.asyncio

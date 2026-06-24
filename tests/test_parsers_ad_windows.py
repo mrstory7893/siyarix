@@ -3010,7 +3010,6 @@ class TestSmbclientParser:
 
     def test_server_ip_line(self):
         r = SmbclientParser().parse("server \\\\10.0.0.1")
-        # This just updates context, no finding produced
         assert len(r) == 0
 
     def test_connected_line(self):

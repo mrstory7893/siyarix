@@ -28,7 +28,6 @@ class TestNowIso:
         assert result.endswith("+00:00") or "Z" in result or "+" in result[19:]
 
     def test_utc_timestamp(self):
-        # Ensure it's reasonably close to now
         now = datetime.now(tz=UTC)
         parsed = datetime.fromisoformat(_now_iso())
         diff = abs((now - parsed).total_seconds())
@@ -274,10 +273,7 @@ class TestParserRegistryRegister:
         reg.register("nmap", _MockParser(), "1.0")
         reg.register("nmap", _MockParserV2(), "2.0")
         assert reg.count == 3  # None default (from 1.0), 1.0, 2.0
-        # The last versioned registration should also set default if None not set
-        # Actually, register logic: if version is not None and None not in parsers[tool_name], set None
-        # After first: None=1.0, 1.0=1.0
-        # After second: None=1.0 (already exists), 1.0=1.0, 2.0=2.0
+
 
 
 class TestParserRegistryGet:
@@ -455,7 +451,6 @@ class TestParserRegistryEdgeCases:
 class TestParserProtocol:
     def test_base_parser_is_not_a_parser(self):
         """BaseParser alone doesn't have parse() instance method on the class itself."""
-        # Actually, BaseParser doesn't define parse(), so it shouldn't match Parser protocol
         pass
 
     def test_concrete_implements_protocol(self):

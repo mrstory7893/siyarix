@@ -1951,7 +1951,6 @@ class TestJwtToolParser:
 
     def test_claims_from_decoded(self):
         r = JwtToolParser().parse("some text with unknown claim")
-        # just process without token decode — claims loop won't trigger
         assert isinstance(r, list)
 
     def test_json_signature_valid(self):

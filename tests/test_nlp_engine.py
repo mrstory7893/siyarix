@@ -509,7 +509,6 @@ class TestEntityExtractionTypes:
 
     def test_email_extraction(self):
         nlp = NaturalLanguageParser()
-        # Domain pattern matches first, extracting just the domain part
         target, ttype = nlp.extract_entities("contact admin@example.com")
         assert ttype == "domain"
 

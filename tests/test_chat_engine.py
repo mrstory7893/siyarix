@@ -33,8 +33,6 @@ class SiyarixChatMock(LLMEngineMixin):
     async def start_chat(self) -> None:
         from siyarix.chat.handlers import Prompt # if imported
         while getattr(self, "_running", False):
-            # For the test, we assume mock_ask is patched over Prompt.ask
-            # but wait, Prompt.ask is patched, so we can just call it
             cmd = Prompt.ask(">>>")
             if cmd and cmd.startswith("/"):
                 await self._handle_slash(cmd)
@@ -69,9 +67,7 @@ def test_resolve_provider_explicit(mock_resolve_api_key, mock_pm_class, chat_moc
 @patch("siyarix.providers.ProviderManager")
 def test_llm_available_registry(mock_pm_class, chat_mock):
     chat_mock._settings.set("model_provider", "registry")
-    # Actually registry should not report available, or wait, does it?
-    # the function is _llm_available
-    # If "cloud", "custom", "opencode" etc.
+
     # Let's test a simple env-based provider
     mock_pm = MagicMock()
     mock_pm_class.get_instance.return_value = mock_pm
@@ -127,8 +123,6 @@ async def test_execute_instruction_command(chat_mock):
     
     with patch("siyarix.chat.engine.LLMEngineMixin._execute_agent") as mock_run:
         mock_run.return_value = ("stdout", "stderr")
-        # Simulating it handling a direct command if in shell mode, wait, in integrated mode it goes to planner.
-        # If we just mock out the planner and executor:
         pass
 
 @pytest.mark.asyncio
