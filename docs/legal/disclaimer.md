@@ -1,48 +1,54 @@
-# Legal Disclaimer
+# ⚠️ Legal Disclaimer
 
-Siyarix is provided without warranty, as specified by the AGPL-3.0 license.
+> [!CAUTION]
+> Siyarix is a powerful tool provided without warranty, exactly as specified by the AGPL-3.0 license. Please read this disclaimer carefully before use.
 
-## No warranty
+## 🛑 No Warranty
 
-Siyarix is free software distributed under the GNU Affero General Public License v3.0 or later. It is provided "AS IS", **without warranty of any kind**, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement.
+Siyarix is free, open-source software distributed under the GNU Affero General Public License v3.0 or later. It is provided **"AS IS"**, without warranty of any kind, whether express or implied.
 
-## Limitation of liability
+This includes, but is not strictly limited to:
+- The warranty of merchantability.
+- Fitness for a particular purpose.
+- Non-infringement of third-party rights.
 
-In no event shall the copyright holders or contributors be liable for any claim, damages, or other liability, whether in an action of contract, tort, or otherwise, arising from, out of, or in connection with the software or the use or other dealings in the software.
+## 📉 Limitation of Liability
 
-## No security guarantees
+In no event shall the copyright holders, maintainers, or contributors be held liable for any claim, damages, or other liabilities. Whether arising from an action of contract, tort, or otherwise, the creators of Siyarix hold no legal liability connected with the software, your use of it, or other dealings within it.
 
-Siyarix is a cybersecurity tool. It does not guarantee:
+## 🛡️ No Security Guarantees
 
-- That its scans will detect all vulnerabilities
-- That its AI providers will produce accurate results
-- That its exploitation modules will work as expected
-- That it will not trigger security systems on target networks
-- That its OPSEC features will prevent all detection
+Siyarix is an advanced cybersecurity tool, but it is not magic. We cannot and do not guarantee:
 
-## User responsibility
+- That its scans will flawlessly detect 100% of vulnerabilities.
+- That the AI providers will always produce accurate, hallucination-free results.
+- That exploitation modules will always work safely or as expected.
+- That the tool will not inadvertently trigger security alarms (IDS/IPS) on target networks.
+- That our OPSEC and stealth features will prevent all forms of detection by skilled blue teams.
 
-Users are solely responsible for:
+## 👤 User Responsibility
 
-- Ensuring they have proper authorization before testing any system
-- Complying with all applicable laws and regulations
-- Using the tool ethically and responsibly
-- Protecting any data collected during assessments
-- Configuring the tool safely (including safe mode when appropriate)
+As the operator of Siyarix, **you** are solely responsible for:
 
-## AI provider disclaimer
+- Ensuring you have proper, written authorization before scanning or testing any system.
+- Complying with all applicable local, federal, and international laws.
+- Using the platform ethically and responsibly.
+- Securing any sensitive data or credentials collected during your assessments.
+- Configuring the tool safely (including enabling Safe Mode when appropriate).
 
-Siyarix integrates with third-party AI providers (OpenAI, Google, Anthropic, etc.). The project maintainers:
+## 🤖 AI Provider Disclaimer
 
-- Do not control AI provider APIs, uptime, or behavior
-- Are not responsible for AI provider data handling practices
-- Recommend reviewing each provider's privacy policy before use
-- Provide local/offline alternatives (Ollama, LM Studio, registry fallback)
+Siyarix acts as an orchestrator that integrates with third-party AI providers (like OpenAI, Google Gemini, and Anthropic). The Siyarix project maintainers:
 
-## Third-party tools
+- Do not control the APIs, uptime, or behavioral models of these providers.
+- Are not responsible for how these providers handle your data (always review their individual privacy policies!).
+- Highly recommend using local/offline alternatives (like Ollama or LM Studio) if data privacy is your absolute top priority.
 
-Siyarix can invoke third-party security tools (nmap, nuclei, metasploit, etc.). These tools have their own licenses, warranties, and liabilities. The Siyarix project does not assume responsibility for third-party tool behavior.
+## 🛠️ Third-Party Tools
 
-## No endorsement
+Under the hood, Siyarix invokes well-known third-party security tools (e.g., `nmap`, `nuclei`, `metasploit`). 
+These tools carry their own licenses, warranties, and liabilities. The Siyarix project assumes zero responsibility for the behavior, safety, or legality of third-party tools.
 
-Reference to any product, service, process, or provider does not constitute or imply endorsement, sponsorship, or recommendation by the Siyarix project or its maintainers.
+## 🚫 No Endorsement
+
+Any reference to specific products, services, processes, or AI providers within Siyarix does not constitute or imply official endorsement, sponsorship, or recommendation by the Siyarix project or its maintainers.

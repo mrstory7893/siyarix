@@ -1,87 +1,68 @@
-# Responsible AI Usage Policy
+# 🧠 Responsible AI Usage Policy
 
-Siyarix integrates AI providers for planning, reasoning, and assistance. This policy governs the responsible use of AI features.
+Siyarix leverages cutting-edge Artificial Intelligence to plan tasks, reason through complex networks, and assist operators. Because AI is powerful but unpredictable, this policy governs how we handle AI responsibly within the platform.
 
-## AI system overview
+## 🏗️ How We Use AI
 
-Siyarix uses AI providers for:
+Siyarix doesn't just use AI for chat. We deeply integrate it into the operational workflow:
+1. **Task Planning:** Converting your natural language goals (e.g., "Find open databases on this subnet") into structured, tool-specific execution plans.
+2. **Interactive Chat:** Providing a multi-turn, context-aware security assistant.
+3. **Report Generation:** Summarizing raw vulnerabilities into polished, actionable executive reports.
+4. **Tool Selection:** Dynamically recommending the best cybersecurity tool for a specific objective.
 
-1. **Task planning**: Converting natural language to structured execution plans
-2. **Interactive chat**: Multi-turn conversation about security operations
-3. **Report generation**: Summarizing findings and suggesting remediation
-4. **Tool selection**: Recommending appropriate tools for objectives
+## 👁️ Human Oversight is Mandatory
 
-## Human oversight
+AI is an assistant, not an autopilot. Siyarix is designed to keep the human in the loop:
+- **The Permission Gate:** Every single command the AI attempts to run is strictly validated before execution.
+- **User Confirmation:** If the AI suggests a destructive or highly sensitive command, execution halts, and the user must explicitly type `y` to approve it.
+- **Full Audit Trail:** Every action, whether triggered by a human or an AI, is permanently logged.
 
-AI-generated plans and commands are subject to:
+> [!CAUTION]
+> **The AI assists, but you are legally responsible for the commands you authorize.** Never blindly approve a command you do not fully understand.
 
-- **Permission gate**: Every command is validated before execution
-- **User confirmation**: Flagged commands require explicit approval
-- **Full audit trail**: All actions are logged regardless of how they were initiated
+## ⚠️ Known Limitations of AI
 
-The AI assists but does not replace human judgment.
+Current generation AI models are brilliant, but flawed. Be aware that the AI may:
+- Generate incorrect, illogical, or incomplete execution plans.
+- Suggest tools that are not actually installed on your system.
+- Misinterpret your intent (especially if your prompt is vague).
+- **Hallucinate** flags, arguments, or entirely fake IP addresses.
 
-## Limitations
+## 🕵️‍♂️ Provider Transparency
 
-AI providers may:
-
-- Generate incorrect or incomplete plans
-- Suggest tools not available on the system
-- Misinterpret user intent, especially with ambiguous input
-- Hallucinate tool names, arguments, or capabilities
-
-Users should verify AI suggestions before executing them.
-
-## Provider transparency
-
-The system documents which AI provider was used for each operation:
+You should always know exactly *who* is processing your data. Siyarix logs the exact provider and model used for every operation:
 
 ```bash
 siyarix audit-log
-# Shows: provider used, model, latency, confidence
+# Output will clearly show: Provider (e.g., Anthropic), Model (e.g., claude-3-5-sonnet), and Latency.
 ```
 
-## Data protection
+## 🛡️ Data Protection & Privacy
 
-When using cloud AI providers:
+When you use cloud-based AI providers (like OpenAI or Gemini), data leaves your machine. We protect you with:
+1. **Bidirectional Masking:** Our DLP engine intercepts and redacts IPs, hostnames, and credentials *before* they hit the internet.
+2. **Session Scoping:** Masks are temporary and isolated to your current session.
+3. **No Centralized Logging:** Siyarix itself does not harvest or centrally log your provider requests.
+4. **The Ultimate Privacy:** If you are dealing with ultra-sensitive environments, Siyarix fully supports local, offline models (via Ollama or LM Studio) so your data never leaves your laptop.
 
-1. **Masking**: IPs, hostnames, credentials, and other sensitive data are redacted or masked before sending
-2. **Session scope**: Data is masked within the session context
-3. **No persistence**: Provider requests are not stored by Siyarix (response caching is optional and local)
-4. **User choice**: Local providers (Ollama, LM Studio) keep all data on the user's machine
+## 🎛️ The Power of Choice
 
-## Choice of provider
+You are never locked into a single AI ecosystem. Siyarix allows you to:
+- Dynamically switch AI providers mid-session.
+- Configure an automatic failover chain (e.g., if OpenAI goes down, fallback to local Ollama).
+- Disable AI entirely and rely purely on our deterministic, offline heuristic templates.
 
-Users can:
+## 🚩 Reporting AI Misbehavior
 
-- Choose which AI provider to use (configurable in settings)
-- Set a preference order for automatic failover
-- Disable AI entirely and use heuristic fallback
-- Use local-only providers for air-gapped environments
+If the AI suggests something harmful, hallucinates dangerously, or bypasses a safety rail:
+- Please open an issue on our [GitHub Repository](https://github.com/mufthakherul/siyarix/issues).
+- Provide the input prompt, the expected behavior, the actual output, and the provider used.
+- **Do not include sensitive target data or actual credentials in your bug report!**
 
-## Provider-agnostic design
+## ⚖️ Your Ethical Obligations
 
-Siyarix is designed to:
-
-- Work with any provider through the standard `Provider` interface
-- Function fully offline with heuristic fallback
-- Never depend on a single provider
-- Degrade gracefully when providers are unavailable
-
-## Reporting AI issues
-
-If the AI behaves unexpectedly or produces harmful output:
-
-- Report via GitHub issues: https://github.com/mufthakherul/siyarix/issues
-- Include: input, expected behavior, actual output, provider used
-- Do not include sensitive data in bug reports
-
-## Ethical AI use
-
-Users must:
-
-- Not use AI features for social engineering
-- Not use AI to generate malware or attack tools
-- Not use AI beyond authorized testing scope
-- Comply with each provider's usage policies
-- Review and verify AI-generated plans before execution
+By using Siyarix's AI features, you agree to:
+- **Never** use the AI to generate targeted phishing campaigns or social engineering lures.
+- **Never** prompt the AI to write bespoke malware, ransomware, or destructive worms.
+- **Never** use the AI to attack systems outside your authorized scope.
+- Comply with the Terms of Service of the specific AI provider you are routing through.

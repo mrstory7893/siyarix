@@ -1,58 +1,55 @@
-# Trademark Policy
+# 🏷️ Trademark Policy
 
-The Siyarix name and logo are project trademarks.
+The Siyarix name and its associated logo are official trademarks of the Siyarix project. This policy outlines how you can—and cannot—use our brand identity.
 
-## Scope
+## 📏 Scope of the Trademark
 
-This policy covers:
+This policy actively protects:
+- **The Word Mark:** "Siyarix"
+- **The Logo:** The official Siyarix project logo and branding assets.
+- **Derivatives:** Any naming variations like "Siyarix AI", "Siyarix CLI", "Siyarix Pro", etc.
 
-- **Word mark**: "Siyarix"
-- **Logo**: The Siyarix project logo
-- **Derivatives**: "Siyarix AI", "Siyarix CLI", etc.
+## ✅ Usage Without Permission (Allowed)
 
-## Usage without permission
+We love it when the community talks about the project! You are free to use the Siyarix trademarks **without asking** in the following scenarios:
+- Referring to the project by its name in text, documentation, or code comments.
+- Accurately stating that your third-party product, plugin, or service "integrates with Siyarix" or "works with Siyarix."
+- Utilizing the name to comply with AGPL-3.0 attribution requirements.
+- Forking the project under the AGPL (provided you rename the fork so it doesn't cause confusion).
+- Writing reviews, articles, blog posts, or creating YouTube videos about the project.
 
-You may use Siyarix trademarks without permission in these cases:
+## ❌ Usage Requiring Permission (Restricted)
 
-- Referring to the project by name in text
-- Stating that your product or service works with Siyarix
-- Using the name in compliance with AGPL-3.0 license requirements
-- Forking the project under a different name (must not imply affiliation)
-- Writing about the project (reviews, articles, blog posts)
+To protect the community from malicious impersonators or supply chain attacks, you need **explicit, written permission** to:
+- Use "Siyarix" as part of your company name, product name, or service branding.
+- Use the official Siyarix logo as your own project's avatar or branding.
+- Register a domain name containing the word "siyarix" (e.g., `siyarix-scans.com`).
+- Create an "official-looking" distribution channel or package repository.
+- Imply that the Siyarix core team officially endorses your product, plugin, or service.
 
-## Usage requiring permission
+## 🔀 Forking & Attribution Rules
 
-You need explicit permission to:
+The AGPL license gives you the absolute right to fork Siyarix. However, trademark law still applies. If you fork the project:
+1. **Rename It:** You must choose a new name for your fork to avoid confusing users.
+2. **Be Clear:** You must clearly state, "This project is a fork of Siyarix."
+3. **Change the Logo:** You cannot use our official logo as your primary branding.
+4. **Keep the License:** The AGPL-3.0 copyright notice must be perfectly preserved in your fork.
 
-- Use "Siyarix" as part of your product or service name
-- Use the Siyarix logo as your own branding
-- Register a domain name containing "siyarix"
-- Create an official-looking distribution channel
-- Imply official project endorsement
+## 🏛️ Official Channels
 
-## Fork attribution
+To ensure you are downloading safe, untampered code, please only use our official distribution channels:
+- **GitHub:** `https://github.com/mufthakherul/siyarix`
+- **PyPI:** `https://pypi.org/project/siyarix/`
+- **Docker:** Official images published by our verified project accounts.
 
-If you fork Siyarix under the AGPL-3.0 license:
+> [!WARNING]
+> Any other website, repository, or package manager claiming to offer "Official Siyarix" should be treated as highly suspicious.
 
-- You must rename your fork (it should not cause confusion with the original)
-- Attribution must be clear: "This project is a fork of Siyarix"
-- You must not use the Siyarix logo as your primary branding
-- The AGPL-3.0 copyright notice must be preserved
+## 🚨 Reporting Misuse
 
-## Official channels
+If you see someone using the Siyarix name or logo in a misleading way, distributing malware under our name, or violating this policy, please let us know immediately by opening an issue at:
+[https://github.com/mufthakherul/siyarix/issues](https://github.com/mufthakherul/siyarix/issues)
 
-The only official Siyarix distribution channels are:
+## ⚖️ License
 
-- **GitHub**: https://github.com/mufthakherul/siyarix
-- **PyPI**: https://pypi.org/project/siyarix/
-- **Docker**: Official images published by the Siyarix project
-
-Any other distribution claiming to be "official Siyarix" should be treated with caution.
-
-## Reporting misuse
-
-If you see the Siyarix name being used in a misleading or unauthorized way, please open an issue at https://github.com/mufthakherul/siyarix/issues.
-
-## License
-
-This trademark policy is licensed under the same terms as the project (AGPL-3.0-or-later).
+This Trademark Policy document itself is open-source and licensed under the same terms as the project (AGPL-3.0-or-later).

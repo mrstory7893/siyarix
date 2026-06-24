@@ -1,83 +1,80 @@
-# AGPL-3.0-or-later License Guide
+# 📜 AGPL-3.0-or-later License Guide
 
-Siyarix is distributed under the **GNU Affero General Public License v3.0 or later** (SPDX: `AGPL-3.0-or-later`).
+Siyarix is proudly distributed under the **GNU Affero General Public License v3.0 or later** (SPDX: `AGPL-3.0-or-later`). This guide translates the legalese into plain language to help you understand your rights and responsibilities.
 
-## What AGPL-3.0 means
+## ⚖️ What Does AGPL-3.0 Mean?
 
-The AGPL-3.0 is a free software license published by the Free Software Foundation. It combines the GNU GPL v3 with an additional network use provision.
+The AGPL-3.0 is a robust, free software license published by the Free Software Foundation. It takes the strong protections of the standard GNU GPL v3 and adds a crucial network use provision.
 
-### Key rights
+### 🎉 Your Key Rights
 
-You are free to:
+Under this license, you are completely free to:
+- **Use:** Run Siyarix for absolutely any purpose.
+- **Study:** Dive into the source code and see exactly how it works.
+- **Modify:** Tweak, change, and adapt the code to suit your specific needs.
+- **Share:** Redistribute copies to anyone.
+- **Improve:** Release your epic improvements back to the public!
 
-- **Use**: Run Siyarix for any purpose
-- **Study**: Examine the source code
-- **Modify**: Change the code to suit your needs
-- **Share**: Redistribute copies
-- **Improve**: Release improvements to the public
+### 🤝 Your Key Conditions
 
-### Key conditions
+If you choose to distribute Siyarix (or a modified version of it) to others, you must play by these rules:
+1. **Provide Source Code:** You must make the complete source code available.
+2. **License under AGPL-3.0:** Your distribution must also be licensed under AGPL-3.0 or later.
+3. **State Your Changes:** Clearly document any modifications you made to the original code.
+4. **Include Notices:** Keep the original copyright and license notices intact.
+5. **No Extra Restrictions:** Do not impose any additional legal restrictions on the recipients.
 
-If you distribute Siyarix (or a modified version) to others, you must:
+### 🌐 The "Network Use" Clause (Section 13)
 
-1. **Provide source code**: Make the complete source code available
-2. **License under AGPL-3.0**: Your distribution must be under AGPL-3.0 or later
-3. **State changes**: Document any modifications you made
-4. **Include license notice**: Keep original copyright and license notices
-5. **No additional restrictions**: Do not add further restrictions on recipients
+> [!IMPORTANT]
+> **The Golden Rule of AGPL:** If you run a modified version of Siyarix over a network and users interact with it remotely, you *must* make your modified source code available to those users.
 
-### Network use clause (Section 13)
+This ensures that if a company deploys Siyarix as a backend "Security-as-a-Service," they cannot keep their improvements hidden from the community.
 
-> If you run a modified version of the program over a network and users interact with it, you must make the source code available to those users.
+## 🤔 "AGPL-3.0-only" vs "AGPL-3.0-or-later"
 
-This means if you deploy Siyarix as a network service, you must provide source access (including modifications) to users.
-
-## AGPL-3.0-only vs AGPL-3.0-or-later
-
-| Variant | Meaning |
+| Variant | What it means |
 |---------|---------|
-| AGPL-3.0-only | Licensed only under v3.0. If FSF releases AGPL v4, you must use v3. |
-| AGPL-3.0-or-later | Licensed under v3.0 or any later version published by FSF. |
+| **AGPL-3.0-only** | You are bound strictly to version 3.0. If the FSF releases v4 tomorrow, you are stuck on v3. |
+| **AGPL-3.0-or-later** | You are licensed under v3.0, but if the FSF releases a newer version, you can automatically adopt it! |
 
-"or later" allows the project to adopt future FSF license versions without re-licensing.
+Siyarix uses the **"or later"** variant to future-proof the project.
 
-## What this means for you
+## 🧑‍💻 What This Means For You
 
-### Individual users
-Use Siyarix for any legitimate purpose — security testing, research, learning — without restrictions. No license fees, no registration.
+### Individual Users
+You can use Siyarix for security testing, research, and learning without any restrictions. There are no license fees, no paywalls, and no registration forms. Go hack!
 
 ### Organizations
-- **Internal use**: Use internally without distributing source
-- **Service deployment**: If running as a network service, make source (including modifications) available to users
-- **Distribution**: If distributed as part of a product, the entire product must be AGPL-3.0 compatible
+- **Internal Use:** You can modify and run Siyarix internally without ever releasing your source code.
+- **Service Deployment:** If you offer Siyarix as a network service to outside clients, you must provide them access to your source code.
+- **Distribution:** If you bundle Siyarix into a commercial product, your entire product must be AGPL-3.0 compatible.
 
 ### Developers
-- **Contributing**: Contributions are licensed under AGPL-3.0-or-later
-- **Modifications**: Changes must be shared when distributed
-- **Bundling**: Can combine with other AGPL-compatible software
+- **Contributing:** By opening a PR, your contributions are licensed under AGPL-3.0-or-later.
+- **Modifications:** If you distribute your changes, you must share the source.
+- **Bundling:** You can freely combine Siyarix with other AGPL-compatible software.
 
-## Plugin exception
+## 🔌 The Plugin Exception
 
-Third-party plugins loaded dynamically via `~/.siyarix/plugins/` are exempt from AGPL requirements. They may use any license (including proprietary). See [Plugin Exception](plugin-exception.md).
+We love developers building on top of Siyarix! Therefore, third-party plugins loaded dynamically via `~/.siyarix/plugins/` are **exempt** from AGPL requirements. They can use any license you want—even a proprietary, closed-source one. 
 
-## Compatibility
+> [!NOTE]
+> Check out the [Plugin Exception](plugin-exception.md) document for the exact legal details.
 
-AGPL-3.0 is compatible with:
-- **GPL-3.0**: Can combine AGPL code with GPL-3.0 code
-- **Apache-2.0**: Apache-2.0 code can be included in AGPL projects
-- **MIT, BSD, ISC**: Permissive licenses can be included in AGPL projects
-- **CC0**: Public domain dedication
+## 🧩 Compatibility Cheatsheet
 
-AGPL-3.0 is NOT compatible with:
-- **GPL-2.0**: Cannot combine AGPL-3.0 code with GPL-2.0 code
-- **Proprietary licenses**: AGPL code cannot be incorporated into proprietary software
+**Compatible Licenses (Can be mixed with AGPL):**
+- ✅ **GPL-3.0:** Perfect match.
+- ✅ **Apache-2.0:** You can include Apache-2.0 code in AGPL projects.
+- ✅ **MIT, BSD, ISC:** Permissive licenses play nicely with AGPL.
+- ✅ **CC0:** Public domain is always free.
 
-## Full license text
+**Incompatible Licenses (Cannot be mixed):**
+- ❌ **GPL-2.0:** AGPL-3.0 and GPL-2.0 do not mix.
+- ❌ **Proprietary Licenses:** You cannot lock AGPL code inside a closed-source proprietary app.
 
-The complete license text is in the project LICENSE file.
-
-## Additional legal documents
-
-- NOTICE — Copyright notices and third-party attributions
-- [Disclaimer](disclaimer.md) — Warranty disclaimer and liability limitation
-- [Responsible AI Usage](responsible-ai-usage.md) — AI-specific governance
+## 📚 Further Reading
+- The full, unabridged legal text is available in the `LICENSE` file.
+- Read our [NOTICE File Explained](notice-file-explained.md) for attribution details.
+- Review our [Disclaimer](disclaimer.md) regarding warranties.
