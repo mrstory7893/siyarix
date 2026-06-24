@@ -1,6 +1,6 @@
 # Interactive Chat (REPL) Mode
 
-The Siyarix REPL is the primary interaction interface — a full-featured interactive shell with AI-assisted planning, 40+ slash commands, split-pane layout, and SmartAutocomplete via `prompt_toolkit`.
+The Siyarix REPL is the primary interaction interface — a full-featured interactive shell with AI-assisted planning, 54+ slash commands, split-pane layout, and SmartAutocomplete via `prompt_toolkit`.
 
 ---
 
@@ -18,7 +18,7 @@ All available slash commands in the REPL:
 
 | Command | Description |
 |---------|-------------|
-| `/help` | Show all slash commands |
+| `/help` | Show all slash commands (or `/help <cmd>` for details) |
 | `/exit` | Exit the session |
 | `/clear` | Clear conversation history |
 | `/new` | Start a new conversation thread |
@@ -36,9 +36,9 @@ All available slash commands in the REPL:
 | `/reset` | Reset session state |
 | `/key` | Set or rotate API keys |
 | `/theme` | Change terminal color theme |
-| `/mode` | Switch interaction mode (integrated/registry/autonomous) |
+| `/mode` | Switch interaction mode |
 | `/model` | Switch AI provider model |
-| `/provider` | Switch AI provider |
+| `/provider` | Show/switch AI provider |
 | `/report` | Generate a session report |
 | `/split` | Toggle split-pane layout |
 | `/batch` | Execute batch commands |
@@ -56,12 +56,48 @@ All available slash commands in the REPL:
 | `/queue` | View execution queue |
 | `/diff` | Diff between scan results |
 | `/log` | View session logs |
+| `/save` | Save current session |
+| `/review` | Review session context |
+| `/persona` | Set active persona |
+| `/scan` | Quick scan command |
+| `/savecmd` | Save a command profile |
+| `/cmds` | List saved command profiles |
+| `/cmd` | Run a saved command profile |
+| `/context` | Show session context |
+| `/version` | Show Siyarix version |
+| `/config` | View/change configuration |
+| `/agent` | Launch an autonomous agent |
+| `/cancel` | Cancel current operation |
+| `/esc` | Alias for /cancel |
+| `/security-cmds` | List security commands for shell |
+| `/run` | Run a command or tool |
+| `/translate` | Translate intent to shell command |
+| `/target` | Set or show current target |
+| `/load` | Load a session from file |
+| `/fork` | Fork the current session |
+| `/export` | Export session data |
+| `/plugins` | List available plugins |
+| `/alias` | Manage command aliases |
+| `/language` | Set interface language |
+| `/learn` | Learn from session context |
+| `/feedback` | Submit feedback |
+| `/redteam` | Switch to red team mode |
+| `/blueteam` | Switch to blue team mode |
+| `/benchmark` | Run performance benchmarks |
+| `/upgrade` | Check for upgrades |
+| `/docs` | Open documentation |
+| `/tutorial` | Start an interactive tutorial |
+| `/bug` | Report a bug |
+| `/suggest` | Suggest a feature |
+| `/playbook` | Execute a playbook |
+| `/stats` | Show session statistics |
+| `/skills` | List available skills |
 
 ---
 
 ## Natural Language Input
 
-Type any natural language command and the AI interprets it via `TaskPlanner`:
+Type any natural language command and the AI interprets it via the execution engine:
 
 ```
 > scan 192.168.1.1
@@ -78,6 +114,8 @@ Toggle a vertical split-pane view with `/split`:
 
 - **Left pane**: Input area with conversation
 - **Right pane**: Live output, logs, or status information
+
+Change the right-pane view with `/split <timeline|metrics|cheatsheet|attack_map>`.
 
 ---
 
@@ -99,18 +137,6 @@ Sessions are persisted to SQLite (`~/.siyarix/sessions.db`):
 - AI conversation history (multi-turn context)
 - Findings and results
 - Session duration and metadata
-
-### Session Branching
-
-Create divergent session branches with `/branch`:
-
-```
-> /branch investigation-v2
-> /branch list
-> /branch switch investigation-v1
-```
-
-Each branch maintains independent conversation history and findings.
 
 ---
 

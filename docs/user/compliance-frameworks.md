@@ -1,6 +1,6 @@
 # Compliance Frameworks
 
-Siyarix can assess targets against six industry compliance frameworks through automated probe execution and evidence collection.
+Siyarix can assess targets against six industry compliance frameworks through automated probe execution and evidence collection. The compliance assessment framework is being actively developed — all check results currently return a `NOT_EVALUATED` status as the evaluation logic is being built out.
 
 ---
 
@@ -8,11 +8,11 @@ Siyarix can assess targets against six industry compliance frameworks through au
 
 | Framework | Full Name | Controls |
 |-----------|-----------|----------|
-| PCI-DSS | Payment Card Industry Data Security Standard | 4 |
-| ISO 27001 | Information Security Management Standard | 4 |
-| NIST 800-53 | Security and Privacy Controls | 4 |
-| SOC 2 | Service Organization Control 2 | 4 |
-| GDPR | General Data Protection Regulation | 4 |
+| PCI-DSS | Payment Card Industry Data Security Standard | 3 |
+| ISO 27001 | Information Security Management Standard | 3 |
+| NIST 800-53 | Security and Privacy Controls | 3 |
+| SOC 2 | Service Organization Control 2 | 3 |
+| GDPR | General Data Protection Regulation | 2 |
 | HIPAA | Health Insurance Portability and Accountability Act | 2 |
 
 ---
@@ -20,16 +20,17 @@ Siyarix can assess targets against six industry compliance frameworks through au
 ## Running Compliance Checks
 
 ```bash
-# Check all frameworks
-siyarix run "check compliance on the infrastructure"
-
-# Check a specific framework
-siyarix run "run SOC 2 compliance scan"
-
-# Via command group
-siyarix compliance run --framework soc-2
-siyarix compliance run --framework all
+# Check a specific framework against a target
+siyarix compliance run SOC2 10.0.0.1
+siyarix compliance run PCI-DSS webapp.example.com
+siyarix compliance run GDPR customer-db.internal
 ```
+
+The `compliance run` command takes two positional arguments: the framework name and the target.
+
+### Current Status
+
+The compliance engine is under active development. Each `ComplianceCheck.run()` currently returns `NOT_EVALUATED` — the assessment probes and evidence collection logic are being implemented. Evidence data and target information are captured and stored for future evaluation.
 
 ---
 
@@ -37,36 +38,32 @@ siyarix compliance run --framework all
 
 ### PCI-DSS
 
-| Control ID | Title | What is Checked |
-|-----------|-------|-----------------|
-| PCI-6.5 | Address common coding vulnerabilities | Security tools present for SAST/DAST |
-| PCI-7.1 | Restrict access to need-to-know | IAM/logging processes verified |
-| PCI-8.1 | Unique user IDs | Auth mechanisms in place |
-| PCI-10.1 | Audit trails | Audit logging confirmed active |
+| Control ID | Title |
+|-----------|-------|
+| Req-1.1 | Firewall configuration standards |
+| Req-6.1 | Security patching process |
+| Req-10.1 | Audit trail implementation |
 
 ### SOC 2
 
-| Control ID | Title | What is Checked |
-|-----------|-------|-----------------|
-| SOC-CC1 | Control Environment | Governance processes detected |
-| SOC-CC3 | Risk Assessment | Risk assessment tools found |
-| SOC-CC6 | Logical and Physical Access | Access controls verified |
-| SOC-CC7 | System Operations | Monitoring and response tools |
+| Control ID | Title |
+|-----------|-------|
+| cc1.1 | Control environment |
+| cc6.1 | Logical and physical access |
+| cc6.2 | Access provisioning and deprovisioning |
 
 ### GDPR
 
-| Control ID | Title | What is Checked |
-|-----------|-------|-----------------|
-| GDPR-5 | Lawful Processing | Consent mechanisms verified |
-| GDPR-17 | Right to Erasure | Data deletion processes exist |
-| GDPR-32 | Security of Processing | Encryption and security tools in place |
-| GDPR-33 | Breach Notification | Incident response plan confirmed |
+| Control ID | Title |
+|-----------|-------|
+| Art. 32 | Security of processing |
+| Art. 33 | Breach notification |
 
 ---
 
 ## Automated Evidence Collection
 
-Each compliance control is assessed via automated probes:
+Each compliance control is assessed via automated probes. The evidence collection system stores assessment data in structured format for audit readiness:
 
 - **Tool detection**: Required security tools present on systems
 - **Process verification**: Logging, monitoring, and response processes
@@ -81,26 +78,22 @@ Each control result includes:
 
 | Field | Description |
 |-------|-------------|
-| `control_id` | Framework-specific identifier |
-| `title` | Human-readable name |
-| `description` | What the control requires |
-| `compliant` | PASS / FAIL |
-| `evidence` | Supporting information |
-| `remediation` | Steps to achieve compliance |
-| `applicable` | Whether the control applies to the target |
+| `check_id` | Framework-specific identifier |
+| `status` | Assessment result (currently `NOT_EVALUATED`) |
+| `evidence_data` | Supporting information |
+| `message` | Status description |
 
 ### Example Output
 
 ```json
 {
-  "framework": "soc-2",
-  "controls": [
+  "framework": "SOC2",
+  "target": "10.0.0.1",
+  "results": [
     {
-      "control_id": "SOC-CC6",
-      "title": "Logical and Physical Access",
-      "compliant": true,
-      "evidence": "Access control mechanisms detected",
-      "severity": "high"
+      "check_id": "cc1.1",
+      "status": "NOT_EVALUATED",
+      "message": "Stub check — not yet evaluated against live controls."
     }
   ]
 }
@@ -112,7 +105,7 @@ Each control result includes:
 
 ```bash
 # Generate a compliance-focused report
-siyarix report generate --format html --include compliance
+siyarix report generate --format html --output compliance-report.html
 
 # Export as JSON for pipeline integration
 siyarix report generate --format json

@@ -1,6 +1,6 @@
 # AI-Powered Workflows
 
-Siyarix uses AI providers for natural language planning, tool selection, and autonomous execution. The `TaskPlanner` converts user intent into structured execution plans with dependency resolution.
+Siyarix uses AI providers for natural language planning, tool selection, and autonomous execution. The execution engine converts user intent into structured execution plans with dependency resolution.
 
 ---
 
@@ -10,10 +10,10 @@ Siyarix uses AI providers for natural language planning, tool selection, and aut
 siyarix run "scan the network 10.0.0.0/24 for open ports and service versions"
 ```
 
-The AI planner processes input through:
+The execution engine processes input through:
 
 1. **Intent parsing**: Extract target, parameters, and desired action
-2. **Tool selection**: Match intent against 80+ tool capabilities in the registry
+2. **Tool selection**: Match intent against tool capabilities in the registry
 3. **Plan construction**: Build an execution DAG with parallel dependencies
 4. **Execution**: Run steps in topological order
 5. **Result aggregation**: Collect and present structured findings
@@ -30,12 +30,11 @@ The agent uses an Observe-Reason-Act loop to decompose complex objectives.
 
 ### Agent Modes
 
-| Mode | Description |
-|------|-------------|
-| `registry` | Deterministic planning using tool registry metadata (no AI) |
-| `autonomous` | Full AI autonomy — plans and executes without confirmation |
-| `hybrid` | AI proposes plans, user approves before execution |
-| `interactive` | AI guides interactively, user confirms each step |
+| Mode | CLI Flag | Description |
+|------|----------|-------------|
+| `REGISTRY` | `--mode offline` | Deterministic planning using tool registry metadata (no AI) |
+| `AUTONOMOUS` | `--mode autonomous` | Full AI autonomy — plans and executes without confirmation |
+| `HYBRID` | `--mode integrated` | AI proposes plans with integrated execution |
 
 ---
 
@@ -45,7 +44,7 @@ If the primary AI provider fails:
 
 1. **Circuit breaker** opens after 3 failures in 60 seconds
 2. **Next provider** in the preference chain is tried
-3. **All remote providers fail** → heuristic fallback activates
+3. **All remote providers fail** → heuristic fallback via RegistryPlanner activates
 4. **Graceful degradation** — commands still execute without AI planning
 
 Configure provider preference order:
@@ -77,7 +76,7 @@ The AI selects tools based on:
 3. **Platform**: Does it work on the current OS?
 4. **Safety**: Is the tool appropriate for the current persona/safe mode?
 
-The `ToolRegistry` maintains metadata for 100+ security tools including capabilities, platforms, and invocation patterns. Auto-discovery scans PATH on startup.
+The `ToolRegistry` maintains metadata for discovered security tools including capabilities, platforms, and invocation patterns. Auto-discovery scans PATH on startup.
 
 ---
 
@@ -86,7 +85,7 @@ The `ToolRegistry` maintains metadata for 100+ security tools including capabili
 | Mode | Description |
 |------|-------------|
 | `integrated` (default) | AI plans, selects tools, executes, and parses results automatically |
-| `registry` | Uses tool registry metadata for deterministic planning (no AI) |
+| `offline` / `registry` | Uses tool registry metadata for deterministic planning (no AI) |
 | `autonomous` | Full AI autonomy — plans and executes without user confirmation |
 
 ---
@@ -103,13 +102,12 @@ The AI context window is managed to prevent overflow:
 
 ## Offline Operation
 
-When no AI provider is available:
+When no AI provider is available or `--mode offline` is used:
 
-- The `NoopProvider` activates automatically
-- `RuleInterpreter` handles command parsing via heuristic fallback
-- Pattern matching and keyword extraction replace AI-driven planning
+- The `RegistryPlanner` handles command parsing via heuristic and pattern matching
+- The `OfflineStore` provides contextual responses in REPL mode
 - All existing tools remain fully usable
-- The Offline Registry provides contextual responses in REPL mode
+- `offline_instruction_hint()` and `no_provider_message()` provide user guidance
 
 ---
 
@@ -117,21 +115,9 @@ When no AI provider is available:
 
 | Provider | Configuration |
 |----------|--------------|
-| OpenAI | `siyarix auth set-key openai` |
-| Anthropic | `siyarix auth set-key anthropic` |
-| Gemini | `siyarix auth set-key gemini` |
-| Groq | `siyarix auth set-key groq` |
-| Together | `siyarix auth set-key together` |
-| OpenRouter | `siyarix auth set-key openrouter` |
-| DeepSeek | `siyarix auth set-key deepseek` |
-| xAI | `siyarix auth set-key xai` |
-| Mistral | `siyarix auth set-key mistral` |
-| Perplexity | `siyarix auth set-key perplexity` |
-| Cerebras | `siyarix auth set-key cerebras` |
-| Fireworks | `siyarix auth set-key fireworks` |
-| Azure OpenAI | `siyarix auth set-key azure` |
-| HuggingFace | `siyarix auth set-key huggingface` |
-| NVIDIA | `siyarix auth set-key nvidia` |
-| Moonshot | `siyarix auth set-key moonshot` |
-| Minimax | `siyarix auth set-key minimax` |
-| ZAI | `siyarix auth set-key zai` |
+| OpenAI | `siyarix auth set-key openai --key sk-...` |
+| Anthropic | `siyarix auth set-key anthropic --key sk-ant-...` |
+| Gemini | `siyarix auth set-key gemini --key AIz...` |
+| Groq | `siyarix auth set-key groq --key ...` |
+| Together | `siyarix auth set-key together --key ...` |
+| OpenRouter | `siyarix auth set-key openrouter --key ...` |

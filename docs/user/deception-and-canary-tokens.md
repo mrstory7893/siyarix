@@ -1,89 +1,61 @@
-# Deception and Canary Tokens
+# Deception Technology & Canary Tokens (Under Active Development)
 
-Siyarix provides deception capabilities for detecting unauthorized access and gathering threat intelligence through honeypot detection, fake banners, and trapdoor credentials. A full `CanaryTokenManager` for deploying and managing canary tokens across multiple channels is planned for a future release.
-
----
-
-## Honeypot Detection
-
-The `HoneypotDetector` identifies known honeypots by matching service banners against 9 signatures.
-
-### Detected Honeypots
-
-| Signature | Type | Detection Pattern |
-|-----------|------|------------------|
-| Cowrie SSH | SSH honeypot | SSH banner contains "cowrie" |
-| Dionaea | Malware honeypot | SIP banner contains "Dionaea" |
-| Honeyd | Virtual honeypot | Banner says "Honeyd Virtual" |
-| Glastopf | Web honeypot | Response contains "Glastopf" |
-| T-Pot | Honeypot platform | Banner contains "T-Pot" |
-| MHN | Modern Honeypot Network | Server identifies as MHN |
-| Nmap honeypot | Scan detection | Nmap output pattern match |
-| Canary tokens | Token detection | Known canary token patterns |
-| Custom | User-defined | Configurable signatures |
-
-### Usage
-
-```bash
-# Detect honeypots during scan
-siyarix run "check if target is running honeypot services"
-```
-
-The detector checks SSH banners, HTTP responses, and service fingerprints.
+Siyarix's deception technology capabilities are currently under active development. A `CanaryTokenManager` stub and related components have been created, and the full implementation — including honeypot detection, canary token deployment, and trapdoor credentials — is on the roadmap.
 
 ---
 
-## Fake Banners
+## Current Status
 
-The `FakeBannerGenerator` creates realistic decoy banners for defense:
+A `CanaryTokenManager` class exists as a stub in the codebase. It supports minimal operations (deploy, list, status, summary) but returns empty or placeholder results. The full deception technology suite has not yet been implemented.
 
 ```python
-from siyarix.deception import FakeBannerGenerator
+from siyarix.chat.stubs import CanaryTokenManager, CanaryTokenType
 
-generator = FakeBannerGenerator()
-ssh_banner = generator.generate_banner("ssh")     # "SSH-2.0-OpenSSH_8.9p1 Ubuntu-3"
-http_banner = generator.generate_banner("http")   # "Apache/2.4.41 (Ubuntu)"
-ftp_banner = generator.generate_banner("ftp")     # "220 vsFTPd 3.0.3"
+manager = CanaryTokenManager()
+manager.deploy_to_target("webapp.example.com", [CanaryTokenType.WEB])
+# Returns None (stub)
+
+tokens = manager.list_tokens()
+# Returns [] (stub)
 ```
 
 ---
 
-## Trapdoor Credentials
+## Planned Capabilities
 
-Trapdoor credentials are fake entries in the credential store that trigger alerts when used:
-
-```python
-from siyarix.deception import TrapdoorCredentialManager
-
-manager = TrapdoorCredentialManager()
-manager.add_trapdoor("admin", "fake_password_hash")
-# If someone attempts authentication with these credentials, an alert fires
-```
-
----
-
-## Canary Token Management (Planned)
-
-A comprehensive `CanaryTokenManager` is planned to provide:
+### Canary Tokens
 
 | Token Type | Description | Deployment Target |
-|------------|-------------|------------------|
-| Web | URL that alerts on request | Web access logs |
-| DNS | DNS name that alerts on resolution | DNS zone files |
-| AWS Key | Fake AWS credential that alerts on use | Config files |
-| Credential | Fake username/password pair | Credential stores |
-| File | File that alerts on open | Filesystem |
-| DB Record | Database record that alerts on query | Database tables |
-| API Key | Fake API key that alerts on use | Config/code |
+|------------|-------------|-------------------|
+| WEB | URL that alerts on request | Web access logs |
+| DNS (planned) | DNS name that alerts on resolution | DNS zone files |
+| AWS Key (planned) | Fake AWS credential that alerts on use | Config files |
+| Credential (planned) | Fake username/password pair | Credential stores |
+| File (planned) | File that alerts on open | Filesystem |
+| DB Record (planned) | Database record that alerts on query | Database tables |
+| API Key (planned) | Fake API key that alerts on use | Config/code |
+
+### Honeypot Detection (Planned)
+
+- Signature-based identification of known honeypots (Cowrie, Dionaea, Honeyd, Glastopf, T-Pot)
+- SSH banner analysis
+- HTTP response fingerprinting
+- Service behavior pattern matching
+
+### Fake Banners (Planned)
+
+- Realistic decoy banners for SSH, HTTP, FTP, and other services
+- Customizable service fingerprints
+- Automated deployment to decoy systems
+
+### Trapdoor Credentials (Planned)
+
+- Fake credentials that trigger alerts on use
+- Integration with credential store
+- Alert routing and notification
 
 ---
 
-## Current Capabilities Summary
+## Stay Tuned
 
-| Feature | Status |
-|---------|--------|
-| Honeypot detection (9 signatures) | Implemented |
-| Fake banner generation | Implemented |
-| Trapdoor credential management | Implemented |
-| Canary token deployment and alerting | Planned |
-| Token lifecycle management | Planned |
+The deception technology suite is being actively developed. Updates on feature availability and release timelines will be shared as the implementation progresses.

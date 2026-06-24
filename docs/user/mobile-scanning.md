@@ -1,99 +1,48 @@
-# Mobile Application Scanning
+# Mobile Application Scanning (Under Active Development)
 
-Siyarix includes APK analysis capabilities for Android application security assessment, covering dangerous permissions, insecure flags, and hardcoded secrets. A comprehensive `MobileScanner` with iOS support and dynamic analysis is planned for a future release.
+Siyarix's mobile application security scanning capability is currently under active development. A `MobileScanner` stub has been created, and the full implementation — including APK analysis, iOS IPA support, and dynamic analysis — is on the roadmap.
 
 ---
 
-## Android APK Analysis
+## Current Status
 
-```bash
-# Scan an APK file for security issues
-siyarix scan mobile app.apk
+A `MobileScanner` class exists as a stub. It accepts a path and returns an empty result set. No actual APK analysis, permission scanning, or vulnerability detection has been implemented yet.
 
-# Natural language
-siyarix run "scan mobile app app.apk for security issues"
+```python
+from siyarix.chat.stubs import MobileScanner
+
+scanner = MobileScanner()
+result = scanner.scan_apk("app.apk")
+# result == {}  (stub - returns empty)
 ```
 
 ---
 
-## Checks Performed
+## Planned Capabilities
 
-### Dangerous Permissions (13 Checks)
+The mobile scanner roadmap includes:
 
-| Permission | Risk |
-|------------|------|
-| `READ_CONTACTS` | Access to contact data |
-| `ACCESS_FINE_LOCATION` | Precise GPS location |
-| `RECORD_AUDIO` | Microphone access |
-| `CAMERA` | Camera access |
-| `READ_SMS` | SMS message access |
-| `SEND_SMS` | Send SMS without user awareness |
-| `READ_CALL_LOG` | Call history access |
-| `PROCESS_OUTGOING_CALLS` | Monitor outgoing calls |
-| `BIND_ACCESSIBILITY_SERVICE` | UI event monitoring |
-| `SYSTEM_ALERT_WINDOW` | Overlay attacks (tapjacking) |
-| `REQUEST_INSTALL_PACKAGES` | Side-loading APKs |
-| `INTERNET` + `READ_EXTERNAL_STORAGE` | Data exfiltration risk |
-| `BIND_NOTIFICATION_LISTENER_SERVICE` | Read notifications |
+### Android APK Analysis
 
-### Insecure Flags (5 Checks)
+- **Dangerous permissions**: Detect over-privileged permission requests (location, camera, SMS, etc.)
+- **Insecure flags**: `allowBackup`, `debuggable`, `usesCleartextTraffic`
+- **Hardcoded secrets**: API keys, tokens, passwords in decompiled code
+- **Manifest analysis**: Exported components, intent filters, and attack surface
 
-| Flag | Issue |
-|------|-------|
-| `allowBackup=true` | App data can be backed up (data theft risk) |
-| `debuggable=true` | Debug mode enabled in production |
-| `exported=true` (no permission) | Activity/service exposed without protection |
-| `usesCleartextTraffic=true` | HTTP traffic allowed (no TLS) |
-| `testOnly=true` | Test mode enabled |
+### iOS IPA Analysis
 
-### Hardcoded Secrets
+- **Plist inspection**: Sensitive data in Info.plist
+- **Binary analysis**: PIE, ARC, stack canary checks
+- **Entitlement review**: Capability over-provisioning
 
-Detected across XML, JSON, Java, Kotlin, and Smali:
+### Dynamic Analysis (Roadmap)
 
-- API keys, passwords, tokens
-- AWS access keys
-- OpenAI API keys
-- JWT tokens
-- Private keys
+- **Network traffic interception**: Detect cleartext and weak TLS
+- **Runtime injection testing**: Attempt common manipulation techniques
+- **Data storage analysis**: Insecure local storage detection
 
 ---
 
-## Output
+## Stay Tuned
 
-```json
-{
-  "package_name": "com.example.app",
-  "version": "2.1.0",
-  "min_sdk": "24",
-  "target_sdk": "34",
-  "permissions": ["ACCESS_FINE_LOCATION", "CAMERA"],
-  "findings": [
-    {
-      "severity": "high",
-      "category": "dangerous_permission",
-      "message": "App requests CAMERA permission without clear use"
-    }
-  ]
-}
-```
-
----
-
-## Reporting
-
-```bash
-# Generate mobile security report
-siyarix report generate --include mobile
-```
-
----
-
-## Planned Enhancements
-
-A comprehensive `MobileScanner` is planned with:
-
-- iOS IPA analysis
-- Dynamic application analysis
-- Network traffic interception and analysis
-- OWASP Mobile Top 10 coverage
-- Automated exploitation testing
+The mobile scanner is being actively developed. Updates on platform support, check coverage, and release timelines will be shared as the implementation progresses.

@@ -1,6 +1,6 @@
 # Reporting and Output
 
-Siyarix provides structured output in multiple formats, comprehensive report generation from the KnowledgeGraph, audit logging with tamper-evident SHA-256 chaining, and system health/metrics monitoring.
+Siyarix provides structured output in multiple formats, comprehensive report generation from the knowledge graph, audit logging with tamper-evident SHA-256 chaining, and system health/metrics monitoring.
 
 ---
 
@@ -16,12 +16,18 @@ siyarix config set default_output_format json
 |--------|-------------|
 | `TABLE` | Rich formatted table (default) |
 | `JSON` | Machine-readable JSON |
+| `JSONL` | JSON lines format |
 | `YAML` | YAML structured output |
 | `CSV` | Comma-separated values |
 | `HTML` | HTML report |
 | `XML` | XML structured output |
+| `MARKDOWN` | Markdown-formatted output |
 | `RAW` | Raw unformatted output |
 | `QUIET` | Minimal output |
+
+### Scan Output Validation
+
+The `siyarix scan` command validates `--output` against: `table`, `json`, `yaml`, `csv`, `html`, `quiet`.
 
 ---
 
@@ -38,16 +44,16 @@ siyarix report generate --format html --output report.html
 | HTML | Client-ready reports with formatting |
 | JSON | Machine-readable, pipeline integration |
 | Markdown | Quick documentation, issue tracking |
-| PDF | Formal documentation (requires `wkhtmltopdf`) |
+| SARIF | Static Analysis Results Interchange Format |
 
 ### Report Sections
 
 - **Executive Summary**: High-level findings overview
-- **Scope**: Targets scanned and tools used
+- **Methodology**: Approach and tools used
 - **Findings**: Detailed vulnerability descriptions with severity
-- **Evidence**: Command outputs, screenshots (if captured)
+- **Evidence**: Command outputs, data collected
 - **Remediation**: Suggested fixes for each finding
-- **Timeline**: Session chronology
+- **Appendix**: Additional technical details
 
 ---
 
@@ -56,7 +62,7 @@ siyarix report generate --format html --output report.html
 All actions are logged to an enterprise-grade audit trail:
 
 ```bash
-siyarix audit report
+siyarix audit report soc2 -o audit-report.md
 siyarix audit logs
 siyarix audit verify
 ```
@@ -64,9 +70,9 @@ siyarix audit verify
 ### Audit System Features
 
 - **Tamper evidence**: SHA-256 hash chain linking entries
-- **SIEM forwarding**: Send logs to Splunk, ELK, or Azure Sentinel
 - **Session tracking**: Every command tied to a session ID
 - **Export**: Logs in JSON or CSV
+- **Filtering**: By event type, user, severity, or date range
 
 ### Audit Record Fields
 
@@ -74,28 +80,11 @@ siyarix audit verify
 |-------|-------------|
 | `timestamp` | ISO 8601 timestamp |
 | `session_id` | Unique session identifier |
-| `event_type` | Type of event (command, auth, safety, tool) |
+| `event_type` | Type of event (command, auth, scan, etc.) |
 | `severity` | INFO, WARNING, ERROR, CRITICAL |
-| `command` | The executed command |
-| `user` | User identity (if auth is configured) |
-| `provider` | AI provider used (if applicable) |
-| `hash` | SHA-256 of previous entry |
-
----
-
-## Session Logs
-
-```bash
-siyarix session-log
-```
-
-Each session log entry includes:
-
-- Command text and parsed intent
-- Execution duration
-- Exit code and output summary
-- Safety events triggered (if any)
-- AI provider used for planning
+| `user` | User identity |
+| `target` | Target of the action |
+| `result` | Outcome (success, failed, started) |
 
 ---
 
@@ -108,11 +97,13 @@ siyarix metrics
 Performance statistics:
 
 - Total scans performed
+- Successful/failed scans
 - Average scan duration
-- Tools used (counts)
-- Planner invocation stats
-- AI provider usage distribution
-- Cache hit/miss rates
+- Total findings
+- Plans generated
+- Model call counts and errors
+
+Supports `--output table|json|prometheus` and `--export` for file output.
 
 ---
 
@@ -127,7 +118,8 @@ Comprehensive system health report:
 - Component status (Python, core modules, AI providers)
 - Platform information (OS, Python version, shell)
 - System state (initialized, configured)
-- Storage usage (database size, cache size)
+- Storage usage
 - Model provider reachability
 - Tool availability on PATH
-- Resource utilization
+
+Supports `--output table|json` for different display formats.

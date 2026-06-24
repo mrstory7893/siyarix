@@ -1,121 +1,91 @@
 # Threat Intelligence
 
-Siyarix integrates threat intelligence feeds, MITRE ATT&CK mapping, and CVE correlation to enrich scan findings with real-world threat context.
+Siyarix integrates with real-world threat intelligence feeds for IP reputation lookups and CVE enrichment. The threat intelligence module provides direct access to AlienVault OTX and the National Vulnerability Database (NVD), with MITRE ATT&CK database integration coming soon.
 
 ---
 
-## MITRE ATT&CK Integration
+## Active Integrations
 
-The built-in `MITREAttackDB` maintains 13 tactics (TA0001–TA0043) and 24 techniques with CVE-to-technique mappings.
+### AlienVault OTX
 
-### Tactics Covered
-
-| Tactic ID | Tactic | Example Techniques |
-|-----------|--------|-------------------|
-| TA0001 | Initial Access | T1078 (Valid Accounts), T1190 (Exploit Public-Facing App) |
-| TA0002 | Execution | T1059 (Command and Scripting Interpreter) |
-| TA0003 | Persistence | T1098 (Account Manipulation) |
-| TA0004 | Privilege Escalation | T1068 (Exploitation for Privilege Escalation) |
-| TA0005 | Defense Evasion | T1027 (Obfuscated Files or Information) |
-| TA0006 | Credential Access | T1110 (Brute Force), T1555 (Credentials from Password Stores) |
-| TA0007 | Discovery | T1046 (Network Service Scanning) |
-| TA0008 | Lateral Movement | T1021 (Remote Services) |
-| TA0009 | Collection | T1005 (Data from Local System) |
-| TA0011 | Command and Control | T1071 (Application Layer Protocol) |
-| TA0010 | Exfiltration | T1048 (Exfiltration Over Alternative Protocol) |
-| TA0040 | Impact | T1485 (Data Destruction), T1490 (Inhibit System Recovery) |
-| TA0043 | Reconnaissance | T1595 (Active Scanning) |
-
-### Finding Enrichment
-
-Scan findings are automatically enriched with MITRE ATT&CK context:
+IP address reputation lookups via the AlienVault Open Threat Exchange API:
 
 ```python
-threat_intel.enrich_finding(finding)
-# Adds: mitre_attack_id, mitre_tactic, mitre_technique, related_threat_actors
+from siyarix.threat_intel import AlienVaultOTX
+
+otx = AlienVaultOTX()
+result = await otx.lookup_ip("8.8.8.8")
+# Returns: pulse_count, reputation, source
 ```
 
-### Viewing MITRE Coverage
+Requires the `ALIENVAULT_API_KEY` environment variable.
 
-```bash
-siyarix security mitre --technique T1078
-# Shows: Valid Accounts — tools and commands that map to this technique
-```
+### National Vulnerability Database (NVD)
 
----
-
-## Threat Feed Ingestion
-
-### MISP Feeds
-
-Import MISP JSON events:
-
-```bash
-siyarix run "import threat intel from misp_feed.json"
-```
-
-Processes MISP attributes (IPs, domains, hashes, URLs) and converts them to `ThreatIntel` objects.
-
-### STIX 2.x Feeds
-
-Import STIX indicators:
-
-```bash
-siyarix run "import STIX indicators from stix_feed.json"
-```
-
-Supports STIX 2.x Indicator and Observed Data objects.
-
-### OpenIOC
-
-```bash
-siyarix run "import IOC from indicators.ioc"
-```
-
----
-
-## Data Model
+CVE lookup and details from the NVD API 2.0:
 
 ```python
-@dataclass
-class ThreatIntel:
-    id: str
-    source: str           # misp, stix, mitre, custom
-    indicator: str        # IP, domain, hash, URL
-    indicator_type: str   # ipv4, domain, md5, url, etc.
-    severity: str         # info, low, medium, high, critical
-    confidence: str       # low, medium, high
-    mitre_attack_id: str
-    mitre_tactic: str
-    mitre_technique: str
-    tags: list[str]
+from siyarix.threat_intel import NVDDatabase
+
+nvd = NVDDatabase()
+result = await nvd.lookup_cve("CVE-2024-0001")
+# Returns: description, base_score (CVSS v3.1), source
 ```
 
----
+### ThreatIntelManager
 
-## Knowledge Graph Integration
-
-Threat intelligence is linked into the KnowledgeGraph:
-
-- Threat indicators added as nodes
-- Relationships created between indicators and matched findings
-- BFS traversal finds attack paths based on threat intel context
-
----
-
-## Built-in CVE Mappings
-
-The `MITREAttackDB` includes CVE-to-technique mappings:
+A unified facade for querying both providers:
 
 ```python
-mitre = MITREAttackDB()
-technique = mitre.map_cve("CVE-2023-44487")
-# Returns: T1498 (Network Denial of Service)
+from siyarix.threat_intel import ThreatIntelManager
+
+manager = ThreatIntelManager()
+result = await manager.analyze_target("8.8.8.8")   # Routes to OTX
+result = await manager.analyze_target("CVE-2024-0001")  # Routes to NVD
 ```
 
 ---
 
-## Use Cases
+## MITRE ATT&CK Integration (Coming Soon)
+
+A `MITREAttackDB` class is stubbed and ready — the full database layer with tactic/technique mappings, CVE correlation, and finding enrichment is under construction:
+
+```bash
+# View MITRE ATT&CK coverage (available now)
+siyarix security mitre-coverage
+
+# Detailed MITRE technique analysis and CVE mapping — coming in a future release
+```
+
+The planned MITRE ATT&CK integration will provide:
+
+- Complete tactic and technique database
+- CVE-to-technique mapping
+- Automatic finding enrichment with ATT&CK context
+- Coverage analysis and gap identification
+
+---
+
+## Planned Enhancements
+
+The following capabilities are on the Siyarix roadmap:
+
+- **MISP feed ingestion**: Import MISP JSON events as structured threat intelligence
+- **STIX 2.x support**: Import STIX indicators and observed data
+- **OpenIOC import**: Import Mandiant OpenIOC format
+- **Knowledge Graph integration**: Link threat indicators to findings as graph nodes
+- **Built-in CVE mappings**: Automated CVE-to-MITRE technique correlation
+- **ThreatIntel data model**: Standardized dataclass for unified threat representation
+
+---
+
+## Use Cases (Current)
+
+- **IP reputation checking**: Quick lookups against AlienVault OTX during reconnaissance
+- **CVE enrichment**: Fetch CVSS scores and descriptions during vulnerability assessment
+- **Threat hunting context**: Combine OTX reputation data with scan findings
+
+## Use Cases (Planned)
 
 - **Threat hunting**: Match scan findings against known attacker TTPs
 - **Risk scoring**: Elevate severity when findings match active threat campaigns
