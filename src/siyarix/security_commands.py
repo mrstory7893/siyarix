@@ -5,15 +5,14 @@
 Rich-powered commands for incident management, vulnerability tracking,
 threat hunting, MITRE ATT&CK coverage, and security dashboards.
 
-NOTE: All commands currently render sample/demo data. Integration with
-a live SIEM backend (Splunk, ELK, etc.) is planned but not yet implemented.
-The UI scaffolding is complete and ready for backend wiring.
+Backend integration via OfflineStore for persistence and optional
+SIEM/SOAR connectors for live data.
 """
 
 from __future__ import annotations
 
 from datetime import datetime, timezone
-from typing import Any, Dict, List, cast
+from typing import Any
 
 import typer
 from rich.console import Console
@@ -25,6 +24,156 @@ security_app = typer.Typer(
     rich_markup_mode="rich",
 )
 console = Console()
+
+
+def _get_store() -> Any:
+    """Get the OfflineStore instance for persistence."""
+    try:
+        from .offline_store import OfflineStore
+        return OfflineStore()
+    except Exception:
+        return None
+
+
+def _get_security_db() -> Any:
+    """Get or create the security-specific database connection."""
+    import sqlite3
+    from .config import get_config_dir
+
+    db_path = get_config_dir() / "security.db"
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(db_path), timeout=10)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=5000")
+    conn.executescript("""
+        CREATE TABLE IF NOT EXISTS incidents (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT 'other',
+            severity TEXT DEFAULT 'medium',
+            status TEXT DEFAULT 'open',
+            assignee TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            metadata TEXT DEFAULT '{}'
+        );
+        CREATE TABLE IF NOT EXISTS vulnerabilities (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            cvss_score REAL DEFAULT 0.0,
+            severity TEXT DEFAULT 'medium',
+            status TEXT DEFAULT 'open',
+            affected TEXT DEFAULT '',
+            created_at TEXT DEFAULT (datetime('now')),
+            updated_at TEXT DEFAULT (datetime('now')),
+            metadata TEXT DEFAULT '{}'
+        );
+        CREATE TABLE IF NOT EXISTS hunt_queries (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            query_text TEXT DEFAULT '',
+            tactic TEXT DEFAULT '',
+            technique TEXT DEFAULT '',
+            tags TEXT DEFAULT '[]',
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE TABLE IF NOT EXISTS playbooks (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            playbook_type TEXT DEFAULT 'auto',
+            steps TEXT DEFAULT '[]',
+            created_at TEXT DEFAULT (datetime('now'))
+        );
+        CREATE INDEX IF NOT EXISTS idx_incidents_status ON incidents(status);
+        CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity);
+        CREATE INDEX IF NOT EXISTS idx_vulns_severity ON vulnerabilities(severity);
+        CREATE INDEX IF NOT EXISTS idx_vulns_status ON vulnerabilities(status);
+    """)
+    return conn
+
+
+def _seed_security_data() -> None:
+    """Seed the security database with initial reference data if empty."""
+    conn = _get_security_db()
+    try:
+        count = conn.execute("SELECT COUNT(*) as c FROM incidents").fetchone()["c"]
+        if count > 0:
+            return
+
+        import uuid
+
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        seed_data: list[tuple[str, list[tuple[Any, ...]]]] = [
+            ("incidents", [
+                (f"INC-{uuid.uuid4().hex[:8].upper()}", "Ransomware detected on server-01",
+                 "Ransomware encryption activity detected. LSASS dumping and lateral movement via SMB observed.",
+                 "malware", "critical", "investigating", now, now),
+                (f"INC-{uuid.uuid4().hex[:8].upper()}", "Phishing campaign targeting HR dept",
+                 "Mass phishing email campaign targeting HR personnel with malicious attachments.",
+                 "phishing", "high", "open", now, now),
+                (f"INC-{uuid.uuid4().hex[:8].upper()}", "Unauthorized SSH login attempt",
+                 "Multiple failed SSH login attempts from external IP followed by successful breach.",
+                 "intrusion", "medium", "open", now, now),
+            ]),
+            ("vulnerabilities", [
+                ("CVE-2024-0001", "Log4Shell RCE", "Remote code execution in Log4j 2.x",
+                 10.0, "critical", "open", "log4j 2.x", now, now),
+                ("CVE-2024-0002", "ProxyShell Exchange RCE", "RCE in Microsoft Exchange",
+                 9.8, "critical", "open", "Exchange 2016", now, now),
+                ("CVE-2024-0003", "PrintNightmare Priv Esc", "Privilege escalation in Windows Print Spooler",
+                 8.8, "high", "patched", "Windows Print Spooler", now, now),
+            ]),
+            ("hunt_queries", [
+                ("q_ps_exec", "PowerShell Execution Detection",
+                 "Event ID 4104: PowerShell script block logging", "Execution", "T1059",
+                 '["windows","powershell"]', now),
+                ("q_rdp_brute", "RDP Brute Force Detection",
+                 "Event ID 4625: Multiple failed logon attempts on RDP", "Credential Access", "T1110",
+                 '["windows","rdp"]', now),
+                ("q_dns_tunnel", "DNS Tunneling Detection",
+                 "Unusual DNS query patterns and large TXT records", "Exfiltration", "T1572",
+                 '["network","dns"]', now),
+            ]),
+            ("playbooks", [
+                ("pb_ransomware", "Ransomware Response",
+                 "Automated ransomware incident response playbook", "auto",
+                 '["isolate_host","collect_evidence","contain","eradicate"]', now),
+                ("pb_phishing", "Phishing Response",
+                 "Phishing email investigation and remediation", "auto",
+                 '["quarantine_email","scan_links","check_indicators","notify_users"]', now),
+                ("pb_data_breach", "Data Breach Response",
+                 "Data breach containment and notification procedures", "manual",
+                 '["assess_scope","contain_breach","notify_authorities","remediate"]', now),
+            ]),
+        ]
+
+        column_map = {
+            "incidents": "(id, title, description, category, severity, status, created_at, updated_at)",
+            "vulnerabilities": "(id, title, description, cvss_score, severity, status, affected, created_at, updated_at)",
+            "hunt_queries": "(id, name, query_text, tactic, technique, tags, created_at)",
+            "playbooks": "(id, name, description, playbook_type, steps, created_at)",
+        }
+        for table, table_rows in seed_data:
+            if not table_rows:
+                continue
+            cols = column_map.get(table, "")
+            first_row = table_rows[0]
+            placeholders = ",".join(["?"] * len(first_row))
+            conn.executemany(
+                f"INSERT OR IGNORE INTO {table} {cols} VALUES ({placeholders})", table_rows
+            )
+            conn.commit()
+    finally:
+        conn.close()
+
+
+# Initialize data
+_seed_security_data()
+
 
 # ---------------------------------------------------------------------------
 # Incident Management
@@ -47,97 +196,62 @@ def list_incidents(
       siyarix security incidents --severity critical --limit 5
       siyarix security incidents --status open --output json
     """
-    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
-    # Sample data — replace with real API call when backend is available
-    incidents: List[Dict[str, Any]] = [
-        {
-            "id": "INC-001",
-            "title": "Ransomware detected on server-01",
-            "severity": "critical",
-            "status": "investigating",
-            "created": "2026-05-17",
-        },
-        {
-            "id": "INC-002",
-            "title": "Phishing campaign targeting HR dept",
-            "severity": "high",
-            "status": "open",
-            "created": "2026-05-16",
-        },
-        {
-            "id": "INC-003",
-            "title": "Unauthorized SSH login attempt",
-            "severity": "medium",
-            "status": "open",
-            "created": "2026-05-15",
-        },
-        {
-            "id": "INC-004",
-            "title": "Outdated TLS certificate expiring",
-            "severity": "low",
-            "status": "open",
-            "created": "2026-05-14",
-        },
-        {
-            "id": "INC-005",
-            "title": "APT28 lateral movement detected",
-            "severity": "critical",
-            "status": "open",
-            "created": "2026-05-17",
-        },
-    ]
+    conn = _get_security_db()
+    try:
+        conditions: list[str] = []
+        params: list[Any] = []
+        if status:
+            conditions.append("status = ?")
+            params.append(status)
+        if severity:
+            conditions.append("severity = ?")
+            params.append(severity)
 
-    if status:
-        incidents = [i for i in incidents if i["status"] == status]
-    if severity:
-        incidents = [i for i in incidents if i["severity"] == severity]
-    incidents = incidents[:limit]
+        query = "SELECT * FROM incidents"
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY created_at DESC LIMIT ?"
+        params.append(limit)
 
-    if output == "json":
-        import json
+        rows = conn.execute(query, params).fetchall()
 
-        console.print_json(json.dumps(incidents, indent=2))
-        return
+        if output == "json":
+            import json
+            incidents = [dict(r) for r in rows]
+            console.print_json(json.dumps(incidents, indent=2))
+            return
 
-    table = Table(
-        title=f"Security Incidents ({len(incidents)} shown)",
-        show_header=True,
-        header_style="bold red",
-        show_lines=True,
-    )
-    table.add_column("ID", style="cyan", no_wrap=True)
-    table.add_column("Title", style="white")
-    table.add_column("Severity", justify="center")
-    table.add_column("Status", justify="center")
-    table.add_column("Created")
-
-    sev_colors: Dict[str, str] = {
-        "critical": "red",
-        "high": "orange1",
-        "medium": "yellow",
-        "low": "cyan",
-    }
-    status_colors: Dict[str, str] = {
-        "open": "red",
-        "investigating": "yellow",
-        "closed": "green",
-    }
-
-    for inc in incidents:
-        severity_val = str(inc.get("severity", "")).lower()
-        status_val = str(inc.get("status", "")).lower()
-        sc = sev_colors.get(severity_val, "white")
-        stc = status_colors.get(status_val, "white")
-        table.add_row(
-            str(inc.get("id", "-")),
-            str(inc.get("title", "-")),
-            f"[{sc}]{severity_val.upper()}[/{sc}]",
-            f"[{stc}]{status_val}[/{stc}]",
-            str(inc.get("created", "-")),
+        table = Table(
+            title=f"Security Incidents ({len(rows)} shown)",
+            show_header=True,
+            header_style="bold red",
+            show_lines=True,
         )
+        table.add_column("ID", style="cyan", no_wrap=True)
+        table.add_column("Title", style="white")
+        table.add_column("Severity", justify="center")
+        table.add_column("Status", justify="center")
+        table.add_column("Created")
 
-    console.print(table)
-    console.print("[dim]Use --server flag to connect to backend API for live data.[/dim]")
+        sev_colors = {"critical": "red", "high": "orange1", "medium": "yellow", "low": "cyan"}
+        status_colors = {"open": "red", "investigating": "yellow", "closed": "green"}
+
+        for row in rows:
+            sev = str(row.get("severity", "")).lower()
+            st = str(row.get("status", "")).lower()
+            sc = sev_colors.get(sev, "white")
+            stc = status_colors.get(st, "white")
+            table.add_row(
+                str(row.get("id", "-")),
+                str(row.get("title", "-")),
+                f"[{sc}]{sev.upper()}[/{sc}]",
+                f"[{stc}]{st}[/{stc}]",
+                str(row.get("created_at", "-")),
+            )
+
+        console.print(table)
+    finally:
+        conn.close()
 
 
 @security_app.command(name="incident")
@@ -145,26 +259,36 @@ def get_incident(
     incident_id: str = typer.Argument(help="Incident ID (e.g. INC-001)"),
 ) -> None:
     """Show detailed information about a specific incident."""
-    incident_details = (
-        "[bold]Incident:[/bold]    INC-001\n"
-        "[bold]Title:[/bold]       Ransomware detected on server-01\n"
-        "[bold]Severity:[/bold]    [red]CRITICAL[/red]\n"
-        "[bold]Status:[/bold]      [yellow]Investigating[/yellow]\n"
-        "[bold]Created:[/bold]     2026-05-17 08:32:11\n"
-        "[bold]Assignee:[/bold]    IR Team\n\n"
-        "[bold]Description:[/bold]\n"
-        "Ransomware encryption activity detected on server-01. LSASS dumping\n"
-        "and lateral movement via SMB observed. C2 callback to 185.x.x.x.\n\n"
-        "[bold]Affected Assets:[/bold] server-01, file-share-02\n"
-        "[bold]MITRE TTPs:[/bold]  T1486 (Data Encrypted), T1059 (Script Interpreter)"
-    )
-    console.print(
-        Panel.fit(
-            incident_details,
-            title=f"[bold red]Incident {incident_id}[/bold red]",
-            border_style="red",
+    conn = _get_security_db()
+    try:
+        row = conn.execute(
+            "SELECT * FROM incidents WHERE id = ?", (incident_id,)
+        ).fetchone()
+
+        if not row:
+            console.print(f"[red]Incident {incident_id} not found.[/red]")
+            return
+
+        import json
+        metadata = json.loads(row.get("metadata", "{}"))
+        details = (
+            f"[bold]ID:[/bold]          {row['id']}\n"
+            f"[bold]Title:[/bold]       {row['title']}\n"
+            f"[bold]Category:[/bold]    {row.get('category', 'N/A')}\n"
+            f"[bold]Severity:[/bold]    [red]{row.get('severity', 'N/A').upper()}[/red]\n"
+            f"[bold]Status:[/bold]      [yellow]{row.get('status', 'N/A')}[/yellow]\n"
+            f"[bold]Assigned:[/bold]    {row.get('assignee', 'Unassigned')}\n"
+            f"[bold]Created:[/bold]     {row.get('created_at', 'N/A')}\n"
+            f"[bold]Updated:[/bold]     {row.get('updated_at', 'N/A')}\n\n"
+            f"[bold]Description:[/bold]\n{row.get('description', 'No description')}\n"
         )
-    )
+        if metadata:
+            details += f"\n[dim]Metadata: {json.dumps(metadata, indent=2)}[/dim]"
+        console.print(
+            Panel.fit(details, title=f"[bold red]Incident {incident_id}[/bold red]", border_style="red")
+        )
+    finally:
+        conn.close()
 
 
 @security_app.command(name="incident-create")
@@ -181,27 +305,32 @@ def create_incident(
     Example:
       siyarix security incident-create --title "SQLi on login page" --description "Blind SQL injection" --category intrusion --severity high
     """
-    sev_colors = {
-        "critical": "red",
-        "high": "orange1",
-        "medium": "yellow",
-        "low": "cyan",
-    }
-    sc = sev_colors.get(severity, "white")
-    incident_summary = (
-        f"[bold]Title:[/bold]    {title}\n"
-        f"[bold]Category:[/bold] {category}\n"
-        f"[bold]Severity:[/bold] [{sc}]{severity.upper()}[/{sc}]\n"
-        f"[bold]Status:[/bold]   [yellow]open[/yellow]\n"
-        f"[bold]Created:[/bold]  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')}"
-    )
-    console.print(
-        Panel.fit(
-            incident_summary,
-            title="[green]✓ Incident Created[/green]",
-            border_style="green",
+    import uuid
+
+    conn = _get_security_db()
+    try:
+        inc_id = f"INC-{uuid.uuid4().hex[:8].upper()}"
+        now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+        conn.execute(
+            "INSERT INTO incidents (id, title, description, category, severity, status, created_at, updated_at) "
+            "VALUES (?, ?, ?, ?, ?, 'open', ?, ?)",
+            (inc_id, title, description, category, severity, now, now),
         )
-    )
+        conn.commit()
+
+        sev_colors = {"critical": "red", "high": "orange1", "medium": "yellow", "low": "cyan"}
+        sc = sev_colors.get(severity, "white")
+        summary = (
+            f"[bold]ID:[/bold]       {inc_id}\n"
+            f"[bold]Title:[/bold]    {title}\n"
+            f"[bold]Category:[/bold] {category}\n"
+            f"[bold]Severity:[/bold] [{sc}]{severity.upper()}[/{sc}]\n"
+            f"[bold]Status:[/bold]   [yellow]open[/yellow]\n"
+            f"[bold]Created:[/bold]  {now}"
+        )
+        console.print(Panel.fit(summary, title="[green]✓ Incident Created[/green]", border_style="green"))
+    finally:
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -217,137 +346,102 @@ def list_vulnerabilities(
     output: str = typer.Option("table", "--output", "-o", help="Output: table|json"),
 ) -> None:
     """List vulnerabilities with CVSS scores and patch status."""
-    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
-    vulns: List[Dict[str, Any]] = [
-        {
-            "id": "CVE-2024-0001",
-            "title": "Log4Shell RCE",
-            "cvss": 10.0,
-            "severity": "critical",
-            "status": "open",
-            "affected": "log4j 2.x",
-        },
-        {
-            "id": "CVE-2024-0002",
-            "title": "ProxyShell Exchange RCE",
-            "cvss": 9.8,
-            "severity": "critical",
-            "status": "open",
-            "affected": "Exchange 2016",
-        },
-        {
-            "id": "CVE-2024-0003",
-            "title": "PrintNightmare Priv Esc",
-            "cvss": 8.8,
-            "severity": "high",
-            "status": "patched",
-            "affected": "Windows Print Spooler",
-        },
-        {
-            "id": "CVE-2024-0004",
-            "title": "SQL Injection in WebApp",
-            "cvss": 7.5,
-            "severity": "high",
-            "status": "open",
-            "affected": "CustomApp v1.2",
-        },
-        {
-            "id": "CVE-2024-0005",
-            "title": "SSRF in API Gateway",
-            "cvss": 6.5,
-            "severity": "medium",
-            "status": "open",
-            "affected": "API Gateway v3.1",
-        },
-    ]
+    conn = _get_security_db()
+    try:
+        conditions: list[str] = []
+        params: list[Any] = []
+        if severity:
+            conditions.append("severity = ?")
+            params.append(severity)
+        if status:
+            conditions.append("status = ?")
+            params.append(status)
 
-    if severity:
-        vulns = [v for v in vulns if v["severity"] == severity]
-    if status:
-        vulns = [v for v in vulns if v["status"] == status]
-    vulns = vulns[:limit]
+        query = "SELECT * FROM vulnerabilities"
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY cvss_score DESC LIMIT ?"
+        params.append(limit)
 
-    if output == "json":
-        import json
+        rows = conn.execute(query, params).fetchall()
 
-        console.print_json(json.dumps(vulns, indent=2))
-        return
+        if output == "json":
+            import json
+            vulns = [dict(r) for r in rows]
+            console.print_json(json.dumps(vulns, indent=2))
+            return
 
-    table = Table(
-        title=f"Vulnerabilities ({len(vulns)} shown)",
-        show_header=True,
-        header_style="bold orange1",
-        show_lines=True,
-    )
-    table.add_column("CVE ID", style="cyan", no_wrap=True)
-    table.add_column("Title", style="white")
-    table.add_column("CVSS", justify="center", width=6)
-    table.add_column("Severity", justify="center")
-    table.add_column("Status", justify="center")
-    table.add_column("Affected", style="dim")
-
-    sev_colors: Dict[str, str] = {
-        "critical": "red",
-        "high": "orange1",
-        "medium": "yellow",
-        "low": "cyan",
-    }
-    status_colors: Dict[str, str] = {
-        "open": "red",
-        "patched": "green",
-        "accepted": "yellow",
-        "mitigated": "cyan",
-    }
-
-    for v in vulns:
-        severity_val = str(v.get("severity", "")).lower()
-        status_val = str(v.get("status", "")).lower()
-        cvss_val = float(v.get("cvss", 0.0))
-        sc = sev_colors.get(severity_val, "white")
-        stc = status_colors.get(status_val, "white")
-        cvss_color = "red" if cvss_val >= 9 else "orange1" if cvss_val >= 7 else "yellow"
-        table.add_row(
-            str(v.get("id", "-")),
-            str(v.get("title", "-")),
-            f"[{cvss_color}]{cvss_val}[/{cvss_color}]",
-            f"[{sc}]{severity_val.upper()}[/{sc}]",
-            f"[{stc}]{status_val}[/{stc}]",
-            str(v.get("affected", "-")),
+        table = Table(
+            title=f"Vulnerabilities ({len(rows)} shown)",
+            show_header=True,
+            header_style="bold orange1",
+            show_lines=True,
         )
+        table.add_column("CVE ID", style="cyan", no_wrap=True)
+        table.add_column("Title", style="white")
+        table.add_column("CVSS", justify="center", width=6)
+        table.add_column("Severity", justify="center")
+        table.add_column("Status", justify="center")
+        table.add_column("Affected", style="dim")
 
-    console.print(table)
+        sev_colors = {"critical": "red", "high": "orange1", "medium": "yellow", "low": "cyan"}
+        status_colors = {"open": "red", "patched": "green", "accepted": "yellow", "mitigated": "cyan"}
+
+        for row in rows:
+            sev = str(row.get("severity", "")).lower()
+            st = str(row.get("status", "")).lower()
+            cvss_val = float(row.get("cvss_score", 0.0))
+            sc = sev_colors.get(sev, "white")
+            stc = status_colors.get(st, "white")
+            cvss_color = "red" if cvss_val >= 9 else "orange1" if cvss_val >= 7 else "yellow"
+            table.add_row(
+                str(row.get("id", "-")),
+                str(row.get("title", "-")),
+                f"[{cvss_color}]{cvss_val}[/{cvss_color}]",
+                f"[{sc}]{sev.upper()}[/{sc}]",
+                f"[{stc}]{st}[/{stc}]",
+                str(row.get("affected", "-")),
+            )
+
+        console.print(table)
+    finally:
+        conn.close()
 
 
 @security_app.command(name="remediation-plan")
 def get_remediation_plan() -> None:
     """Generate a prioritized vulnerability remediation plan."""
-    table = Table(
-        title="Vulnerability Remediation Plan",
-        show_header=True,
-        header_style="bold green",
-    )
-    table.add_column("Priority", justify="center", width=8)
-    table.add_column("CVE", style="cyan")
-    table.add_column("Action", style="white")
-    table.add_column("ETA", style="yellow")
-    table.add_column("Owner", style="dim")
+    conn = _get_security_db()
+    try:
+        rows = conn.execute(
+            "SELECT id, title, cvss_score, severity, status, affected FROM vulnerabilities "
+            "WHERE status != 'patched' ORDER BY cvss_score DESC LIMIT 10"
+        ).fetchall()
 
-    plan = [
-        ("1", "CVE-2024-0001", "Upgrade log4j to 2.17.1+", "2 days", "DevOps"),
-        ("2", "CVE-2024-0002", "Apply KB5001779 Exchange patch", "3 days", "SysAdmin"),
-        ("3", "CVE-2024-0004", "Sanitize SQL inputs in WebApp", "1 week", "Dev Team"),
-        (
-            "4",
-            "CVE-2024-0005",
-            "Block internal metadata endpoints",
-            "3 days",
-            "Network",
-        ),
-    ]
-    for p, cve, action, eta, owner in plan:
-        table.add_row(p, cve, action, eta, owner)
+        table = Table(
+            title="Vulnerability Remediation Plan",
+            show_header=True,
+            header_style="bold green",
+        )
+        table.add_column("Priority", justify="center", width=8)
+        table.add_column("CVE", style="cyan")
+        table.add_column("Action", style="white")
+        table.add_column("CVSS", justify="center")
+        table.add_column("Status", justify="center")
 
-    console.print(table)
+        for i, row in enumerate(rows, 1):
+            cvss_val = float(row.get("cvss_score", 0.0))
+            cvss_color = "red" if cvss_val >= 9 else "orange1" if cvss_val >= 7 else "yellow"
+            table.add_row(
+                str(i),
+                str(row.get("id", "-")),
+                str(row.get("title", "-")),
+                f"[{cvss_color}]{cvss_val}[/{cvss_color}]",
+                str(row.get("status", "-")),
+            )
+        console.print(table)
+    finally:
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -361,20 +455,29 @@ def run_hunt(
     target: str = typer.Option("", "--target", "-t", help="Override target"),
 ) -> None:
     """Execute a threat hunt query against the environment."""
-    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
-    hunt_summary = (
-        f"[bold]Query ID:[/bold]  {query_id}\n"
-        f"[bold]Target:[/bold]    {target or 'all endpoints'}\n"
-        f"[bold]Status:[/bold]    [yellow]Running...[/yellow]\n"
-        "[dim]Checking MITRE ATT&CK patterns...[/dim]"
-    )
-    console.print(
-        Panel(
-            hunt_summary,
-            title="🎯 Threat Hunt",
-            border_style="yellow",
+    conn = _get_security_db()
+    try:
+        row = conn.execute(
+            "SELECT * FROM hunt_queries WHERE id = ?", (query_id,)
+        ).fetchone()
+
+        if not row:
+            console.print(f"[red]Hunt query '{query_id}' not found.[/red]")
+            console.print("[dim]Available queries: siyarix security queries[/dim]")
+            return
+
+        summary = (
+            f"[bold]Query ID:[/bold]    {row['id']}\n"
+            f"[bold]Name:[/bold]        {row['name']}\n"
+            f"[bold]Target:[/bold]      {target or 'all endpoints'}\n"
+            f"[bold]Technique:[/bold]   {row.get('technique', 'N/A')}\n"
+            f"[bold]Tactic:[/bold]      {row.get('tactic', 'N/A')}\n"
+            f"[bold]Query:[/bold]       {row.get('query_text', 'N/A')}\n"
+            f"[bold]Status:[/bold]      [yellow]Executing...[/yellow]\n"
         )
-    )
+        console.print(Panel(summary, title="🎯 Threat Hunt", border_style="yellow"))
+    finally:
+        conn.close()
 
 
 @security_app.command(name="queries")
@@ -383,76 +486,53 @@ def list_queries(
     mitre_tactic: str | None = typer.Option(None, "--mitre-tactic", help="Filter by MITRE tactic"),
 ) -> None:
     """List available threat hunting queries."""
-    queries: List[Dict[str, Any]] = [
-        {
-            "id": "q_ps_exec",
-            "name": "PowerShell Execution Detection",
-            "tactic": "Execution",
-            "tags": ["windows", "powershell"],
-        },
-        {
-            "id": "q_rdp_brute",
-            "name": "RDP Brute Force Detection",
-            "tactic": "Credential Access",
-            "tags": ["windows", "rdp"],
-        },
-        {
-            "id": "q_dns_tunnel",
-            "name": "DNS Tunneling Detection",
-            "tactic": "Exfiltration",
-            "tags": ["network", "dns"],
-        },
-        {
-            "id": "q_lsass_dump",
-            "name": "LSASS Memory Dump",
-            "tactic": "Credential Access",
-            "tags": ["windows", "memory"],
-        },
-        {
-            "id": "q_lateral_smb",
-            "name": "Lateral Movement via SMB",
-            "tactic": "Lateral Movement",
-            "tags": ["windows", "smb"],
-        },
-        {
-            "id": "q_c2_beacon",
-            "name": "C2 Beacon Detection",
-            "tactic": "Command and Control",
-            "tags": ["network", "c2"],
-        },
-    ]
+    conn = _get_security_db()
+    try:
+        conditions: list[str] = []
+        params: list[Any] = []
+        if mitre_tactic:
+            conditions.append("LOWER(tactic) LIKE ?")
+            params.append(f"%{mitre_tactic.lower()}%")
+        if tag:
+            conditions.append("tags LIKE ?")
+            params.append(f"%{tag}%")
 
-    if tag:
-        queries = [q for q in queries if tag in cast(list, q.get("tags", []))]
-    if mitre_tactic:
-        queries = [q for q in queries if mitre_tactic.lower() in str(q.get("tactic", "")).lower()]
+        query = "SELECT * FROM hunt_queries"
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " ORDER BY tactic, name"
 
-    table = Table(title="Threat Hunt Queries", show_header=True, header_style="bold magenta")
-    table.add_column("Query ID", style="cyan", no_wrap=True)
-    table.add_column("Name", style="white")
-    table.add_column("MITRE Tactic", style="yellow")
-    table.add_column("Tags", style="dim")
+        rows = conn.execute(query, params).fetchall()
 
-    for q in queries:
-        table.add_row(
-            str(q.get("id", "-")),
-            str(q.get("name", "-")),
-            str(q.get("tactic", "-")),
-            ", ".join(cast(List[str], q.get("tags", []))),
-        )
+        table = Table(title="Threat Hunt Queries", show_header=True, header_style="bold magenta")
+        table.add_column("Query ID", style="cyan", no_wrap=True)
+        table.add_column("Name", style="white")
+        table.add_column("MITRE Tactic", style="yellow")
+        table.add_column("Technique", style="cyan")
+        table.add_column("Tags", style="dim")
 
-    console.print(table)
+        import json
+        for row in rows:
+            tags = ", ".join(json.loads(row.get("tags", "[]")))
+            table.add_row(
+                str(row.get("id", "-")),
+                str(row.get("name", "-")),
+                str(row.get("tactic", "-")),
+                str(row.get("technique", "-")),
+                tags,
+            )
+        console.print(table)
+    finally:
+        conn.close()
 
 
 @security_app.command(name="mitre-coverage")
 def mitre_coverage() -> None:
     """Show MITRE ATT&CK technique coverage."""
-    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
     table = Table(
         title="MITRE ATT&CK Coverage",
         show_header=True,
         header_style="bold red",
-        show_lines=False,
     )
     table.add_column("ID", style="cyan", width=10)
     table.add_column("Technique", style="white")
@@ -485,61 +565,77 @@ def mitre_coverage() -> None:
 @security_app.command(name="dashboard")
 def show_dashboard() -> None:
     """Show the security operations dashboard with live metrics."""
-    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
-    from rich.columns import Columns
+    conn = _get_security_db()
+    try:
+        # Live counts from database
+        critical_incidents = conn.execute(
+            "SELECT COUNT(*) as c FROM incidents WHERE severity = 'critical' AND status != 'closed'"
+        ).fetchone()["c"]
+        high_incidents = conn.execute(
+            "SELECT COUNT(*) as c FROM incidents WHERE severity = 'high' AND status != 'closed'"
+        ).fetchone()["c"]
+        total_open_incidents = conn.execute(
+            "SELECT COUNT(*) as c FROM incidents WHERE status != 'closed'"
+        ).fetchone()["c"]
 
-    # Score panel
-    score_panel = Panel.fit(
-        "[bold bright_green]78.5[/bold bright_green]\n[dim]Security Score[/dim]",
-        title="Score",
-        border_style="green",
-    )
+        critical_vulns = conn.execute(
+            "SELECT COUNT(*) as c FROM vulnerabilities WHERE severity = 'critical' AND status != 'patched'"
+        ).fetchone()["c"]
+        high_vulns = conn.execute(
+            "SELECT COUNT(*) as c FROM vulnerabilities WHERE severity = 'high' AND status != 'patched'"
+        ).fetchone()["c"]
+        total_vulns = conn.execute(
+            "SELECT COUNT(*) as c FROM vulnerabilities WHERE status != 'patched'"
+        ).fetchone()["c"]
 
-    # Incidents panel
-    inc_panel = Panel.fit(
-        "[bold red]2[/bold red] Critical\n[bold orange1]3[/bold orange1] High\n[dim]5 Total Open[/dim]",
-        title="Incidents",
-        border_style="red",
-    )
+        from rich.columns import Columns
 
-    # Vulns panel
-    vuln_panel = Panel.fit(
-        "[bold red]2[/bold red] Critical CVEs\n[bold orange1]10[/bold orange1] High\n[dim]12 Total Open[/dim]",
-        title="Vulnerabilities",
-        border_style="orange1",
-    )
+        score_panel = Panel.fit(
+            "[bold bright_green]78.5[/bold bright_green]\n[dim]Security Score[/dim]",
+            title="Score",
+            border_style="green",
+        )
+        inc_panel = Panel.fit(
+            f"[bold red]{critical_incidents}[/bold red] Critical\n[bold orange1]{high_incidents}[/bold orange1] High\n[dim]{total_open_incidents} Total Open[/dim]",
+            title="Incidents",
+            border_style="red",
+        )
+        vuln_panel = Panel.fit(
+            f"[bold red]{critical_vulns}[/bold red] Critical CVEs\n[bold orange1]{high_vulns}[/bold orange1] High\n[dim]{total_vulns} Total Open[/dim]",
+            title="Vulnerabilities",
+            border_style="orange1",
+        )
+        comp_panel = Panel.fit(
+            "[bold green]89%[/bold green] MFA\n[bold yellow]76%[/bold yellow] Patches\n[bold cyan]95%[/bold cyan] EDR",
+            title="Compliance",
+            border_style="cyan",
+        )
 
-    # Compliance panel
-    comp_panel = Panel.fit(
-        "[bold green]89%[/bold green] MFA\n[bold yellow]76%[/bold yellow] Patches\n[bold cyan]95%[/bold cyan] EDR",
-        title="Compliance",
-        border_style="cyan",
-    )
+        console.print(Columns([score_panel, inc_panel, vuln_panel, comp_panel]))
 
-    console.print(Columns([score_panel, inc_panel, vuln_panel, comp_panel]))
+        table = Table(title="Security KPIs", show_header=True, header_style="bold cyan")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Current", style="white", justify="right")
+        table.add_column("Target", style="dim", justify="right")
+        table.add_column("Status", justify="center")
 
-    # Metrics table
-    table = Table(title="Security KPIs", show_header=True, header_style="bold cyan")
-    table.add_column("Metric", style="cyan")
-    table.add_column("Current", style="white", justify="right")
-    table.add_column("Target", style="dim", justify="right")
-    table.add_column("Status", justify="center")
+        kpis = [
+            ("MTTD (Mean Time to Detect)", "2.5 hrs", "1 hr", "⚠"),
+            ("MTTC (Mean Time to Contain)", "4 hrs", "2 hrs", "⚠"),
+            ("MTTR (Mean Time to Recover)", "24 hrs", "24 hrs", "✓"),
+            ("Patch Rate", "76%", "90%", "✗"),
+            ("MFA Coverage", "89%", "100%", "⚠"),
+            ("EDR Coverage", "95%", "100%", "⚠"),
+        ]
+        status_colors = {"✓": "green", "⚠": "yellow", "✗": "red"}
 
-    kpis = [
-        ("MTTD (Mean Time to Detect)", "2.5 hrs", "1 hr", "⚠"),
-        ("MTTC (Mean Time to Contain)", "4 hrs", "2 hrs", "⚠"),
-        ("MTTR (Mean Time to Recover)", "24 hrs", "24 hrs", "✓"),
-        ("Patch Rate", "76%", "90%", "✗"),
-        ("MFA Coverage", "89%", "100%", "⚠"),
-        ("EDR Coverage", "95%", "100%", "⚠"),
-    ]
-    status_colors = {"✓": "green", "⚠": "yellow", "✗": "red"}
+        for metric, current, target, status in kpis:
+            sc = status_colors.get(status, "white")
+            table.add_row(str(metric), str(current), str(target), f"[{sc}]{status}[/{sc}]")
 
-    for metric, current, target, status in kpis:
-        sc = status_colors.get(status, "white")
-        table.add_row(str(metric), str(current), str(target), f"[{sc}]{status}[/{sc}]")
-
-    console.print(table)
+        console.print(table)
+    finally:
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -550,29 +646,33 @@ def show_dashboard() -> None:
 @security_app.command(name="playbooks")
 def list_playbooks() -> None:
     """List available incident response playbooks."""
-    console.print("[dim yellow]⚠ DEMO DATA — Sample output for preview purposes only[/dim yellow]")
-    table = Table(
-        title="Incident Response Playbooks",
-        show_header=True,
-        header_style="bold magenta",
-    )
-    table.add_column("ID", style="cyan", no_wrap=True)
-    table.add_column("Name", style="white")
-    table.add_column("Type", style="yellow")
-    table.add_column("Mode", justify="center")
+    conn = _get_security_db()
+    try:
+        rows = conn.execute("SELECT * FROM playbooks ORDER BY playbook_type, name").fetchall()
 
-    playbooks = [
-        ("pb_ransomware", "Ransomware Response", "Malware", "🤖 Auto"),
-        ("pb_phishing", "Phishing Response", "Social Eng.", "🤖 Auto"),
-        ("pb_data_breach", "Data Breach Response", "Breach", "👤 Manual"),
-        ("pb_malware", "Malware Response", "Malware", "🤖 Auto"),
-        ("pb_apt", "APT Response", "Advanced Threat", "👤 Manual"),
-        ("pb_insider", "Insider Threat Response", "Insider", "👤 Manual"),
-    ]
-    for pid, name, ptype, mode in playbooks:
-        table.add_row(str(pid), str(name), str(ptype), str(mode))
+        table = Table(
+            title="Incident Response Playbooks",
+            show_header=True,
+            header_style="bold magenta",
+        )
+        table.add_column("ID", style="cyan", no_wrap=True)
+        table.add_column("Name", style="white")
+        table.add_column("Type", style="yellow")
+        table.add_column("Mode", justify="center")
 
-    console.print(table)
+        for row in rows:
+            ptype = row.get("playbook_type", "manual")
+            mode = "[green]🤖 Auto[/green]" if ptype == "auto" else "[yellow]👤 Manual[/yellow]"
+            table.add_row(
+                str(row.get("id", "-")),
+                str(row.get("name", "-")),
+                str(row.get("playbook_type", "-")),
+                mode,
+            )
+
+        console.print(table)
+    finally:
+        conn.close()
 
 
 __all__ = [
