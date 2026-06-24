@@ -1,103 +1,152 @@
 # Multi-Wave Execution & Live Streaming
 
-Siyarix uses a multi-wave execution loop that enables iterative, LLM-driven workflows. Rather than executing a single batch of commands, the system runs multiple waves — each wave's results are analysed by the LLM to determine the next set of commands — enabling autonomous multi-step security operations.
+Siyarix uses a multi-wave execution loop that enables iterative, LLM-driven workflows. Rather than executing a single batch of commands, the system runs multiple waves — each wave's results are analysed by the LLM to determine the next set of commands — enabling autonomous multi-step security operations. Context is carried over between waves, allowing the LLM to build on previous findings progressively.
 
 ---
 
 ## Execution Flow
 
 ```
-User request → LLM plans commands → Wave 1 executes →
-  LLM analyses results → Wave 2 (if needed) → ... →
-  Final response (up to 5 waves)
+User request → LLM analyses & plans → Wave 1 executes →
+  LLM analyses wave results → Wave 2 (if needed) → ...
+  → Final response (up to configurable max waves)
 ```
 
 ---
 
 ## Multi-Wave Loop
 
-### How It Works
+### LLM-Driven Wave Orchestration (Integrated/Autonomous Modes)
 
-1. The LLM analyses the user's request and produces a JSON plan with shell commands
-2. All commands in the plan run **in parallel** within the wave
-3. After completion, the LLM receives all outputs and analyses them
-4. If more work is needed (missing data, tool not found, deeper recon required), the LLM generates a new plan for the next wave
-5. This repeats for up to **5 waves**
+The `LLMEngineMixin._execute_agent()` method in `chat/engine.py` orchestrates the multi-wave loop:
 
 ```python
-max_waves = 5
+max_waves = self._settings.get("max_waves") or 12
+plan = llm_plan
+
 for wave in range(max_waves):
     if not plan or not plan.steps:
         break
-    # Execute all steps in parallel
-    raw_results = await execute_wave(plan.steps)
-    # Ask LLM: are we done?
-    plan = await llm.analyse_and_plan(wave_results)
+
+    # Execute via AutonomousExecutor with live display
+    plan = await agent.executor_autonomous.execute_plan(plan, live_display=True)
+
+    # If cancelled by user, stop
+    if plan.status.name == "CANCELLED":
+        break
+
+    # Collect outputs for next wave context
+    for s in plan.steps:
+        result = s.result or {}
+        output = (result.get("output") or "").strip()
+        all_outputs.append(f"• {cmd_label}:\n{output}\n")
+
+    # Ask LLM: are we done or more work needed?
+    if llm_connected:
+        wave_goal = (
+            f"Original request: {instruction}\n\n"
+            f"Completed execution wave {wave + 1}. Results so far:\n\n"
+            f"{''.join(all_outputs)}\n\n"
+            "Analyse these results. Decide: is the original request fully satisfied?\n"
+            "- If YES → set needs_tools=false and provide a final response.\n"
+            "- If NO and only 1-2 more commands → set needs_tools=true.\n"
+            "- Prefer stopping early with a good summary over endless waves."
+        )
+        plan = await agent.planner_autonomous.plan(
+            wave_goal,
+            system_prompt=wave_sys_prompt,
+            llm_call=llm_call_fn,
+            is_first_call=False,
+        )
+    else:
+        plan = None
 ```
+
+### Context Carry-Over Between Waves
+
+Each wave's output is collected and fed into the next wave's LLM analysis prompt. The carry-over includes:
+
+- **Original user request** — preserved across all waves
+- **All prior command outputs** — accumulated results from every executed wave
+- **Execution metadata** — tool used, command run, exit status
+- **Wave number** — enables the LLM to gauge progress
+
+The accumulated context helps the LLM make informed decisions about whether to continue, refine, or conclude.
 
 ### Wave Decision
 
-The LLM receives the original request plus all outputs from completed waves and responds with:
+The LLM receives the original request plus all outputs from completed waves and produces a new plan:
 
 - **`needs_tools=false`**: Present the final response to the user (done)
 - **`needs_tools=true`**: Generate a new plan for the next wave (e.g., found open ports → now scan for vulnerabilities)
 
-### Parallel Execution Within Waves
-
-All steps in a single wave execute concurrently:
-
-```python
-async def execute_wave(steps: list[dict]) -> list[dict]:
-    tasks = [execute_step(step) for step in steps]
-    results = await asyncio.gather(*tasks, return_exceptions=True)
-    return [format_result(r, step) for r, step in zip(results, steps)]
-```
+The prompt explicitly instructs the LLM to prefer early summarisation over endless probing.
 
 ---
 
-## Live Streaming Output
+### AgentCore Multi-Wave (Core Mode)
 
-During execution, command output is streamed line-by-line in real time using a Rich `Live` display.
+`AgentCore.execute_multi_wave()` in `core/__init__.py` provides a structured multi-wave interface for programmatic use:
+
+```python
+async def execute_multi_wave(self, goal: AgentGoal, max_waves: int = 5) -> AgentResult:
+    all_findings = []
+    plan = None
+    for wave in range(max_waves):
+        wave_context = {
+            "wave": wave,
+            "previous_findings": all_findings[-20:],
+            "goal": goal.description,
+        }
+        wave_goal = AgentGoal(
+            description=goal.description,
+            constraints={**goal.constraints, "context": wave_context},
+        )
+        wave_result = await self.execute_goal(wave_goal, plan)
+        all_findings.extend(wave_result.findings)
+        if not wave_result.findings:
+            break
+        if hasattr(self._planner, "plan_next_wave"):
+            plan = self._planner.plan_next_wave(wave_result.findings, goal)
+        else:
+            plan = None
+    return AgentResult(goal=goal.description, findings=all_findings, success=True)
+```
+
+Key aspects:
+
+- **Context carry-over**: Previous findings (up to 20) are injected into each wave's goal context
+- **Early termination**: Breaks if a wave produces no new findings
+- **Findings accumulation**: All findings across waves are merged and deduplicated
+
+---
+
+## Live Streaming Display
+
+During execution, command output is streamed line-by-line in real time using the `AutonomousExecutor` with live display enabled.
 
 ### Display Behavior
 
-- A single `Live` Panel shows output of the currently focused command
+- A single Live panel shows output of the currently focused command
 - The display auto-cycles through running commands as they complete
-- Each panel has a coloured border indicating status:
+- Coloured borders indicate status:
   - **Cyan**: Still running
-  - **Green**: Completed successfully (exit code 0)
+  - **Green**: Completed successfully
   - **Red**: Failed (non-zero exit code)
-- The panel title shows the command and a status icon (`·` running, `✓` success, `✗` failure)
+- Panel title shows the command and a status indicator
 
-```python
-with Live(console=console, refresh_per_second=10, screen=False) as live:
-    while not done_set:
-        await asyncio.sleep(0.1)
-        # Auto-cycle to next unfinished command
-        if cmd_states[focus_idx].done:
-            unfinished = [i for i, st in enumerate(cmd_states) if not st.done]
-            if unfinished:
-                focus_idx = unfinished[0]
-            else:
-                done_set = True
-        live.update(RichPanel(...))
+### Per-Wave Output Display
+
+After each wave completes, summary panels are shown for each command:
+
 ```
-
-### Streaming Output Capture
-
-Each command's stdout and stderr is captured line-by-line via `safe_run_async_stream`:
-
-```python
-result = await safe_run_async_stream(
-    command,
-    timeout=agent_timeout,
-    validate=False,
-    on_stdout=lambda line: state.lines.append(line),
-    on_stderr=lambda line: state.lines.append(line),
-)
+╭─ ✓ $ nmap -sS -sV -O -Pn example.com ───────────────────╮
+│ PORT     STATE  SERVICE    VERSION                       │
+│ 22/tcp   open   ssh        OpenSSH 8.9p1                 │
+│ 80/tcp   open   http       nginx 1.24.0                  │
+│ 443/tcp  open   https      nginx 1.24.0                  │
+╰──────────────────────────────────────────────────────────╯
 ```
-
-The last 200 lines of each command's output are retained in memory for display.
 
 ---
 
@@ -129,43 +178,20 @@ Review command [edit/run/step/cancel] (run):
 ### Toggle Review
 
 ```bash
-/command off    # Skip review, run all commands immediately
 /command on     # Show review prompt before each command
+/command off     # Skip review, run all commands immediately
+/command         # Show current review state
 ```
-
-The current state is shown with `/command` alone.
-
-### Review Timing
-
-Commands are reviewed **before** the Live display starts, in a synchronous phase. Once all commands are approved, execution begins with the Live display.
 
 ---
 
-## Wave Summary
+## Wave Summary & Stats
 
-After each wave completes, a summary panel is shown for each command:
+After each wave completes, a bottom stats line shows relevant information:
 
 ```
-╭─ ✓ $ nmap -sS -sV -O -Pn example.com ───────────────────╮
-│ PORT     STATE  SERVICE    VERSION                       │
-│ 22/tcp   open   ssh        OpenSSH 8.9p1                 │
-│ 80/tcp   open   http       nginx 1.24.0                  │
-│ 443/tcp  open   https      nginx 1.24.0                  │
-╰──────────────────────────────────────────────────────────╯
+Time: 12.3s | Mode: integrated | Persona: redteam | LLM: connected
 ```
-
-Each wave's output is fed back to the LLM to inform the next wave's plan.
-
----
-
-## Event Streaming
-
-The `AssistantMessageEventStream` provides granular, event-driven output for streaming scenarios:
-
-- **Text tokens**: Incremental LLM response content
-- **Tool calls**: Structured function call objects
-- **Error events**: Provider errors with classification
-- **Wave boundaries**: Start/end markers for each execution wave
 
 ---
 
@@ -173,10 +199,34 @@ The `AssistantMessageEventStream` provides granular, event-driven output for str
 
 Each command in every wave passes through the full safety pipeline:
 
-1. **DangerAnalysis** — `DangerAnalyzer` classifies command destructiveness
-2. **InputValidation** — `InputValidator` rejects injection patterns
-3. **SecretRedaction** — `SecretRedactor` strips credentials from output
-4. **Permission Gate** — Interactive review before execution
+1. **PermissionGate** — two-stage review: syntax validation followed by danger analysis (blocks critical, flags high/medium for review)
+2. **InputValidator** — rejects injection patterns (shell metacharacters, path traversal, null bytes)
+3. **DLPEngine** — strips secrets and PII from output
+4. **ShellReview** — interactive prompt before execution (edit/run/step/cancel)
+5. **Orphan process tracking** — ensures cleanup on timeout or user interrupt
+
+---
+
+## CLS Pre-Execution (Integrated Mode)
+
+Before the LLM planning phase in integrated mode, the `LearningSystem` (CLS) may execute high-confidence cached skills (≥ 80% confidence) to provide rich base context. Results from these pre-executed steps are fed into the LLM's first-wave prompt, potentially reducing the number of waves needed.
+
+---
+
+## Adversarial Review
+
+Before execution, the plan is reviewed by the `AdversarialTester` (via `chat/stubs.py`) which flags potentially dangerous or suspicious patterns:
+
+```
+┌──────────────────────────────────────────────────────┐
+│ 🔍 Adversarial Review (3 findings) — 1 critical      │
+│                                                      │
+│ 🔴 [CRITICAL] Command uses full disk wipe patterns   │
+│    Suggestion: Consider using safe alternatives       │
+│ ⚠ [HIGH] Command may expose sensitive data           │
+│    Suggestion: Review command parameters              │
+└──────────────────────────────────────────────────────┘
+```
 
 ---
 
@@ -184,8 +234,10 @@ Each command in every wave passes through the full safety pipeline:
 
 | Module | Path | Purpose |
 |--------|------|---------|
-| `LLMEngineMixin._execute_instruction` | `src/siyarix/chat/engine.py:57` | Multi-wave execution orchestrator |
-| `LLMEngineMixin._execute_agent` | `src/siyarix/chat/engine.py` | Agent loop with LLM-driven wave planning |
-| `AssistantMessageEventStream` | `src/siyarix/events.py` | Granular event streaming for UI |
+| `LLMEngineMixin._execute_agent` | `src/siyarix/chat/engine.py:619` | Multi-wave execution orchestrator with context carry-over |
+| `AgentCore.execute_multi_wave` | `src/siyarix/core/__init__.py:286` | Structured multi-wave execution for programmatic use |
+| `AutonomousExecutor.execute_plan` | `src/siyarix/executor_autonomous.py` | Live-display execution engine |
+| `AutonomousPlanner.plan` | `src/siyarix/planner_autonomous.py` | LLM-driven planner for wave analysis and planning |
 | `safe_run_async_stream` | `src/siyarix/subprocess_utils.py` | Async subprocess with line-by-line streaming |
-| `DangerAnalyzer` | `src/siyarix/security_hardening.py` | Pre-execution command danger classification |
+| `ShellReview` | `src/siyarix/shell_review.py` | Interactive command review (edit/run/step/cancel) |
+| `PermissionGate` | `src/siyarix/permission_gate.py` | Two-stage syntax + danger check |
