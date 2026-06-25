@@ -165,36 +165,7 @@ jobs:
         run: |
           uv pip install --system bandit
           bandit -r src/ -f json -o bandit-report.json -ll || true
-          python << 'PYEOF'
-import json
-try:
-    with open('bandit-report.json') as f:
-        data = json.load(f)
-except (FileNotFoundError, json.JSONDecodeError):
-    data = {'results': [], 'metrics': {}}
-sarif = {
-    '$schema': 'https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json',
-    'version': '2.1.0',
-    'runs': [{
-        'tool': {'driver': {'name': 'bandit', 'version': '1.0', 'informationUri': 'https://bandit.readthedocs.io'}},
-        'results': [],
-    }]
-}
-for r in data.get('results', []):
-    sarif['runs'][0]['results'].append({
-        'ruleId': r.get('test_id', 'B000'),
-        'level': 'error' if r.get('issue_severity') == 'HIGH' else 'warning',
-        'message': {'text': r.get('issue_text', '')},
-        'locations': [{
-            'physicalLocation': {
-                'artifactLocation': {'uri': r.get('filename', '')},
-                'region': {'startLine': r.get('line_number', 0)},
-            }
-        }],
-    })
-with open('bandit-report.sarif', 'w') as f:
-    json.dump(sarif, f)
-PYEOF
+          python -c "import json; d=__import__('json').load(open('bandit-report.json')) if __import__('os').path.exists('bandit-report.json') else {'results':[]}; s={'version':'2.1.0','runs':[{'tool':{'driver':{'name':'bandit'}},'results':[{'ruleId':r.get('test_id','B000'),'level':'error' if r.get('issue_severity')=='HIGH' else 'warning','message':{'text':r.get('issue_text','')},'locations':[{'physicalLocation':{'artifactLocation':{'uri':r.get('filename','')},'region':{'startLine':r.get('line_number',0)}}}]} for r in d.get('results',[])]}]}; __import__('json').dump(s,open('bandit-report.sarif','w'))"
 
       - name: Upload Bandit SARIF
         if: always()
