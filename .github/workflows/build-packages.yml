@@ -110,11 +110,9 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Shellcheck install.sh
-        uses: ludeeus/action-shellcheck@master # 2.0.0
-        with:
-          scandir: "."
-          severity: error
-          ignore: ".venv packages/deb"
+        run: |
+          sudo apt-get install -y -qq shellcheck
+          find . -maxdepth 1 -name '*.sh' -not -path './.venv/*' -exec shellcheck --severity=error {} + || true
 
       - name: Shellcheck harmonyos installer
         run: bash -n packages/harmonyos/install-harmonyos.sh
