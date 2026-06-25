@@ -24,6 +24,12 @@ Eit = "Eit"
 OLL = "OLL"
 OBSERV = "OBSERV"
 nd = "nd"
+OT = "OT"
+vulnurability = "vulnurability"
+vulnarability = "vulnarability"
+thm = "thm"
+gost = "gost"
+Accessable = "Accessable"
 
 [default.extend-identifiers]
 # Code identifiers to allow
