@@ -48,6 +48,7 @@ async def test_onboarding_full_run(mock_get_config, mock_subproc, mock_which, mo
                     wizard._step_persona_sysmsg = MagicMock()
                     wizard._step_install_persona_tools = MagicMock()
                     wizard._step_preferences = MagicMock()
+                    wizard._step_learning_setup = MagicMock()
                     wizard._step_network_diagnostics = AsyncMock()
                     wizard._finalize = AsyncMock()
                     result = await wizard.run()
@@ -136,10 +137,10 @@ def test_step_preferences(mock_console):
 @pytest.mark.asyncio
 async def test_step_network_diagnostics(mock_console):
     wizard = OnboardingWizard(console=mock_console)
-    wizard._check_dns = MagicMock(return_value=True)
-    wizard._check_port = MagicMock(return_value=True)
     wizard._pause = MagicMock()
-    await wizard._step_network_diagnostics()
+    with patch("siyarix.onboarding.httpx.get", return_value=MagicMock(status_code=200, elapsed=MagicMock(total_seconds=lambda: 0.1))):
+        with patch("siyarix.onboarding.socket.getaddrinfo", return_value=[(None, None, None, None, ("8.8.8.8", 80))]):
+            await wizard._step_network_diagnostics()
     assert wizard._choices["network_ok"] is True
 
 @pytest.mark.asyncio

@@ -43,7 +43,7 @@ def _get_security_db() -> Any:
     db_path = get_config_dir() / "security.db"
     db_path.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(db_path), timeout=10)
-    conn.row_factory = sqlite3.Row
+    conn.row_factory = lambda c, r: dict(zip([col[0] for col in c.description], r))
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=5000")
     conn.executescript("""
@@ -93,12 +93,21 @@ def _get_security_db() -> Any:
         CREATE INDEX IF NOT EXISTS idx_vulns_severity ON vulnerabilities(severity);
         CREATE INDEX IF NOT EXISTS idx_vulns_status ON vulnerabilities(status);
     """)
+    _seed_security_data(conn)
     return conn
 
 
-def _seed_security_data() -> None:
+def _seed_security_data(conn: Any | None = None) -> None:
     """Seed the security database with initial reference data if empty."""
-    conn = _get_security_db()
+    close_conn = conn is None
+    if conn is None:
+        import sqlite3
+        from .config import get_config_dir
+
+        db_path = get_config_dir() / "security.db"
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        conn = sqlite3.connect(str(db_path), timeout=10)
+        conn.row_factory = lambda c, r: dict(zip([col[0] for col in c.description], r))
     try:
         count = conn.execute("SELECT COUNT(*) as c FROM incidents").fetchone()["c"]
         if count > 0:
@@ -168,10 +177,8 @@ def _seed_security_data() -> None:
             )
             conn.commit()
     finally:
-        conn.close()
-
-
-_seed_security_data()
+        if close_conn:
+            conn.close()
 
 
 # ---------------------------------------------------------------------------

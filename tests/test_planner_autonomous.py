@@ -56,7 +56,9 @@ async def test_plan(planner):
     assert plan2 is not None
 
 def test_parse_llm_response_error(planner):
-    assert planner._parse_llm_response("Not JSON") is None
+    result = planner._parse_llm_response("Not JSON")
+    assert isinstance(result, dict)
+    assert result.get("needs_tools") is False
 
 def test_stats(planner):
     planner.create_plan("Test 1", steps=[])

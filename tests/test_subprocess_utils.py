@@ -61,55 +61,55 @@ class TestExecutionResult:
 # ── detect_package_manager ───────────────────────────────────────────────
 
 class TestDetectPackageManager:
-    @patch("siyarix.subprocess_utils.shutil.which")
-    @patch("siyarix.subprocess_utils.os.name", "posix")
-    def test_detects_apt(self, mock_which: MagicMock) -> None:
-        mock_which.side_effect = lambda x: "/usr/bin/apt-get" if x == "apt-get" else None
+    @patch("siyarix._platform.shutil.which")
+    @patch("siyarix._platform.get_platform_id", return_value="linux")
+    def test_detects_apt(self, mock_platform: MagicMock, mock_which: MagicMock) -> None:
+        mock_which.side_effect = lambda x: "/usr/bin/apt" if x == "apt" else None
         assert detect_package_manager() == "apt"
 
-    @patch("siyarix.subprocess_utils.shutil.which")
-    @patch("siyarix.subprocess_utils.os.name", "posix")
-    def test_detects_dnf(self, mock_which: MagicMock) -> None:
+    @patch("siyarix._platform.shutil.which")
+    @patch("siyarix._platform.get_platform_id", return_value="linux")
+    def test_detects_dnf(self, mock_platform: MagicMock, mock_which: MagicMock) -> None:
         mock_which.side_effect = lambda x: "/usr/bin/dnf" if x == "dnf" else None
         assert detect_package_manager() == "dnf"
 
-    @patch("siyarix.subprocess_utils.shutil.which")
-    @patch("siyarix.subprocess_utils.os.name", "posix")
-    def test_detects_pacman(self, mock_which: MagicMock) -> None:
+    @patch("siyarix._platform.shutil.which")
+    @patch("siyarix._platform.get_platform_id", return_value="linux")
+    def test_detects_pacman(self, mock_platform: MagicMock, mock_which: MagicMock) -> None:
         mock_which.side_effect = lambda x: "/usr/bin/pacman" if x == "pacman" else None
         assert detect_package_manager() == "pacman"
 
-    @patch("siyarix.subprocess_utils.shutil.which")
-    @patch("siyarix.subprocess_utils.os.name", "posix")
-    def test_detects_brew(self, mock_which: MagicMock) -> None:
+    @patch("siyarix._platform.shutil.which")
+    @patch("siyarix._platform.get_platform_id", return_value="macos")
+    def test_detects_brew(self, mock_platform: MagicMock, mock_which: MagicMock) -> None:
         mock_which.side_effect = lambda x: "/opt/homebrew/bin/brew" if x == "brew" else None
         assert detect_package_manager() == "brew"
 
-    @patch("siyarix.subprocess_utils.shutil.which")
-    @patch("siyarix.subprocess_utils.os.name", "posix")
-    def test_detects_pkg(self, mock_which: MagicMock) -> None:
+    @patch("siyarix._platform.shutil.which")
+    @patch("siyarix._platform.get_platform_id", return_value="android")
+    def test_detects_pkg(self, mock_platform: MagicMock, mock_which: MagicMock) -> None:
         mock_which.side_effect = lambda x: "/usr/sbin/pkg" if x == "pkg" else None
         assert detect_package_manager() == "pkg"
 
-    @patch("siyarix.subprocess_utils.shutil.which")
-    @patch("siyarix.subprocess_utils.os.name", "posix")
-    def test_detects_apk(self, mock_which: MagicMock) -> None:
+    @patch("siyarix._platform.shutil.which")
+    @patch("siyarix._platform.get_platform_id", return_value="linux")
+    def test_detects_apk(self, mock_platform: MagicMock, mock_which: MagicMock) -> None:
         mock_which.side_effect = lambda x: "/sbin/apk" if x == "apk" else None
         assert detect_package_manager() == "apk"
 
-    @patch("siyarix.subprocess_utils.shutil.which", return_value=None)
-    @patch("siyarix.subprocess_utils.os.name", "posix")
-    def test_fallback_pip(self, _mock: MagicMock) -> None:
+    @patch("siyarix._platform.shutil.which", return_value=None)
+    @patch("siyarix._platform.get_platform_id", return_value="linux")
+    def test_fallback_pip(self, _mock_platform: MagicMock, _mock_sh: MagicMock) -> None:
         assert detect_package_manager() == "pip"
 
-    @patch("siyarix.subprocess_utils.shutil.which", side_effect=lambda x: x if x == "choco" else None)
-    @patch("siyarix.subprocess_utils.os.name", "nt")
-    def test_windows_choco(self, _mock_sh: MagicMock) -> None:
+    @patch("siyarix._platform.shutil.which", side_effect=lambda x: x if x == "choco" else None)
+    @patch("siyarix._platform.get_platform_id", return_value="windows")
+    def test_windows_choco(self, _mock_platform: MagicMock, _mock_sh: MagicMock) -> None:
         assert detect_package_manager() == "choco"
 
-    @patch("siyarix.subprocess_utils.shutil.which", side_effect=lambda x: x if x == "winget" else None)
-    @patch("siyarix.subprocess_utils.os.name", "nt")
-    def test_windows_winget(self, _mock_sh: MagicMock) -> None:
+    @patch("siyarix._platform.shutil.which", side_effect=lambda x: x if x == "winget" else None)
+    @patch("siyarix._platform.get_platform_id", return_value="windows")
+    def test_windows_winget(self, _mock_platform: MagicMock, _mock_sh: MagicMock) -> None:
         assert detect_package_manager() == "winget"
 
 

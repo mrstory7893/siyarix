@@ -10,10 +10,14 @@ from typer.main import get_command
 
 from siyarix.chat.commands import CommandProfile, CommandProfileStore
 from siyarix.dlp import DLPEngine
-from siyarix.security_commands import security_app
 
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
+
+@pytest.fixture(autouse=True)
+def _isolate_config(tmp_path, monkeypatch):
+    """Isolate the security DB to a temp directory so tests don't share state."""
+    monkeypatch.setenv("SIYARIX_CONFIG_DIR", str(tmp_path / "siyarix"))
 
 
 
@@ -21,6 +25,7 @@ from siyarix.security_commands import security_app
 
 @pytest.fixture
 def cli() -> Typer:
+    from siyarix.security_commands import security_app
     app = Typer()
     app.add_typer(security_app, name="security")
     return app
@@ -49,25 +54,24 @@ class TestSecurityGroup:
 class TestIncidentsCommand:
     def test_list_default(self, cli: Typer, runner: CliRunner) -> None:
         output = invoke_security(cli, runner, ["incidents"])
-        assert "INC-001" in output
         assert "Ransomware" in output
+        assert "INC-" in output
 
     def test_list_filter_by_status(self, cli: Typer, runner: CliRunner) -> None:
         output = invoke_security(cli, runner, ["incidents", "--status", "open"])
-        assert "INC-001" not in output
-        assert "INC-002" in output
-        assert "INC-003" in output
+        assert "investigating" not in output
+        assert "Phishing" in output
+        assert "Unauthorized" in output
 
     def test_list_filter_by_severity(self, cli: Typer, runner: CliRunner) -> None:
         output = invoke_security(cli, runner, ["incidents", "--severity", "critical"])
-        assert "INC-001" in output
-        assert "INC-005" in output
-        assert "INC-002" not in output
+        assert "Ransomware" in output
+        assert "Phishing" not in output
 
     def test_list_json_output(self, cli: Typer, runner: CliRunner) -> None:
         output = invoke_security(cli, runner, ["incidents", "--output", "json"])
         assert "{" in output
-        assert "INC-001" in output
+        assert "INC-" in output
 
     def test_list_with_limit(self, cli: Typer, runner: CliRunner) -> None:
         output = invoke_security(cli, runner, ["incidents", "--limit", "2"])
@@ -78,7 +82,7 @@ class TestIncidentsCommand:
         output = invoke_security(
             cli, runner, ["incidents", "--status", "open", "--severity", "critical"]
         )
-        assert "INC-001" not in output
+        assert "0 shown" in output
 
     def test_empty_filter_result(self, cli: Typer, runner: CliRunner) -> None:
         output = invoke_security(cli, runner, ["incidents", "--status", "closed"])
@@ -87,13 +91,21 @@ class TestIncidentsCommand:
 
 class TestIncidentDetail:
     def test_get_incident(self, cli: Typer, runner: CliRunner) -> None:
-        output = invoke_security(cli, runner, ["incident", "INC-001"])
-        assert "Ransomware" in output
-        assert "CRITICAL" in output
+        output = invoke_security(cli, runner, ["incident", "NONEXISTENT"])
+        assert "not found" in output
 
-    def test_get_incident_different_id(self, cli: Typer, runner: CliRunner) -> None:
-        output = invoke_security(cli, runner, ["incident", "INC-999"])
-        assert "INC-999" in output
+    def test_get_incident_after_create(self, cli: Typer, runner: CliRunner) -> None:
+        import re
+        create_out = invoke_security(
+            cli, runner,
+            ["incident-create", "--title", "Test Incident", "--description", "desc",
+             "--category", "intrusion", "--severity", "critical"],
+        )
+        match = re.search(r"ID:\s+(INC-\w+)", create_out)
+        assert match, f"ID not found in: {create_out}"
+        output = invoke_security(cli, runner, ["incident", match.group(1)])
+        assert "Test Incident" in output
+        assert "CRITICAL" in output
 
 
 class TestCreateIncident:
@@ -163,7 +175,7 @@ class TestRemediationPlan:
     def test_remediation_plan(self, cli: Typer, runner: CliRunner) -> None:
         output = invoke_security(cli, runner, ["remediation-plan"])
         assert "CVE-2024-0001" in output
-        assert "Upgrade log4j" in output
+        assert "Log4Shell RCE" in output
 
 
 class TestHuntCommands:

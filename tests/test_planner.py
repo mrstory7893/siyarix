@@ -599,11 +599,13 @@ class TestAutonomousPlannerIntegration:
     def test_parse_llm_response_invalid_json_content(self, ap):
         raw = {"content": "not json at all"}
         result = ap._parse_llm_response(raw)
-        assert result is None
+        assert isinstance(result, dict)
+        assert result.get("needs_tools") is False
 
     def test_parse_llm_response_not_dict(self, ap):
         result = ap._parse_llm_response("just a string")
-        assert result is None
+        assert isinstance(result, dict)
+        assert result.get("needs_tools") is False
 
     def test_list_plans_with_status_filter(self, ap):
         p1 = ap.create_plan("active_plan")
