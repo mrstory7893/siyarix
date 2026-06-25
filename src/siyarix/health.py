@@ -201,7 +201,7 @@ class HealthChecker:
                                 else f"{name_map.get(provider_name, provider_name.capitalize())} not responding"
                             )
                     except Exception:
-                        logger.debug("%s check failed — not running", provider_name)
+                        logger.debug("Provider check failed — not running")
                 elif provider_name == "gemini":
                     from .providers import resolve_api_key
 
@@ -236,7 +236,7 @@ class HealthChecker:
                 )
             except Exception as exc:
                 display_name = name_map.get(provider_name, provider_name.capitalize())
-                logger.exception("Model provider check failed for %s", provider_name)
+                logger.exception("Model provider check failed")
                 return ComponentHealth(
                     name=f"ModelProvider/{display_name}",
                     state=HealthState.UNHEALTHY,

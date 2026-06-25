@@ -174,9 +174,8 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
 
         key = resolve_api_key(provider, profile.api_key_env or "")
         if not key:
-            msg = f"Provider '{provider}' configured but {profile.api_key_env} is not set."
-            logger.warning(msg)
-            console.print(f"[yellow]⚠ {msg}[/yellow]")
+            logger.warning("Provider '%s' configured but API key env var is not set", provider)
+            console.print(f"[yellow]⚠ Provider '{provider}' configured but API key is not set.[/yellow]")
 
         if profile.sdk_dependency:
             try:

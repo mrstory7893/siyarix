@@ -719,7 +719,7 @@ class LLMEngineMixin:
                             ]
                 except Exception:
                     logger.warning(
-                        "Failed to discover provider models for %s", provider_name, exc_info=True
+                        "Failed to discover provider models", exc_info=True
                     )
 
         # Build call function for the provider.

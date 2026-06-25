@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import logging
 import os
+from urllib.parse import urlparse
 import httpx
 from typing import Any
 
@@ -43,7 +44,8 @@ class NotificationDispatcher:
 
         payload: dict[str, Any] = {"content": message}
 
-        if "slack.com" in self.webhook_url:
+        parsed = urlparse(self.webhook_url)
+        if parsed.hostname and "slack.com" in parsed.hostname:
             payload = {"text": message}
 
         try:

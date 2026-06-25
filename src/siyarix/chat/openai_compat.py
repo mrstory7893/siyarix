@@ -16,6 +16,7 @@ from __future__ import annotations
 import json
 import subprocess
 from dataclasses import dataclass
+from urllib.parse import urlparse
 from typing import Any, AsyncGenerator
 
 import httpx
@@ -174,20 +175,21 @@ def detect_compat(provider: str, base_url: str) -> OpenAICompat:
     """
     merged_url = (PROVIDER_CONFIG.get(provider, ("", "", ""))[0]) or base_url
     effective_base = base_url or merged_url
+    parsed_host = urlparse(effective_base).hostname or ""
 
     # ── provider identification (name + URL patterns) ──
-    is_zai = provider == "zai" or "api.z.ai" in effective_base
+    is_zai = provider == "zai" or "api.z.ai" in parsed_host
     is_together = (
         provider == "together"
-        or "api.together.xyz" in effective_base
-        or "api.together.ai" in effective_base
+        or "api.together.xyz" in parsed_host
+        or "api.together.ai" in parsed_host
     )
-    is_moonshot = provider == "moonshot" or "api.moonshot." in effective_base
-    is_grok = provider == "xai" or "api.x.ai" in effective_base
-    is_deepseek = provider == "deepseek" or "deepseek.com" in effective_base
-    is_cerebras = provider == "cerebras" or "cerebras.ai" in effective_base
-    is_openrouter = provider == "openrouter" or "openrouter.ai" in effective_base
-    is_cloudflare = "gateway.ai.cloudflare.com" in effective_base
+    is_moonshot = provider == "moonshot" or "api.moonshot." in parsed_host
+    is_grok = provider == "xai" or "api.x.ai" in parsed_host
+    is_deepseek = provider == "deepseek" or "deepseek.com" in parsed_host
+    is_cerebras = provider == "cerebras" or "cerebras.ai" in parsed_host
+    is_openrouter = provider == "openrouter" or "openrouter.ai" in parsed_host
+    is_cloudflare = "gateway.ai.cloudflare.com" in parsed_host
 
     is_non_standard = any(
         [
@@ -198,9 +200,9 @@ def detect_compat(provider: str, base_url: str) -> OpenAICompat:
             is_moonshot,
             is_deepseek,
             provider == "opencode-zen",
-            "opencode.ai" in effective_base,
+            "opencode.ai" in parsed_host,
             is_cloudflare,
-            "chutes.ai" in effective_base,
+            "chutes.ai" in parsed_host,
         ]
     )
 
