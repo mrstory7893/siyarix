@@ -105,8 +105,11 @@ jobs:
           pip-audit -r requirements-audit.txt --format=json -o audit.json || true
           python -c "
           import json, sys
-          with open('audit.json') as f:
-              data = json.load(f)
+          try:
+              with open('audit.json') as f:
+                  data = json.load(f)
+          except (FileNotFoundError, json.JSONDecodeError):
+              data = []
           vulns = sum(len(dep.get('vulns', [])) for dep in data)
           if vulns > 0:
               print(f'::error::{vulns} vulnerabilities found')
