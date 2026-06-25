@@ -202,12 +202,12 @@ class TestPlatformUtils:
                 assert detect_shell() == "cmd.exe"
 
     def test_detect_shell_posix_with_shell_env(self):
-        with patch("os.name", "posix"):
+        with patch("siyarix.chat.platform_utils._is_windows", return_value=False):
             with patch.dict(os.environ, {"SHELL": "/bin/zsh"}, clear=True):
                 assert detect_shell() == "/bin/zsh"
 
     def test_detect_shell_posix_no_shell_env_finds_first(self):
-        with patch("os.name", "posix"):
+        with patch("siyarix.chat.platform_utils._is_windows", return_value=False):
             with patch.dict(os.environ, {}, clear=True):
                 with patch(
                     "shutil.which", side_effect=lambda x: f"/usr/bin/{x}" if x == "bash" else None
@@ -221,7 +221,7 @@ class TestPlatformUtils:
                     assert detect_shell() == "cmd.exe"
 
     def test_detect_shell_no_shell_found_fallback_posix(self):
-        with patch("os.name", "posix"):
+        with patch("siyarix.chat.platform_utils._is_windows", return_value=False):
             with patch.dict(os.environ, {}, clear=True):
                 with patch("shutil.which", return_value=None):
                     assert detect_shell() == "/bin/sh"
@@ -273,7 +273,7 @@ class TestPlatformUtils:
             assert "Audit policy" in cmds
 
     def test_get_security_commands_non_windows(self):
-        with patch("sys.platform", "linux"):
+        with patch("siyarix.chat.platform_utils.get_platform_id", return_value="linux"):
             cmds = get_security_commands()
             assert "Listening ports" in cmds
             assert cmds["Listening ports"] == "ss -tulpn"
