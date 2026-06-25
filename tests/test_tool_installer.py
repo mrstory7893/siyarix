@@ -96,11 +96,9 @@ class TestToolInstallerCore:
         installer = ToolInstaller()
         with patch(
             "shutil.which",
-            side_effect=lambda x: "/usr/bin/choco"
-            if x == "choco"
-            else "/usr/bin/nmap"
-            if x == "nmap"
-            else None,
+            side_effect=lambda x: (
+                "/usr/bin/choco" if x == "choco" else "/usr/bin/nmap" if x == "nmap" else None
+            ),
         ):
             with patch("subprocess.run") as mock_run:
                 import subprocess
