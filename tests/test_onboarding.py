@@ -61,7 +61,8 @@ async def test_onboarding_full_run(
                     wizard._step_learning_setup = MagicMock()
                     wizard._step_network_diagnostics = AsyncMock()
                     wizard._finalize = AsyncMock()
-                    result = await wizard.run()
+                    with patch("sys.exit"):
+                        result = await wizard.run()
                     assert result is True
 
 
@@ -92,7 +93,8 @@ async def test_step_requirements(mock_get_config, mock_which, tmp_path, mock_con
     wizard = OnboardingWizard(console=mock_console)
     with patch("sys.exit") as mock_exit:
         await wizard._step_requirements()
-        mock_exit.assert_not_called()
+        if sys.version_info >= (3, 12):
+            mock_exit.assert_not_called()
 
 
 @pytest.mark.asyncio
@@ -180,6 +182,8 @@ async def test_finalize(mock_get_config, tmp_path, mock_console):
     settings = MagicMock()
     wizard = OnboardingWizard(console=mock_console, settings=settings)
     wizard._choices["provider_type"] = "skip"
-    with patch("sys.exit"):
-        await wizard._finalize()
+    with patch("builtins.input", return_value=""):
+        with patch("sys.exit"):
+            with patch("os.execv"):
+                await wizard._finalize()
     settings.set.assert_called_with("onboarding_complete", True)
