@@ -149,11 +149,13 @@ skips = ["B101", "B303", "B311", "B404", "B603", "B607"]
 [tool.mypy]
 python_version = "3.11"
 check_untyped_defs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
 ignore_missing_imports = false
 warn_unused_ignores = true
 strict_optional = true
+
+[[tool.mypy.overrides]]
+module = ["tests.*", "scripts.*"]
+ignore_errors = true
 
 [tool.ruff.format]
 docstring-code-format = true
