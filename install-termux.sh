@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # Siyarix Termux Installer
-#   One-liner: curl -fsSL https://siyarix.dev/install-termux.sh | bash
+#   One-liner: curl -fsSL https://siyarix.github.io/install-termux.sh | bash
 #
 # Installs Siyarix AI Cybersecurity Orchestration Agent on Android via Termux.
 #

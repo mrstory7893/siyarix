@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # Siyarix Universal Installer
-#   One-liner: curl -fsSL https://siyarix.dev/install.sh | bash
+#   One-liner: curl -fsSL https://siyarix.github.io/install.sh | bash
 # =============================================================================
 set -euo pipefail
 
@@ -218,7 +218,7 @@ install_via_brew() {
 install_via_apt() {
   INSTALL_METHOD="apt"
   info "Installing via apt..."
-  local repo_url="${SIYARIX_APT_REPO:-https://siyarix.dev/apt}"
+  local repo_url="${SIYARIX_APT_REPO:-https://siyarix.github.io/apt}"
   local key_url="${SIYARIX_APT_KEY:-${repo_url}/KEY.gpg}"
   if curl -fsSL "${repo_url}/dists/stable/main/binary-amd64/Packages.gz" &>/dev/null; then
     run curl -fsSL "${key_url}" | run gpg --dearmor -o /usr/share/keyrings/siyarix.gpg 2>/dev/null || true
@@ -380,7 +380,7 @@ main() {
   while [ $# -gt 0 ]; do
     case "$1" in
       --help|-h)
-        echo "Usage: curl -fsSL https://siyarix.dev/install.sh | bash [-- [options]]"
+        echo "Usage: curl -fsSL https://siyarix.github.io/install.sh | bash [-- [options]]"
         echo ""
         echo "Options:"
         echo "  --version VERSION    Version to install (or set SIYARIX_VERSION)"
