@@ -298,36 +298,6 @@ class ExecutionEngine:
         return await self.execute(f"Continue previous security plan (ID: {safe_id})")
 
 
-class IntentRoute:
-    def __init__(
-        self, mode: str = "general", risk_tier: Any = None, requires_confirmation: bool = False
-    ) -> None:
-        self.mode = mode
-        self.risk_tier = risk_tier or RiskTier("low")
-        self.requires_confirmation = requires_confirmation
-
-
-RiskTier = RiskLevel
-
-
-class IntentRouter:
-    def route(self, text: str, **kwargs: Any) -> IntentRoute:
-        text_lower = text.lower()
-        if any(kw in text_lower for kw in ("scan", "nmap", "port scan")):
-            return IntentRoute(mode="scan", risk_tier=RiskTier("medium"))
-        if any(kw in text_lower for kw in ("recon", "enumerate", "discover")):
-            return IntentRoute(mode="recon", risk_tier=RiskTier("low"))
-        if any(kw in text_lower for kw in ("web", "http", "nikto", "nuclei")):
-            return IntentRoute(mode="web", risk_tier=RiskTier("medium"))
-        if any(kw in text_lower for kw in ("brute", "crack", "password")):
-            return IntentRoute(mode="brute", risk_tier=RiskTier("high"), requires_confirmation=True)
-        if any(kw in text_lower for kw in ("exploit", "metasploit", "attack")):
-            return IntentRoute(
-                mode="exploit", risk_tier=RiskTier("high"), requires_confirmation=True
-            )
-        return IntentRoute(mode="general", risk_tier=RiskTier("low"))
-
-
 __all__ = [
     "ExecutionMode",
     "SessionPersistenceLevel",
@@ -336,6 +306,4 @@ __all__ = [
     "SessionKernel",
     "EngineResult",
     "ExecutionEngine",
-    "IntentRoute",
-    "IntentRouter",
 ]
