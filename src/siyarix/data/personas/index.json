@@ -1,0 +1,68 @@
+{
+  "red team": {
+    "name": "red team",
+    "label": "Red Team / Offensive Security",
+    "description": "Adversary emulation, penetration testing, exploitation, C2 operations, evasion",
+    "file": "red-team.md"
+  },
+  "blue team": {
+    "name": "blue team",
+    "label": "Blue Team / Defensive Security",
+    "description": "Detection engineering, SOC operations, threat hunting, defence architecture, IR",
+    "file": "blue-team.md"
+  },
+  "purple team": {
+    "name": "purple team",
+    "label": "Purple Team / Collaborative Security",
+    "description": "Attack validation, detection coverage assessment, adversary emulation exercises",
+    "file": "purple-team.md"
+  },
+  "dfir": {
+    "name": "dfir",
+    "label": "DFIR / Digital Forensics & Incident Response",
+    "description": "Forensic analysis, incident command, malware triage, timeline reconstruction, e-discovery",
+    "file": "dfir.md"
+  },
+  "threat intelligence": {
+    "name": "threat intelligence",
+    "label": "Threat Intelligence / CTI",
+    "description": "Threat research, TTP mapping, IoC extraction, threat actor profiling, intelligence tradecraft",
+    "file": "threat-intelligence.md"
+  },
+  "cloud security": {
+    "name": "cloud security",
+    "label": "Cloud Security / CloudSec",
+    "description": "AWS/Azure/GCP security, IAM hardening, container security, serverless, Kubernetes",
+    "file": "cloud-security.md"
+  },
+  "appsec": {
+    "name": "appsec",
+    "label": "Application Security / AppSec",
+    "description": "SAST/DAST, secure code review, threat modelling, SSDLC, supply chain security",
+    "file": "appsec.md"
+  },
+  "network security": {
+    "name": "network security",
+    "label": "Network Security / NetSec",
+    "description": "Network architecture, firewall policy, segmentation, protocol analysis, zero trust",
+    "file": "network-security.md"
+  },
+  "governance": {
+    "name": "governance",
+    "label": "Governance / GRC",
+    "description": "Compliance, policy, risk management, audit, regulatory frameworks, third-party risk",
+    "file": "governance.md"
+  },
+  "security explorer": {
+    "name": "security explorer",
+    "label": "Security Explorer / Research",
+    "description": "Vulnerability research, reverse engineering, tool discovery, CTF, experimental security",
+    "file": "security-explorer.md"
+  },
+  "universal": {
+    "name": "universal",
+    "label": "Universal / All-in-One",
+    "description": "Balanced red + blue + purple + DFIR + threat intel + cloud + appsec + network sec + governance + security exploration",
+    "file": "universal.md"
+  }
+}
