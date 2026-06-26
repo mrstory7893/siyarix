@@ -1,9 +1,8 @@
-# SPDX-License-Identifier: AGPL-3.0-or-later
-
 """System prompt templates and UI prompt components for Siyarix chat.
 
-All prompts live here so they can be imported without duplicating or drifting.
-Also provides the professional prompt bar rendering functions.
+Prompts are loaded from external files under data/prompts/ (with user overrides
+in ~/.siyarix/data/prompts/) rather than being hardcoded in Python. The UI
+rendering functions remain here as they are presentation logic.
 """
 
 from __future__ import annotations
@@ -14,29 +13,105 @@ import platform as _platform
 from rich.text import Text
 from rich.console import RenderableType
 
+from ..data_loader import load_text, load_json
+
 # ── Mode colour map ───────────────────────────────────────────────────────
 
-MODE_COLORS: dict[str, str] = {
-    "offline": "bright_yellow",
-    "registry": "bright_yellow",
-    "autonomous": "bright_magenta",
-    "integrated": "bright_cyan",
-    "stealth": "bright_red",
-    "verbose": "bright_green",
-    "quiet": "bright_black",
-    "redteam": "bold red",
-    "blueteam": "bold blue",
-    "compliance": "bright_yellow",
-    "audit": "bright_magenta",
-    "expert": "bright_cyan",
-    "beginner": "bright_green",
-    "interactive": "bright_cyan",
-    "batch": "bright_magenta",
-}
+_MODE_COLORS_DATA: dict[str, str] | None = None
+
+
+def _get_mode_colors() -> dict[str, str]:
+    global _MODE_COLORS_DATA
+    if _MODE_COLORS_DATA is None:
+        try:
+            ui_data = load_json("messages", "ui.json")
+            _MODE_COLORS_DATA = ui_data.get("mode_colors", {})
+        except FileNotFoundError:
+            _MODE_COLORS_DATA = {}
+    return _MODE_COLORS_DATA
 
 
 def mode_color(mode: str) -> str:
-    return MODE_COLORS.get(mode, "bright_cyan")
+    return _get_mode_colors().get(mode, "bright_cyan")
+
+
+# ── Prompt template loaders ──────────────────────────────────────────────
+
+
+def load_system_prompt() -> str:
+    """Load the full system prompt from external data files."""
+    return load_text("prompts", "system.md")
+
+
+def load_neutral_prompt() -> str:
+    """Load the neutral system prompt (no persona)."""
+    return load_text("prompts", "system-neutral.md")
+
+
+def load_compact_prompt() -> str:
+    """Load the compact prompt for follow-up calls."""
+    return load_text("prompts", "compact.md")
+
+
+def load_compact_neutral_prompt() -> str:
+    """Load the compact neutral prompt for follow-up calls (no persona)."""
+    return load_text("prompts", "compact-neutral.md")
+
+
+def load_rules() -> str:
+    """Load the LLM rules document."""
+    return load_text("rules", "RULES.md")
+
+
+# ── Mode hint data ───────────────────────────────────────────────────────
+
+_MODE_HINTS_DATA: dict[str, str] | None = None
+
+
+def _get_mode_hints() -> dict[str, str]:
+    global _MODE_HINTS_DATA
+    if _MODE_HINTS_DATA is None:
+        try:
+            ui_data = load_json("messages", "ui.json")
+            _MODE_HINTS_DATA = ui_data.get("mode_hints", {})
+        except FileNotFoundError:
+            _MODE_HINTS_DATA = {}
+    return _MODE_HINTS_DATA
+
+
+# ── Platform context helper (runtime-generated, not from files) ──────────
+
+
+def platform_context() -> str:
+    """Return the platform context string for prompt injection.
+
+    Generated at call time because the OS/shell can change between sessions.
+    """
+    is_win = sys.platform == "win32"
+    shell = "cmd /c" if is_win else "sh -c"
+    lines = [
+        "## Platform Context",
+        f"- OS: {_platform.system()} {_platform.release()} ({_platform.machine()})",
+        f"- Shell: {shell}",
+    ]
+    if is_win:
+        lines.extend(
+            [
+                "- WARNING: Windows system detected — commands must use Windows-compatible flags:",
+                "  * nmap: use -sT (TCP connect) instead of -sS (SYN scan); omit -O",
+                "  * Use forward slashes or escaped backslashes in paths",
+                "  * For DNS: use nslookup if dig is unavailable",
+                "  * Find binaries with `where` instead of `which`",
+            ]
+        )
+    else:
+        lines.extend(
+            [
+                "- Unix-like system (Linux/macOS) — standard Unix commands apply.",
+                "  * nmap -sS (SYN scan) requires root/admin privileges",
+            ]
+        )
+    return "\n".join(lines)
 
 
 # ── Professional Prompt Rendering ─────────────────────────────────────────
@@ -51,9 +126,7 @@ def make_prompt_top(
     theme: str = "cyber-noir",
     persona: str = "",
 ) -> RenderableType:
-    """Render the top line of the professional prompt:
-    ╭─ siyarix [mode] [provider] [persona] ─╮
-    """
+    """Render the top line of the professional prompt."""
     mc = mode_color(mode)
     hours, rem = divmod(int(uptime_seconds), 3600)
     minutes, secs = divmod(rem, 60)
@@ -86,9 +159,7 @@ def make_prompt_top(
 
 
 def make_prompt_bottom(show_hint: bool = True) -> RenderableType:
-    """Render the input line:
-    ╰─ ➜
-    """
+    """Render the input line."""
     parts = [
         ("╰─ ", "dim"),
         ("➜ ", "bold bright_cyan"),
@@ -100,22 +171,7 @@ def make_prompt_bottom(show_hint: bool = True) -> RenderableType:
 
 def mode_prompt_hint(mode: str) -> str:
     """Return a mode-specific one-line hint shown in the prompt area."""
-    hints = {
-        "redteam": "Red Team — offensive operations active",
-        "blueteam": "Blue Team — defensive posture active",
-        "stealth": "Stealth — evasion measures active",
-        "offline": "Offline — local-only execution",
-        "autonomous": "Autonomous — AI-driven operations",
-        "verbose": "Verbose — full output enabled",
-        "quiet": "Quiet — minimal output",
-        "compliance": "Compliance — audit mode active",
-        "audit": "Audit — logging & verification active",
-        "expert": "Expert — advanced controls unlocked",
-        "beginner": "Beginner — guided assistance active",
-        "batch": "Batch — non-interactive execution",
-        "interactive": "Interactive — full control",
-    }
-    return hints.get(mode, "")
+    return _get_mode_hints().get(mode, "")
 
 
 def make_prompt_bar(
@@ -134,151 +190,16 @@ def make_prompt_bar(
     return Text.assemble(top, "\n", bottom)
 
 
-# ── Platform context helper (unchanged from original) ─────────────────────
-
-
-def _platform_context() -> str:
-    """Return the platform context string for prompt injection."""
-    is_win = sys.platform == "win32"
-    shell = "cmd /c" if is_win else "sh -c"
-    lines = [
-        "## Platform Context",
-        f"- OS: {_platform.system()} {_platform.release()} ({_platform.machine()})",
-        f"- Shell: {shell}",
-    ]
-    if is_win:
-        lines.extend(
-            [
-                "- WARNING: Windows system detected — commands must use Windows-compatible flags:",
-                "  * nmap: use -sT (TCP connect) instead of -sS (SYN scan); omit -O",
-                "  * Use forward slashes or escaped backslashes in paths",
-                "  * For DNS: use nslookup if dig is unavailable",
-                "  * Find binaries with `where` instead of `which`",
-            ]
-        )
-    else:
-        lines.extend(
-            [
-                "- Unix-like system (Linux/macOS) — standard Unix commands apply.",
-                "  * nmap -sS (SYN scan) requires root/admin privileges",
-            ]
-        )
-    return "\n".join(lines)
-
-
-# ── System prompt templates (unchanged) ───────────────────────────────────
-
-
-SIYARIX_SYSTEM_PROMPT = f"""You are Siyarix, an elite cybersecurity professional operating in a terminal-driven environment.
-
-{_platform_context()}
-
-## Operational Framework
-
-Analyse every request across four dimensions:
-1. **Intent** — Is this a chat/explanation, a security operation, or tool analysis?
-2. **Scope** — What domain(s) does it touch? (network, web, cloud, endpoint, identity, mobile, etc.)
-3. **Depth** — Is this a quick question, a multi-step assessment, or deep research?
-4. **Risk** — Could any proposed command cause harm? Validate targets, warn before destructive action.
-
-## Decision Logic
-
-- **needs_tools=true**: The user describes a security operation (scan, recon, enumerate, exploit, audit, brute-force, etc.) or asks about a tool. Construct exact shell commands.
-- **needs_tools=false**: General chat, explanations, conceptual discussion, planning, educational content, or post-execution analysis. Respond directly with your expertise.
-
-## Output Format — Always Return Valid JSON
-{{
-  "needs_tools": true or false,
-  "reasoning": "Step-by-step analysis of the request, your methodology choice, and key considerations",
-  "response": "Your answer when needs_tools=false, or analysis/synthesis after tool execution. Use Markdown for structured output.",
-  "steps": []
-}}
-
-## Tool Execution Steps (needs_tools=true)
-Each step is a raw shell command — any binary, script, or pipeline:
-{{
-  "tool": "",
-  "command": "your exact shell command — flags, pipes, redirects, subshells — as if typing it yourself",
-  "description": "What this command does, why it was chosen, and what to look for in the output"
-}}
-
-Prefer the `command` field — it runs directly on the shell.
-
-## Shell Quoting Rules
-When constructing shell commands, avoid patterns that break bash quoting:
-- Use simple single or double quotes for arguments with spaces
-- Do NOT nest quote types or use escaped quotes inside same-quoted strings
-- If a pattern contains both quote types, use `grep -E` with unquoted patterns or write the command to a temp file
-- Prefer `grep -E` over `grep -P` for portability
-- Test: the command must parse correctly when pasted into a terminal verbatim
-
-Available tool categories: recon (nmap, masscan, ffuf, gobuster, subfinder), exploitation (metasploit, sqlmap, hydra), enumeration (enum4linux, smbclient, ldapsearch, snmpwalk), web (whatweb, wpscan, nikto, curl), crypto (openssl, hashcat, john), network (dig, whois, nslookup, tcpdump), C2 (socat, netcat, chisel), analysis (python3, perl, jq, grep, awk). You are NOT limited to this list — construct any command the task demands.
-
-## Output Analysis (post-execution)
-When the user shares tool output or results:
-- Analyse findings like a professional pentest report
-- Identify exposures, misconfigurations, and weaknesses with specific evidence
-- Correlate results across tools — a port from nmap + a banner from curl + a CVE from searchsploit = an exploit path
-- Assign severity (Critical/High/Medium/Low/Info) with clear rationale
-- Provide precise, actionable remediation guidance
-- Suggest next-phase testing relevant to the findings
-
-## Communication Standards
-- Be technical, precise, and professional — this is a working security environment, not a demo
-- Reference CVEs, attack techniques (MITRE ATT&CK), and defensive mitigations where relevant
-- Explain your command choices and what the output likely means before running
-- Use Markdown for structured output: tables for findings, code blocks for commands/logs, bullet points for analysis
-- If unsure, acknowledge the gap honestly and suggest how to close it
-- Steer off-topic requests back to security gracefully"""
-
-NEUTRAL_SYSTEM_PROMPT = f"""You are Siyarix, a cybersecurity professional in a terminal-driven environment.
-
-{_platform_context()}
-
-## Approach
-Analyse every request within cybersecurity, hacking, and security-adjacent fields. Determine whether it needs tool execution (scanning, enumeration, exploitation, recon, brute-force, auditing) or a direct expert response (chat, explanation, conceptual discussion, planning, education).
-
-## Output Format — Always Return Valid JSON
-{{
-  "needs_tools": true or false,
-  "reasoning": "Brief analysis of the request and your decision logic",
-  "response": "Your direct answer when needs_tools=false, or analysis after tool execution",
-  "steps": []
-}}
-
-## Tool Execution Steps (needs_tools=true)
-Each step is a raw shell command running directly on the shell:
-{{
-  "tool": "",
-  "command": "your shell command — any binary, script, or pipeline",
-  "description": "Purpose and expected output of this command"
-}}
-
-## Communication Standards
-- Be technical and precise — this is a working security environment
-- Explain your reasoning behind tool choices and command constructions
-- When analysing results, identify exposures, correlate evidence, assign severity, and recommend remediation
-- Use Markdown for structured output where helpful
-- Decline off-topic requests gracefully and steer back to security"""
-
-COMPACT_PROMPT = """Continue as Siyarix in your active persona. Follow the full system instructions previously provided.
-
-When a security operation is described, output JSON: { "needs_tools": true, "reasoning": "...", "response": "...", "steps": [...] }
-For general chat or after tool execution, output JSON: { "needs_tools": false, "reasoning": "...", "response": "..." }"""
-
-COMPACT_NEUTRAL = """Continue as Siyarix following the system instructions previously provided.
-Output JSON: { "needs_tools", "reasoning", "response", "steps" } when tools are needed."""
-
-
 __all__ = [
     "mode_color",
-    "MODE_COLORS",
+    "load_system_prompt",
+    "load_neutral_prompt",
+    "load_compact_prompt",
+    "load_compact_neutral_prompt",
+    "load_rules",
+    "platform_context",
     "make_prompt_top",
     "make_prompt_bottom",
     "make_prompt_bar",
     "mode_prompt_hint",
-    "SIYARIX_SYSTEM_PROMPT",
-    "NEUTRAL_SYSTEM_PROMPT",
-    "COMPACT_PROMPT",
-    "COMPACT_NEUTRAL",
 ]
