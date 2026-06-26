@@ -32,6 +32,7 @@ _THEME_ALIASES: dict[str, str] = {
     "neon": "synthwave",
     "minimal": "eclipse",
     "system": "cyber-noir",
+    "enterprise": "arctic",
 }
 
 # ---------------------------------------------------------------------------

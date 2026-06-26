@@ -52,7 +52,8 @@ from ..audit_log import AuditEventType, AuditSeverity, audit
 from ..branding import available_themes, print_banner
 from ..chat import start_chat, CommandProfile, CommandProfileStore, CROSS_PLATFORM_COMMANDS
 from ..config import SettingsStore, get_config_dir
-from ..compat import IntentRouter, SessionKernel, ExecutionEngine, ExecutionMode
+from ..compat import SessionKernel, ExecutionEngine, ExecutionMode
+from ..core.router import IntentRouter
 from ..registry import ToolRegistry
 from ..exceptions import ValidationError
 from ..health import get_health
@@ -1183,8 +1184,8 @@ def discover(
         return
 
     instruction = f"scan and discover all services on {target}"
-    engine = _get_engine("integrated")
-    result = run_async(engine.execute(instruction, interactive=True))
+    scan_engine = _get_engine("integrated")
+    result = run_async(scan_engine.execute(instruction, interactive=True))
 
     if export and result.all_findings:
         import json
