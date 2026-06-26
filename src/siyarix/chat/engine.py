@@ -569,6 +569,8 @@ class LLMEngineMixin:
 
     def _should_use_compact(self) -> bool:
         """Indicate whether to send the compact system prompt."""
+        if not self._settings.get("token_saver", False):
+            return False
         return self._llm_calls > 0 and bool(self._llm_calls % self.SYSTEM_REFRESH_INTERVAL)
 
     def _build_system_prompt(self, compact: bool = False) -> str:
@@ -917,6 +919,8 @@ class LLMEngineMixin:
                         )
                     else:
                         _goal_with_context = instruction_with_target
+                    token_saver_enabled = self._settings.get("token_saver", False)
+                    is_first = True if not token_saver_enabled else (self._llm_calls <= 1)
                     plan_result = await agent.planner_autonomous.plan(
                         _goal_with_context,
                         system_prompt=plan_sys_prompt,
@@ -924,7 +928,7 @@ class LLMEngineMixin:
                         tool_schemas=tool_dicts,
                         available_tools=tool_names,
                         history=self._get_conversation_history(),
-                        is_first_call=(self._llm_calls <= 1),
+                        is_first_call=is_first,
                     )
                     llm_plan = plan_result
                     llm_reasoning = (
@@ -1084,6 +1088,8 @@ class LLMEngineMixin:
                         self._llm_calls += 1
                         compact = self._should_use_compact()
                         wave_sys_prompt = self._build_system_prompt(compact=compact)
+                        token_saver_enabled = self._settings.get("token_saver", False)
+                        is_first_wave = not token_saver_enabled
                         plan = await agent.planner_autonomous.plan(
                             wave_goal,
                             system_prompt=wave_sys_prompt,
@@ -1091,7 +1097,7 @@ class LLMEngineMixin:
                             tool_schemas=tool_dicts,
                             available_tools=tool_names,
                             history=self._get_conversation_history(),
-                            is_first_call=False,
+                            is_first_call=is_first_wave,
                         )
                         llm_model = provider_name or "none"
                     except asyncio.TimeoutError:

@@ -162,3 +162,32 @@ async def test_chat_loop_basic(chat_mock):
             await chat_mock.start_chat()
             # Loop should terminate because /exit sets _running = False
             assert mock_ask.call_count == 2
+
+
+def test_should_use_compact_with_token_saver(chat_mock):
+    chat_mock.SYSTEM_REFRESH_INTERVAL = 15
+
+    # 1. When token_saver is False (default) -> should_use_compact should always be False
+    chat_mock._settings.set("token_saver", False)
+    chat_mock._llm_calls = 5
+    assert chat_mock._should_use_compact() is False
+
+    # 2. When token_saver is True -> should_use_compact should be True for calls 1-14, and False for multiples of 15
+    chat_mock._settings.set("token_saver", True)
+    
+    # 0 calls -> False
+    chat_mock._llm_calls = 0
+    assert chat_mock._should_use_compact() is False
+    
+    # 5 calls -> True
+    chat_mock._llm_calls = 5
+    assert chat_mock._should_use_compact() is True
+
+    # 15 calls -> False (multiple of 15 refresh interval)
+    chat_mock._llm_calls = 15
+    assert chat_mock._should_use_compact() is False
+
+    # 16 calls -> True
+    chat_mock._llm_calls = 16
+    assert chat_mock._should_use_compact() is True
+

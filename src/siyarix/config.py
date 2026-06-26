@@ -114,6 +114,7 @@ DEFAULTS: dict[str, Any] = {
     "history_retention_days": 90,
     "multiline": False,
     "auto_save_session": False,
+    "token_saver": False,
 }
 
 # Human-readable descriptions
@@ -166,6 +167,7 @@ DESCRIPTIONS: dict[str, str] = {
     "history_retention_days": "Days to retain command history (0 = forever, default: 90)",
     "multiline": "Enable multiline input mode (Enter=newline, Alt+Enter=submit)",
     "auto_save_session": "Auto-save session logs on exit (default: false — no footprint)",
+    "token_saver": "Optimize token usage by sending compact system prompts after the first call (default: false)",
 }
 
 
