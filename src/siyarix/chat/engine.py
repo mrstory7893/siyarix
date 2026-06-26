@@ -918,7 +918,43 @@ class LLMEngineMixin:
                             f"If more investigation is needed, plan the remaining steps."
                         )
                     else:
-                        _goal_with_context = instruction_with_target
+                        session_findings = self._session.context.get("findings", [])
+                        session_outputs = self._session.context.get("previous_outputs", [])
+                        if session_findings or session_outputs:
+                            parts = [f"Original request: {instruction_with_target}\n\n"]
+                            parts.append("[Existing session data from prior investigation]\n")
+                            if session_outputs:
+                                parts.append("Previous tool outputs (last 5):\n")
+                                for line in session_outputs[-5:]:
+                                    parts.append(f"  {line[:200]}\n")
+                            if session_findings:
+                                parts.append(
+                                    f"\nPreviously discovered findings: "
+                                    f"{len(session_findings)} total\n"
+                                )
+                                for f in session_findings[:15]:
+                                    sev = f.get("severity", "info").upper()
+                                    title = f.get(
+                                        "title",
+                                        f.get("description", f.get("detail", "?")),
+                                    )
+                                    parts.append(f"  - [{sev}] {title}\n")
+                            parts.append(
+                                "\nYou already have existing session data from prior investigation. "
+                                "Analyse these findings and determine: does the user's request "
+                                "require additional tool execution, or can you synthesise a "
+                                "comprehensive report from the existing data?\n"
+                                "- If the user is asking for a report/summary/synthesis → "
+                                "set needs_tools=false and provide the full report using "
+                                "existing findings.\n"
+                                "- If the user is asking for NEW investigation not covered "
+                                "by existing data → set needs_tools=true and plan only "
+                                "the missing steps.\n"
+                                "Do NOT re-run tools that already have results."
+                            )
+                            _goal_with_context = "".join(parts)
+                        else:
+                            _goal_with_context = instruction_with_target
                     token_saver_enabled = self._settings.get("token_saver", False)
                     is_first = True if not token_saver_enabled else (self._llm_calls <= 1)
                     plan_result = await agent.planner_autonomous.plan(
@@ -1060,12 +1096,32 @@ class LLMEngineMixin:
                     )
                 )
 
-            # Store outputs for next wave context
+            # Store outputs for next wave context and record in persistent chat session history
             for s in plan.steps:
                 result = s.result or {}
-                output = (result.get("output") or "").strip()[:2000]
+                output = (result.get("output") or "").strip()
+                error = (result.get("error") or "").strip()
+                success = result.get("status") == "success"
                 cmd_label = f"$ {s.command}" if s.command else s.tool
-                all_outputs.append(f"• {cmd_label} ({s.description}):\n{output}\n")
+
+                # Truncate output for wave context to not overload tokens
+                wave_output = output[:2000]
+                all_outputs.append(f"• {cmd_label} ({s.description}):\n{wave_output}\n")
+
+                # Record command execution to persistent session history
+                log_content = f"Command: {cmd_label}\n"
+                if output:
+                    log_content += f"Output:\n{output[:4000]}\n"
+                    if len(output) > 4000:
+                        log_content += "...[output truncated]\n"
+                if error:
+                    log_content += f"Error:\n{error[:4000]}\n"
+                    if len(error) > 4000:
+                        log_content += "...[error truncated]\n"
+                log_content += f"Status: {'Success' if success else 'Failed'}"
+
+                self._session.add_message("assistant", f"Executed command: {cmd_label}")
+                self._session.add_message("user", f"Command output:\n{log_content}")
 
             # Ask LLM whether processing is complete or another iteration is needed
             if llm_connected and llm_call_fn is not None:
@@ -1074,11 +1130,16 @@ class LLMEngineMixin:
                     f"Completed execution wave {wave + 1}. Results so far:\n\n"
                     f"{''.join(all_outputs)}\n\n"
                     "Analyse these results. Decide: is the original request now fully satisfied?\n"
-                    "- If YES → set needs_tools=false and provide a concise final response.\n"
-                    "- If NO and only 1-2 more commands would complete it → set needs_tools=true.\n"
-                    "- If NO and many more commands are needed → set needs_tools=false and "
-                    "summarise what was found so far instead of continuing indefinitely.\n"
-                    "Prefer stopping early with a good summary over endless waves of probing."
+                    "- If YES → set needs_tools=false and provide a detailed final report "
+                    "addressing all aspects of the original request (findings, exploitation "
+                    "paths, remediation).\n"
+                    "- If NO → set needs_tools=true. Plan the next wave (1-3 targeted commands) "
+                    "to continue investigating. Prioritise commands that yield the most useful "
+                    "information for the user's original goal.\n"
+                    "Do NOT stop early when the user has explicitly asked for a full report, "
+                    "exploitation analysis, or deep assessment. Only set needs_tools=false if "
+                    "the target is completely unreachable, all plausible investigation paths "
+                    "have been exhausted, or the user confirms they are satisfied."
                 )
                 with console.status(
                     "[bold cyan]LLM analysing wave results...[/bold cyan]",
@@ -1118,6 +1179,10 @@ class LLMEngineMixin:
                     self._print_assistant(summary)
             else:
                 plan = None
+
+        # ── Save outputs to session context for follow-up requests ────────
+        if all_outputs:
+            self._session.context["previous_outputs"] = all_outputs
 
         # ── Bottom stats line ────────────────────────────────────────────
         total_duration = time.time() - total_start
@@ -1299,6 +1364,16 @@ class LLMEngineMixin:
                 stream: bool = False,
                 history: list[dict] | None = None,
             ) -> dict[str, Any]:
+                system_param: Any = system_prompt
+                if system_prompt:
+                    system_param = [
+                        {
+                            "type": "text",
+                            "text": system_prompt,
+                            "cache_control": {"type": "ephemeral"}
+                        }
+                    ]
+
                 if stream:
 
                     async def _gen() -> Any:
@@ -1306,10 +1381,11 @@ class LLMEngineMixin:
                         msgs = hist_msgs + [{"role": "user", "content": user_prompt}]
                         async with anthropic_client.messages.stream(
                             model=model,
-                            system=system_prompt,
+                            system=system_param,
                             messages=msgs,  # type: ignore[arg-type]
                             max_tokens=2000,
                             temperature=0.3,
+                            extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
                         ) as stream_ctx:
                             async for text in stream_ctx.text_stream:
                                 yield text
@@ -1319,10 +1395,11 @@ class LLMEngineMixin:
                 msgs = hist_msgs + [{"role": "user", "content": user_prompt}]
                 msg = await anthropic_client.messages.create(
                     model=model,
-                    system=system_prompt,
+                    system=system_param,
                     messages=msgs,  # type: ignore[arg-type]
                     max_tokens=2000,
                     temperature=0.3,
+                    extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
                 )
                 content_block = msg.content[0] if msg.content else None
                 return {
