@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
-from siyarix.compat import IntentRouter, RiskTier
+from siyarix.core.router import IntentRouter, RiskTier
 
 
 def test_intent_router_high_risk_for_exploit() -> None:

@@ -9,14 +9,12 @@ from siyarix.compat import (
     EngineResult,
     ExecutionEngine,
     ExecutionMode,
-    IntentRoute,
-    IntentRouter,
     OperationCard,
-    RiskTier,
     SessionContext,
     SessionKernel,
     SessionPersistenceLevel,
 )
+from siyarix.core.router import IntentRoute, IntentRouter, RiskTier
 from siyarix.registry import RiskLevel
 
 
