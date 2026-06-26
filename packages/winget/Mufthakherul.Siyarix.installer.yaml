@@ -11,7 +11,7 @@
       "Architecture": "x64",
       "InstallerType": "portable",
       "InstallerUrl": "https://github.com/mufthakherul/siyarix/releases/download/v1.0.0/siyarix-install.ps1",
-      "InstallerSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "InstallerSha256": "dff8516fedd01ec7ff826f0b9af350b1ee5aaa429a681a5e2839585911925866",
       "InstallLocationRequired": false,
       "RequireExplicitUpgrade": false
     }

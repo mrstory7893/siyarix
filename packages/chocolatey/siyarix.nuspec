@@ -24,7 +24,7 @@ This package installs Siyarix via pip. Python 3.11+ is required.
     <projectUrl>https://github.com/mufthakherul/siyarix</projectUrl>
     <packageSourceUrl>https://github.com/mufthakherul/siyarix</packageSourceUrl>
     <projectSourceUrl>https://github.com/mufthakherul/siyarix</projectSourceUrl>
-    <docsUrl>https://siyarix.dev/docs</docsUrl>
+    <docsUrl>https://siyarix.github.io/docs</docsUrl>
     <bugTrackerUrl>https://github.com/mufthakherul/siyarix/issues</bugTrackerUrl>
     <tags>siyarix cybersecurity security agent cli pentest ai automation</tags>
     <copyright>2026 MD MUFTHAKHERUL ISLAM MIRAZ</copyright>
