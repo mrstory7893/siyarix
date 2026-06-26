@@ -153,6 +153,9 @@ class LLMEngineMixin:
                     self._llm_calls += 1
                 else:
                     response = self._generate_text_response(instruction) or ""
+                    if not response:
+                        response = self._build_offline_fallback_response(instruction)
+                    self._print_assistant(response)
             if response:
                 self._session.add_message("assistant", response or "")
             return
@@ -549,11 +552,11 @@ class LLMEngineMixin:
             f"Hello, {username}. Good {time_of_day}.\n\n"
             "I'm Siyarix — an open-source, AI-powered CLI assistant focused on cybersecurity. "
             "I am currently under active development.\n\n"
-            "My principal creator is Mufthakherul, but as an open-source project, "
+            "My principal Path creator is Mufthakherul, but as an open-source project, "
             "maybe many developers from around the world contribute to building and improving me. "
-            "I am genuinely grateful to every contributor who helps shape Siyarix "
-            "and keeps it relevant in the modern era.\n\n"
-            "If you would like to contribute, please visit my repository:\n"
+            "I am genuinely grateful to every contributor who helps shape me "
+            "and keeps me relevant in the modern era.\n\n"
+            "If you would like to contribute, please visit my website:\n"
             f"{website_url}\n\n"
             "Useful commands:\n\n"
             "  help\n"
@@ -571,37 +574,55 @@ class LLMEngineMixin:
     def _build_system_prompt(self, compact: bool = False) -> str:
         """Build the system prompt for the LLM.
 
-        When *compact* is True, return a short reminder instead of the full prompt
-        to save context window tokens (first call and every N calls use full).
+        Loads prompt templates from external data files (with user overrides
+        in ~/.siyarix/data/prompts/), appends dynamic platform context,
+        user custom instructions, workspace context files, and a reference
+        to the full rules document.
 
-        Appends any user-configured *additional_system_message* and workspace
-        context files (AGENTS.md, SOUL.md) when present.
+        When *compact* is True, return a short reminder instead of the full
+        prompt to save context window tokens (first call and every N calls
+        use full).
         """
         from ..personas import build_persona_prompt, get_persona
         from .prompts import (
-            COMPACT_NEUTRAL,
-            COMPACT_PROMPT,
-            NEUTRAL_SYSTEM_PROMPT,
-            SIYARIX_SYSTEM_PROMPT,
+            load_compact_neutral_prompt,
+            load_compact_prompt,
+            load_neutral_prompt,
+            load_system_prompt,
+            load_rules,
+            platform_context,
         )
 
         persona_name = self._settings.get("persona") or "auto"
 
         if compact:
             if persona_name == "none":
-                prompt = COMPACT_NEUTRAL
+                prompt = load_compact_neutral_prompt()
             else:
-                p = get_persona(persona_name)  # noqa: F811
+                p = get_persona(persona_name)
                 label = p["label"] if p else "default"
-                prompt = f"## Active Persona: {label}\n{COMPACT_PROMPT}"
+                prompt = f"## Active Persona: {label}\n{load_compact_prompt()}"
         elif persona_name == "none":
-            prompt = NEUTRAL_SYSTEM_PROMPT
+            prompt = load_neutral_prompt()
         else:
             preamble = build_persona_prompt(persona_name)
+            system_prompt = load_system_prompt()
             if preamble:
-                prompt = preamble + "\n\n" + SIYARIX_SYSTEM_PROMPT
+                prompt = preamble + "\n\n" + system_prompt
             else:
-                prompt = SIYARIX_SYSTEM_PROMPT
+                prompt = system_prompt
+
+        # ── Rules reference (appended to full prompts only) ───────────────
+        if not compact:
+            try:
+                rules_text = load_rules()
+                prompt += "\n\n" + rules_text
+            except FileNotFoundError:
+                pass
+
+        # ── Dynamic platform context (runtime-generated) ──────────────────
+        if not compact:
+            prompt += "\n\n" + platform_context()
 
         # ── User custom instructions ──────────────────────────────────────
         extra = self._settings.get("additional_system_message", "").strip()
