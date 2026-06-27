@@ -920,9 +920,11 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
     def _gather_provider_status(self) -> dict[str, tuple[str, str]]:
         """Return a concise status map for supported providers.
 
-        Map keys -> (icon, reason)
+        Performs live health checks for local providers instead of
+        showing static availability. Map keys -> (icon, reason).
         """
         from ..providers import ProviderManager
+        from ..provider_utils import check_provider_health, list_provider_models
 
         pm = ProviderManager.get_instance()
         status: dict[str, tuple[str, str]] = {}
@@ -959,8 +961,21 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
             elif profile.api_key_env and key:
                 status[prov_name] = ("✓", "configured")
             else:
-                # local providers (no api_key_env)
-                status[prov_name] = ("⚠", "available (local)")
+                # Local provider — perform live health check
+                base_url = self._settings.get(f"{prov_name}_url") or ""
+                try:
+                    if check_provider_health(prov_name, base_url, timeout=1.0):
+                        try:
+                            models = list_provider_models(prov_name, base_url)
+                            count = len(models)
+                            label = f"running ({count} models)" if count else "running"
+                        except Exception:
+                            label = "running"
+                        status[prov_name] = ("✓", label)
+                    else:
+                        status[prov_name] = ("✗", "stopped")
+                except Exception:
+                    status[prov_name] = ("✗", "stopped")
 
         return status
 
