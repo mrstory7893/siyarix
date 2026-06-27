@@ -1771,7 +1771,9 @@ class RegistryPlanner:
                 if prefer_tool and kw == prefer_tool:
                     pos = max(0, pos - 10)
                 if pos <= 5 or not has_comprehensive:
-                    if best_pos is None or pos < best_pos:
+                    if best_pos is None:
+                        best_pos = pos
+                    elif pos < best_pos:
                         best_pos = pos
                         best_kw = kw
                         best_tool = tool
@@ -2981,8 +2983,8 @@ class RegistryPlanner:
                     ("masscan", "Mass port scan", "--rate 1000 --top-ports 100"),
                 ],
             ]
-            probe_steps = []
-            last_step_id = None
+            probe_steps: list[dict[str, Any]] = []
+            last_step_id: str | None = None
             for group in probe_groups:
                 for tool, desc, flags in group:
                     actual_tool = tool
@@ -3242,7 +3244,13 @@ class RegistryPlanner:
                 pos = words.index(kw)
                 if prefer_tool and kw == prefer_tool:
                     pos = max(0, pos - 10)
-                if best_pos is None or pos < best_pos:
+                if best_pos is None:
+                    best_pos = pos
+                    best_kw = kw
+                    best_tool = tool
+                    best_desc = desc
+                    best_flags = flags
+                elif pos < best_pos:
                     best_pos = pos
                     best_kw = kw
                     best_tool = tool
