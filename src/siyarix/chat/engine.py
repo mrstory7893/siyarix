@@ -475,6 +475,7 @@ class LLMEngineMixin:
         lowered = instruction.lower()
 
         suggestions = []
+        # Network / scanning
         if any(kw in lowered for kw in ("ping", "icmp", "reachable")):
             suggestions.append("  • **`ping example.com`** — ICMP ping connectivity test")
         if any(kw in lowered for kw in ("scan", "port", "nmap")):
@@ -491,20 +492,47 @@ class LLMEngineMixin:
             suggestions.append("  • **`brute force ssh on target`** — credential testing")
         if any(kw in lowered for kw in ("smb", "windows", "netbios")):
             suggestions.append("  • **`smb enum on 10.0.0.1`** — SMB enumeration")
-        if any(kw in lowered for kw in ("cloud", "aws", "azure", "gcp")):
-            suggestions.append("  • **`cloud audit on example.com`** — cloud assessment")
         if any(kw in lowered for kw in ("wifi", "wireless", "wpa")):
             suggestions.append("  • **`wifi audit`** — wireless assessment")
         if any(kw in lowered for kw in ("headers", "http", "security headers")):
             suggestions.append("  • **`headers on example.com`** — HTTP security headers")
         if any(kw in lowered for kw in ("cors", "cross")):
             suggestions.append("  • **`cors check on example.com`** — CORS policy")
+        # Cloud
+        if any(kw in lowered for kw in ("cloud", "aws", "azure", "gcp")):
+            suggestions.append("  • **`cloud audit on example.com`** — cloud assessment")
+        # Forensics
+        if any(kw in lowered for kw in ("forensic", "memory", "dump", "volatility")):
+            suggestions.append("  • **`analyze memory dump memory.raw`** — memory forensics analysis")
+        if any(kw in lowered for kw in ("disk", "filesystem", "carving", "recover")):
+            suggestions.append("  • **`forensic analysis on disk_image.dd`** — disk forensics")
+        if any(kw in lowered for kw in ("malware", "yara", "scan file")):
+            suggestions.append("  • **`scan file suspicious.exe with yara`** — YARA rule matching")
+        # Code / SAST
+        if any(kw in lowered for kw in ("code", "source", "review", "semgrep", "static analysis")):
+            suggestions.append("  • **`sast scan on /path/to/code`** — static code security analysis")
+        if any(kw in lowered for kw in ("secrets", "credentials", "gitleaks", "leaked")):
+            suggestions.append("  • **`scan for secrets in /path/to/repo`** — secrets detection")
+        # IaC / compliance
+        if any(kw in lowered for kw in ("terraform", "iac", "checkov", "cloudformation")):
+            suggestions.append("  • **`check iac in /path/to/terraform`** — IaC security scanning")
+        if any(kw in lowered for kw in ("compliance", "audit", "cis", "benchmark")):
+            suggestions.append("  • **`compliance audit on target`** — compliance check")
+        # Container
+        if any(kw in lowered for kw in ("container", "docker", "image", "trivy")):
+            suggestions.append("  • **`scan container ubuntu:latest`** — container vulnerability scan")
+        # OSINT
+        if any(kw in lowered for kw in ("osint", "recon", "email", "social")):
+            suggestions.append("  • **`osint on example.com`** — OSINT gathering")
+        # Active Directory
+        if any(kw in lowered for kw in ("ad", "active directory", "domain", "kerberos")):
+            suggestions.append("  • **`ad enum on dc.example.com`** — Active Directory enumeration")
 
         if suggestions:
             return (
                 "I couldn't build a complete plan from your request. "
                 "Based on what you described, here are some suggestions:\n\n"
-                + "\n".join(suggestions[:5])
+                + "\n".join(suggestions[:8])
                 + "\n\nType **`/help`** to see all available commands."
             )
 
@@ -516,7 +544,12 @@ class LLMEngineMixin:
             "  • **`port scan <target>`** — TCP port scan\n"
             "  • **`web audit <url>`** — web application audit\n"
             "  • **`dns recon <domain>`** — DNS enumeration\n"
-            "  • **`vuln scan <target>`** — vulnerability scan\n\n"
+            "  • **`vuln scan <target>`** — vulnerability scan\n"
+            "  • **`analyze memory dump <file>`** — memory forensics\n"
+            "  • **`sast scan <path>`** — static code analysis\n"
+            "  • **`container scan <image>`** — container vulnerability scan\n"
+            "  • **`cloud audit <account>`** — cloud security audit\n"
+            "  • **`osint on <target>`** — OSINT gathering\n\n"
             "Type **`/help`** for all commands, or switch to **integrated** mode "
             "with `/mode integrated` for LLM-powered interpretation."
         )
