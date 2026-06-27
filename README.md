@@ -20,8 +20,8 @@
   <a href="https://codecov.io/gh/mufthakherul/siyarix">
     <img src="https://img.shields.io/codecov/c/github/mufthakherul/siyarix?style=for-the-badge&logo=codecov&logoColor=white" alt="Code Coverage"/>
   </a>
-  <a href="https://www.codefactor.io/repository/github/mufthakherul/siyarix">
-    <img src="https://img.shields.io/codefactor/grade/github/mufthakherul/siyarix?style=for-the-badge&logo=codefactor&logoColor=white&label=quality" alt="Code Quality"/>
+  <a href="https://github.com/mufthakherul/siyarix/actions/workflows/codeql.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/mufthakherul/siyarix/codeql.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=codeql" alt="CodeQL"/>
   </a>
   <a href="https://securityscorecards.dev/viewer/?uri=github.com/mufthakherul/siyarix">
     <img src="https://img.shields.io/ossf-scorecard/github.com/mufthakherul/siyarix?label=openssf%20scorecard&style=for-the-badge&logo=openssf&logoColor=white" alt="OpenSSF Scorecard"/>
