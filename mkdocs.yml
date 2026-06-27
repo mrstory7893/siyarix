@@ -1,6 +1,6 @@
 site_name: Siyarix
 site_description: AI-Native Cybersecurity Orchestration Platform — 25+ AI providers, 80+ tool parsers, 50+ CLI commands, 4 execution modes
-site_url: https://siyarix.github.io
+site_url: https://mufthakherul.github.io/siyarix/
 repo_url: https://github.com/mufthakherul/siyarix
 repo_name: mufthakherul/siyarix
 edit_uri: edit/main/docs/
@@ -97,6 +97,7 @@ extra:
       link: https://pypi.org/project/siyarix/
 
 nav:
+  - Back to Website: https://siyarix.github.io
   - Home: index.md
   - Getting Started:
       - Installation: getting-started/installation.md
