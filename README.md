@@ -17,8 +17,8 @@
   <a href="https://github.com/mufthakherul/siyarix/actions/workflows/ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/mufthakherul/siyarix/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=build" alt="Build Status"/>
   </a>
-  <a href="https://codecov.io/gh/mufthakherul/siyarix">
-    <img src="https://img.shields.io/codecov/c/github/mufthakherul/siyarix?style=for-the-badge&logo=codecov&logoColor=white" alt="Code Coverage"/>
+  <a href="https://github.com/mufthakherul/siyarix/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/mufthakherul/siyarix/ci.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=tests" alt="Tests"/>
   </a>
   <a href="https://github.com/mufthakherul/siyarix/actions/workflows/codeql.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/mufthakherul/siyarix/codeql.yml?branch=main&style=for-the-badge&logo=githubactions&logoColor=white&label=codeql" alt="CodeQL"/>
@@ -28,14 +28,14 @@
   </a>
 
   <!-- Package & Ecosystem -->
-  <a href="https://pypi.org/project/siyarix/">
-    <img src="https://img.shields.io/pypi/v/siyarix?style=for-the-badge&logo=pypi&logoColor=white&color=blue" alt="PyPI Package Version"/>
+  <a href="https://github.com/mufthakherul/siyarix">
+    <img src="https://img.shields.io/github/v/tag/mufthakherul/siyarix?style=for-the-badge&logo=github&logoColor=white&color=blue" alt="GitHub Tag"/>
   </a>
   <a href="https://pypi.org/project/siyarix/">
     <img src="https://img.shields.io/pypi/dm/siyarix?style=for-the-badge&logo=pypi&logoColor=white&color=blue" alt="PyPI Downloads"/>
   </a>
-  <a href="https://pypi.org/project/siyarix/">
-    <img src="https://img.shields.io/pypi/pyversions/siyarix?style=for-the-badge&logo=python&logoColor=white&color=blue" alt="Supported Python Versions"/>
+  <a href="https://github.com/mufthakherul/siyarix/blob/main/pyproject.toml">
+    <img src="https://img.shields.io/badge/python-3.11%20|%203.12%20|%203.13-blue?style=for-the-badge&logo=python&logoColor=white" alt="Supported Python Versions"/>
   </a>
   <a href="https://github.com/mufthakherul/siyarix">
     <img src="https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20Windows%20%7C%20Android-blue?style=for-the-badge&logo=linux&logoColor=white" alt="Supported Platforms"/>
