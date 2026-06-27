@@ -76,7 +76,7 @@ def make_nmap_handler(tool_name: str) -> ToolHandler:
 def make_web_handler(tool_name: str) -> ToolHandler:
     TARGET_FLAGS = {
         "nikto": "-h",
-        "nuclei": "-duc -u",
+        "nuclei": "-duc -nt -u",
         "gobuster": "-u",
         "ffuf": "-u",
         "wpscan": "--url",
@@ -122,7 +122,9 @@ def make_web_handler(tool_name: str) -> ToolHandler:
                 cmd.extend(flag.split() + [target])
             else:
                 cmd.append(target)
-        result = await _run(tool_name, cmd, kwargs.get("timeout", 300), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        # Nuclei: use dedicated longer timeout (default 600s) for template download on first run
+        default_timeout = 600 if tool_name == "nuclei" else 300
+        result = await _run(tool_name, cmd, kwargs.get("timeout", default_timeout), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
         return _make_result(tool_name, result)
 
     return handler

@@ -61,7 +61,7 @@ _DEEP_SCAN_PASSES: list[DeepScanProfile] = [
         name="vulnerability",
         description="Template-based vulnerability scanning",
         tools=[
-            {"tool": "nuclei", "args": {"severity": "low,medium,high,critical"}, "timeout": 300},
+            {"tool": "nuclei", "args": {"severity": "low,medium,high,critical", "flags": "-duc -nt"}, "timeout": 600},
             {"tool": "nikto", "args": {"flags": "-C all"}, "timeout": 300},
         ],
         timeout=600,
