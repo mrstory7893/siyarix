@@ -137,5 +137,3 @@ We encourage good-faith security research. If you follow this coordinated disclo
 ---
 
 *SPDX-License-Identifier: AGPL-3.0-or-later*
-
-

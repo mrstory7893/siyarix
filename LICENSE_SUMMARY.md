@@ -71,9 +71,8 @@ For network service providers (SaaS): ensure modified source code is available t
 |--------|---------|
 | [Ethical Use Policy](ETHICAL_USE.md) | Defines acceptable and prohibited use cases |
 | [Responsible AI Use](RESPONSIBLE_AI_USE.md) | Governs AI-assisted and autonomous platform features |
-| [Commercial License](COMMERCIAL_LICENSE.md) | Alternative terms for organizations that cannot comply with AGPL |
 | [Contributing Guide](CONTRIBUTING.md) | How to contribute to the project |
-| [Trademark Policy](TRADEMARK_POLICY.md) | Proper use of Siyarix branding and logos |
+| [Trademark Policy](BRAND_POLICY.md) | Proper use of Siyarix branding and logos |
 
 ---
 

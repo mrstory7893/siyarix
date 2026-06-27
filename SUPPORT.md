@@ -73,21 +73,6 @@ When opening a support issue on GitHub, please include the following information
 
 ---
 
-## Commercial Support
-
-For enterprise deployments requiring:
-
-- Guaranteed response times (SLA)
-- Custom integration and development
-- Dedicated support engineer
-- Priority bug fixes and feature requests
-- On-premise deployment assistance
-- Training and onboarding sessions
-
-See [COMMERCIAL_LICENSE.md](COMMERCIAL_LICENSE.md) or contact the project maintainers.
-
----
-
 ## Contributing
 
 Found a bug you can fix? Have a feature idea you want to implement? See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution workflow, coding standards, and pull request guidelines.
