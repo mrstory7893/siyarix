@@ -43,7 +43,7 @@
   <a href="https://github.com/mufthakherul/siyarix/pkgs/container/siyarix">
     <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready"/>
   </a>
-  
+
   <!-- Code Standards & Compliance -->
   <a href="https://github.com/mufthakherul/siyarix/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/mufthakherul/siyarix?style=for-the-badge&logo=gnu&logoColor=white&color=blue" alt="License"/>
@@ -93,8 +93,8 @@
 
 ---
 
-> ✋ **We are moving!**  
-> To better support our growing community, Siyarix will soon be migrating from my personal repository (`mufthakherul/siyarix`) to its very own dedicated GitHub organization: **`siyarix/siyarix`**.  
+> ✋ **We are moving!**
+> To better support our growing community, Siyarix will soon be migrating from my personal repository (`mufthakherul/siyarix`) to its very own dedicated GitHub organization: **`siyarix/siyarix`**.
 > Please read our [Migration Announcement](announcement/repo-migration-announcement.md) for all the details.
 
 ---
@@ -103,15 +103,15 @@
 
 Hello there! Welcome to **Siyarix**. What started as a personal project has steadily grown into a capable AI-driven Cybersecurity Orchestration Platform, built to help streamline security operations.
 
-Have you ever wished you could just tell your security tools what to do in plain English? With Siyarix, you can! Whether you say *"scan this subnet for open ports"*, *"enumerate services on our main web server,"* or even *"perform a full external reconnaissance on example.com,"* Siyarix takes your natural language objective, plans the necessary steps, executes the right tools safely, analyzes the outputs, and generates a clear report for you. 
+Have you ever wished you could just tell your security tools what to do in plain English? With Siyarix, you can! Whether you say *"scan this subnet for open ports"*, *"enumerate services on our main web server,"* or even *"perform a full external reconnaissance on example.com,"* Siyarix takes your natural language objective, plans the necessary steps, executes the right tools safely, analyzes the outputs, and generates a clear report for you.
 
-Under the hood, Siyarix is beautifully crafted in **Python 3.11+**. It features a modern, type-safe operations experience powered by **Typer CLI** for seamless terminal commands, **Rich** for gorgeous, readable terminal output, and **Pydantic** for robust data modeling. 
+Under the hood, Siyarix is beautifully crafted in **Python 3.11+**. It features a modern, type-safe operations experience powered by **Typer CLI** for seamless terminal commands, **Rich** for gorgeous, readable terminal output, and **Pydantic** for robust data modeling.
 
 ## 💡 Why Siyarix? The Problem We Solve
 
-Security operations can be complex. Security professionals often juggle dozens of disparate CLI tools, each with its own obscure syntax, parsing messy text outputs, and manually stringing together workflows. 
+Security operations can be complex. Security professionals often juggle dozens of disparate CLI tools, each with its own obscure syntax, parsing messy text outputs, and manually stringing together workflows.
 
-Siyarix acts as your intelligent, tireless co-pilot. It bridges the gap between **human intent** and **machine execution**. 
+Siyarix acts as your intelligent, tireless co-pilot. It bridges the gap between **human intent** and **machine execution**.
 - **No more memorizing flags:** Let the AI remember that `-p- -sV -T4` is the right `nmap` flag combination for your current goal.
 - **Automated parsing:** Siyarix automatically reads the raw output of dozens of common security tools and turns it into structured, actionable intelligence.
 - **Scale your efforts:** What normally takes manual typing and correlation can now be orchestrated with a simple plain-English sentence.
@@ -207,7 +207,7 @@ The easiest way to install Siyarix is via Python's package manager:
 pip install siyarix
 ```
 
-*Prefer a different method?* We also support **Docker, Homebrew (macOS), Winget (Windows), Termux, and Linux** packages! 
+*Prefer a different method?* We also support **Docker, Homebrew (macOS), Winget (Windows), Termux, and Linux** packages!
 
 Check out our incredibly detailed [Installation Guide](docs/getting-started/installation.md) for step-by-step instructions for all platforms and optional extras.
 
@@ -260,9 +260,9 @@ Want to dive much deeper into what makes Siyarix tick? We have written extensive
 
 Siyarix is a tool built **strictly for authorized security testing, legitimate research, and defensive operations**.
 
-> **🛑 CRITICAL REMINDER:** You must NEVER use Siyarix to scan, test, or interact with systems, applications, or networks without explicit, documented permission from their respective owners. 
+> **🛑 CRITICAL REMINDER:** You must NEVER use Siyarix to scan, test, or interact with systems, applications, or networks without explicit, documented permission from their respective owners.
 
-***We strongly believe in building tools that protect, not harm.*** 
+***We strongly believe in building tools that protect, not harm.***
 
 Before running your first scan, please read our full [ETHICAL_USE.md](ETHICAL_USE.md) and [RESPONSIBLE_AI_USE.md](RESPONSIBLE_AI_USE.md) policies.
 
@@ -270,9 +270,9 @@ Before running your first scan, please read our full [ETHICAL_USE.md](ETHICAL_US
 
 ## 🤝 Contributing
 
-Siyarix started as a personal project, but it is **now officially public** and open for contributions! 
+Siyarix started as a personal project, but it is **now officially public** and open for contributions!
 
-We **warmly welcome** contributors of all skill levels. Whether you want to fix a typo in the documentation, add a new AI provider, or write a parser for a security tool you love, your help is deeply appreciated. 
+We **warmly welcome** contributors of all skill levels. Whether you want to fix a typo in the documentation, add a new AI provider, or write a parser for a security tool you love, your help is deeply appreciated.
 
 > 👋 **Heads Up:** To better support our growing community of contributors, Siyarix will soon be moving to its own dedicated GitHub organization (`siyarix/siyarix`). Don't worry, all links will seamlessly redirect!
 

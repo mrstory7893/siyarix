@@ -3,7 +3,7 @@
 
 # ☁️ Cloud Security Scanning
 
-Securing your cloud environments doesn't have to be a headache. Siyarix comes packed with multi-cloud security scanning capabilities right out of the box, covering AWS, Azure, GCP, Kubernetes, and Docker. 
+Securing your cloud environments doesn't have to be a headache. Siyarix comes packed with multi-cloud security scanning capabilities right out of the box, covering AWS, Azure, GCP, Kubernetes, and Docker.
 
 > [!NOTE]
 > Siyarix is smart! It only queries a provider's SDK if it detects that the respective cloud credentials are available on your system.
@@ -112,7 +112,7 @@ When a scan finishes, you'll get detailed results including the Check ID, Severi
 
 ## 🚀 What's Next? (Planned Enhancements)
 
-We're constantly improving! While our current scanner is great for quick, provider-specific checks, we are actively building a comprehensive `CloudScanner`. 
+We're constantly improving! While our current scanner is great for quick, provider-specific checks, we are actively building a comprehensive `CloudScanner`.
 
 Future updates will include:
 - Deep multi-account support

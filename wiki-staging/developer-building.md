@@ -81,7 +81,7 @@ A quick look at the directory layout:
 
 ```text
 siyarix/
-├── src/siyarix/          # Package source 
+├── src/siyarix/          # Package source
 ├── tests/                # Test suite
 ├── packages/             # Platform-specific packaging
 ├── docs/                 # Documentation (Built with MkDocs)

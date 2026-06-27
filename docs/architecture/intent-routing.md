@@ -4,7 +4,7 @@
 > 👋 **Hey there!** Siyarix is a personal passion project built by a single developer that is growing and under active development. Some of the architectural components and features described on this page might currently be **Planned, Work in Progress, or basic implementations**. Stay tuned as it evolves! 🚀
 
 
-Welcome to the **Intent Routing** subsystem! Think of this as the intelligent traffic cop of the application. It listens to what the user wants to do (their input), figures out how risky that action is, and directs it down the safest and most efficient execution path. 
+Welcome to the **Intent Routing** subsystem! Think of this as the intelligent traffic cop of the application. It listens to what the user wants to do (their input), figures out how risky that action is, and directs it down the safest and most efficient execution path.
 
 This system teams up with two other key components:
 - **NLP Engine**: For super-smart, zero-dependency semantic parsing.

@@ -4,9 +4,9 @@
 > 👋 **Hey there!** Siyarix is a personal passion project built by a single developer that is growing and under active development. Some of the architectural components and features described on this page might currently be **Planned, Work in Progress, or basic implementations**. Stay tuned as it evolves! 🚀
 
 
-Welcome to the **Tool Execution Pipeline** documentation! This guide explains how AI-planned tools are seamlessly discovered, registered, evaluated, and executed within Siyarix. 
+Welcome to the **Tool Execution Pipeline** documentation! This guide explains how AI-planned tools are seamlessly discovered, registered, evaluated, and executed within Siyarix.
 
-Our pipeline is designed to be robust and secure, handling everything from cross-platform installation and availability checks to output parsing and error recovery. 
+Our pipeline is designed to be robust and secure, handling everything from cross-platform installation and availability checks to output parsing and error recovery.
 
 ---
 
@@ -15,7 +15,7 @@ Our pipeline is designed to be robust and secure, handling everything from cross
 Understanding the tool lifecycle is key to working with Siyarix. Every time a tool is invoked, it flows through this structured pipeline:
 
 ```text
-Discovery 🔍 (ToolRegistry) 
+Discovery 🔍 (ToolRegistry)
   → Registration 📝 (ToolCapabilityGraph)
   → Availability Check ✅ (ToolAvailabilityContext)
   → Permission Gate 🛡️ (PermissionGate + ShellReview)
@@ -28,14 +28,14 @@ Discovery 🔍 (ToolRegistry)
   → Installation 📦 (ToolInstaller)
 ```
 
-> [!NOTE]  
+> [!NOTE]
 > This pipeline ensures that no tool is executed blindly. Every step adds a layer of security, context, or functionality!
 
 ---
 
 ## 🗂️ Tool Registry
 
-The `ToolRegistry` (found in `registry.py`) is the beating heart of our tool management system. Think of it as the central hub that keeps track of what tools can do, how to call them, and how to understand their output. 
+The `ToolRegistry` (found in `registry.py`) is the beating heart of our tool management system. Think of it as the central hub that keeps track of what tools can do, how to call them, and how to understand their output.
 
 It maintains:
 - **`ToolCapabilityGraph`**: For capability-based lookups and chaining.
@@ -48,10 +48,10 @@ from siyarix.registry import ToolRegistry
 registry = ToolRegistry()
 
 # Discover curated tools and interpreter environments
-registry.discover_from_path()  
+registry.discover_from_path()
 
 # Scan every executable available on the system's $PATH
-registry.scan_path()           
+registry.scan_path()
 ```
 
 ### 📝 Registration
@@ -174,7 +174,7 @@ Tools are grouped into logical categories to help the AI select the right approa
 
 ## 🕸️ Tool Capability Graph
 
-The `ToolCapabilityGraph` (`tool_graph.py`) isn't just a list—it's an intelligent graph that understands how tools relate to one another. 
+The `ToolCapabilityGraph` (`tool_graph.py`) isn't just a list—it's an intelligent graph that understands how tools relate to one another.
 
 ### 🔗 Pathfinding for Tool Chaining
 Want to automatically pass the output of one tool to another? The graph finds the path:
@@ -216,19 +216,19 @@ Here is how a typical handler wraps a tool:
 def make_nmap_handler(tool_name: str) -> ToolHandler:
     async def handler(**kwargs: Any) -> dict[str, Any]:
         target = kwargs.get("target", "")
-        
+
         # Guard against empty targets
         if not target:
             return {"status": "error", "error": "No target specified", "tool": tool_name}
-            
+
         flags = kwargs.get("flags", "-sT -T4 --top-ports 100")
         cmd = [tool_name] + flags.split() + [target]
-        
+
         # Execute safely
         result = await _run(tool_name, cmd, kwargs.get("timeout", 120))
-        
+
         return {
-            "status": "success" if not result.exit_code else "error", 
+            "status": "success" if not result.exit_code else "error",
             "output": result.stdout
         }
     return handler
@@ -243,7 +243,7 @@ Not all tools are external binaries. Some (`internal_tools.py`) interact directl
 
 ## 🚦 Availability Evaluation
 
-Before a tool is even suggested to the AI, `ToolAvailabilityContext` checks if it can actually run in the current environment. 
+Before a tool is even suggested to the AI, `ToolAvailabilityContext` checks if it can actually run in the current environment.
 
 ### 📡 Availability Signals
 Signals are JSON expressions that define requirements:
@@ -288,7 +288,7 @@ desc = describe_tool("nuclei")         # Returns: "Template-based vulnerability 
 
 ## ⚡ Execution Engine
 
-At the core of execution is `subprocess_utils.py`, built for ultimate safety and performance. 
+At the core of execution is `subprocess_utils.py`, built for ultimate safety and performance.
 
 It provides multiple execution modes:
 - `safe_run_async`: Standard non-blocking execution.
@@ -308,7 +308,7 @@ Execution isn't just about running commands; it's about running them *safely*.
 
 ## 🧩 Output Parsing
 
-Running a tool is only half the battle. `ParserRegistry` automatically converts messy CLI output into structured `Finding` objects. 
+Running a tool is only half the battle. `ParserRegistry` automatically converts messy CLI output into structured `Finding` objects.
 
 ### 🔄 The Finding Lifecycle
 1. **Parse**: The dedicated parser reads the raw stdout.
@@ -330,7 +330,7 @@ from siyarix.tool_installer import ToolInstaller
 installer = ToolInstaller()
 
 # Automatically detects OS and runs the right package manager
-result = installer.install("nmap") 
+result = installer.install("nmap")
 ```
 
 > [!TIP]

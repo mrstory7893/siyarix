@@ -1,6 +1,6 @@
 # 🪄 The Onboarding Wizard
 
-Welcome to your first run with Siyarix! 
+Welcome to your first run with Siyarix!
 
 We know that configuring security tools, managing API keys, and setting up environments can be a headache. That's exactly why we built the **Interactive Onboarding Wizard**.
 
@@ -14,13 +14,13 @@ Usually, you won't even need to think about this. If Siyarix detects that it has
 
 ```bash
 # Auto-starts if not initialized
-siyarix                    
+siyarix
 
 # Or, if you want to start it manually:
-siyarix init               
+siyarix init
 
 # Need to start fresh? Re-run the wizard from scratch:
-siyarix init --force       
+siyarix init --force
 ```
 
 ---
@@ -50,13 +50,13 @@ Curious about what the wizard actually does? Here is the complete breakdown of t
 The most important step of the wizard is connecting Siyarix to its AI brain. You have two main paths:
 
 ### ☁️ Cloud Providers
-If you prefer raw power and speed, you can connect Siyarix to commercial APIs. 
-*Supported:* OpenAI, Anthropic (Claude), Google Gemini, Groq, Together AI, DeepSeek, xAI (Grok), Mistral, and many more. 
+If you prefer raw power and speed, you can connect Siyarix to commercial APIs.
+*Supported:* OpenAI, Anthropic (Claude), Google Gemini, Groq, Together AI, DeepSeek, xAI (Grok), Mistral, and many more.
 *(Note: These require you to paste in your API key during setup).*
 
 ### 🏠 Local Offline Engines
 Working in a sensitive environment? You can run Siyarix **100% offline** with zero data leaving your machine!
-*Supported:* Ollama, LM Studio, llama.cpp, vLLM. 
+*Supported:* Ollama, LM Studio, llama.cpp, vLLM.
 
 **Hardware-Based Recommendations:**
 If you choose to run local models, the wizard analyzes your available RAM and GPU to suggest the absolute best cybersecurity-tuned model for your machine:

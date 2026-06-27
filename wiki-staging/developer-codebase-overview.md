@@ -1,6 +1,6 @@
 # 🗺️ Codebase Overview
 
-Welcome to the Siyarix codebase! This document serves as a quick tour of the project structure and core modules. Siyarix started as a personal passion project to explore AI-native orchestration, and it's continuously growing thanks to active development. 
+Welcome to the Siyarix codebase! This document serves as a quick tour of the project structure and core modules. Siyarix started as a personal passion project to explore AI-native orchestration, and it's continuously growing thanks to active development.
 
 > [!TIP]
 > If you are new to the codebase, I recommend starting with the **Agent Orchestrator (`core/`)** and **Interactive Chat (`chat/`)** modules, as they form the core experience!
@@ -23,7 +23,7 @@ src/siyarix/
 │   ├── repl.py              # SiyarixChat: prompt_toolkit REPL
 │   ├── handlers.py          # Slash command handlers
 │   ├── openai_compat.py     # Adapter for AI providers
-│   └── ...                  
+│   └── ...
 │
 ├── core/                    # 🧠 Agent Orchestration Kernel
 │   ├── __init__.py          # AgentCore
@@ -38,7 +38,7 @@ src/siyarix/
 ├── parsers/                 # 🔍 Tool Output Parser Subsystem
 │   ├── __init__.py          # ParserRegistry
 │   ├── nmap_parser.py       # Nmap XML/text parser
-│   └── ...                  
+│   └── ...
 │
 ├── output/                  # 🎨 Output Engine
 │   └── __init__.py          # Renders formats (JSON, YAML, HTML, etc.)
@@ -59,7 +59,7 @@ src/siyarix/
     ├── opsec.py             # Basic OPSEC controls
     ├── permission_gate.py   # Command permission control
     ├── workflow.py          # Workflow engine
-    └── ...                  
+    └── ...
 ```
 
 ## 🏗️ Key Subsystems

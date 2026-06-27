@@ -95,7 +95,7 @@ Before any plan is even considered for execution, the **Validator** class (`siya
 | **Argument safety** | Verifies all required arguments are present and blocks unrecognized parameters. |
 
 > [!TIP]
-> **Automatic Recovery**  
+> **Automatic Recovery**
 > If validation fails, Siyarix doesn't just give up. It attempts to apply a recovery action—like retrying (`RETRY`), fixing parameters (`RETRY_MODIFIED`), switching tools (`RETRY_ALTERNATIVE`), or escalating to the user (`ESCALATE`).
 
 ---
@@ -186,7 +186,7 @@ For scenarios requiring absolute minimal detection, the **StealthEngine** (`siya
 | `4` | **Paranoid** | Tor routing, MAC rotation, DNS tunneling, C2 mimicry. |
 
 > [!IMPORTANT]
-> **Safe Commands Limit**  
+> **Safe Commands Limit**
 > The Stealth Engine restricts which commands can be run at higher tiers. If an operation is deemed too "noisy" for your active tier, Siyarix will block it or warn you.
 
 ---
@@ -233,7 +233,7 @@ entry = {
 }
 ```
 
-> [!NOTE]  
+> [!NOTE]
 > Because each entry hashes the previous one, the audit log is **tamper-evident**. Modifying a past entry will break the entire cryptographic chain, instantly alerting you to foul play.
 
 ### 🔑 CredentialStore

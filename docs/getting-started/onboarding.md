@@ -1,6 +1,6 @@
 # 🪄 The Onboarding Wizard
 
-Welcome to your first run with Siyarix! 
+Welcome to your first run with Siyarix!
 
 We know that configuring security tools, managing API keys, and setting up environments can be a headache. That's exactly why we built the **Interactive Onboarding Wizard**.
 
@@ -14,13 +14,13 @@ Usually, you won't even need to think about this. If Siyarix detects that it has
 
 ```bash
 # Auto-starts if not initialized
-siyarix                    
+siyarix
 
 # Or, if you want to start it manually:
-siyarix init               
+siyarix init
 
 # Need to start fresh? Re-run the wizard from scratch:
-siyarix init --force       
+siyarix init --force
 ```
 
 ---

@@ -1,7 +1,7 @@
 /* Siyarix Custom Premium Stylesheet */
 
 /* Rounded and shadowed cards / admonitions */
-.md-typeset .admonition, 
+.md-typeset .admonition,
 .md-typeset details {
   border-radius: 8px !important;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
@@ -16,15 +16,15 @@
 }
 
 /* Smooth color/background transitions */
-body, 
-.md-header, 
+body,
+.md-header,
 .md-footer,
-.md-sidebar, 
-.md-nav__link, 
+.md-sidebar,
+.md-nav__link,
 .md-tabs__link,
 .md-social__link,
 .md-search__form {
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
               border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
               box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1),

@@ -9,7 +9,7 @@ tags:
 
 # 📦 Installation Guide
 
-Welcome! We are thrilled you're ready to install Siyarix. 
+Welcome! We are thrilled you're ready to install Siyarix.
 
 We have designed Siyarix to be as lightweight and universally compatible as possible. Whether you are running a high-powered security workstation, a cloud instance, or even a mobile device, we have got you covered.
 
@@ -21,7 +21,7 @@ Before we begin, let's make sure your system is ready:
 - **Python:** Version **3.11 or later** is required.
 - **Memory (RAM):** Minimum 512 MB, but we **strongly recommend 4 GB+** if you plan on running intensive, multi-wave AI autonomous operations.
 - **Storage:** ~500 MB of free disk space is recommended to comfortably house the security tool dependencies Siyarix might download.
-- **Operating Systems Supported:** 
+- **Operating Systems Supported:**
   - Linux (Debian, Ubuntu, Kali, Arch, etc.)
   - macOS
   - Windows (PowerShell 5.1+)
@@ -31,7 +31,7 @@ Before we begin, let's make sure your system is ready:
 
 ## 🚀 The Fastest Way: PyPI (Recommended)
 
-The easiest and most common way to install Siyarix is directly through Python's package manager, `pip`. 
+The easiest and most common way to install Siyarix is directly through Python's package manager, `pip`.
 
 Open your terminal and run:
 
@@ -41,7 +41,7 @@ pip install siyarix
 
 ### ✨ Optional "Extras" Packages
 
-By default, the command above installs the core engine. However, Siyarix is highly modular! You can install specific "extras" to pull in SDKs for your favorite AI providers or extra UI components. 
+By default, the command above installs the core engine. However, Siyarix is highly modular! You can install specific "extras" to pull in SDKs for your favorite AI providers or extra UI components.
 
 *Just append the extra in brackets like this: `pip install "siyarix[extra_name]"`*
 
@@ -122,9 +122,9 @@ python -m venv .venv
 
 # 4. Activate the virtual environment
 # On Linux/macOS:
-source .venv/bin/activate  
+source .venv/bin/activate
 # On Windows:
-.\.venv\Scripts\Activate.ps1  
+.\.venv\Scripts\Activate.ps1
 
 # 5. Install in editable mode with all features
 pip install -e ".[all,cli,siem]"
@@ -167,6 +167,6 @@ If you see the help menu, **congratulations! 🎉** Siyarix is successfully inst
 
 ## ⏭️ Next Steps
 
-Now that you have the platform installed, it's time to wire up its brain! 
+Now that you have the platform installed, it's time to wire up its brain!
 
 Head over to the **[Onboarding Wizard](onboarding.md)** guide. Siyarix features an incredible 11-step interactive wizard that will guide you through setting up your AI provider API keys and checking your local security tools.

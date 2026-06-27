@@ -1,6 +1,6 @@
 # Disclaimer
 
-**Last Updated:** June 2026  
+**Last Updated:** June 2026
 **Applies to:** Siyarix v1.0.0 and all prior versions
 
 ---

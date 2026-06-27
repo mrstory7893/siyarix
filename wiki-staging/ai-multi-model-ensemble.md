@@ -4,7 +4,7 @@
 > 👋 **Hey there!** Siyarix is a personal passion project built by a single developer that is growing and under active development. Some of the architectural components and features described on this page might currently be **Planned, Work in Progress, or basic implementations**. Stay tuned as it evolves! 🚀
 
 
-Ever wish you could ask a panel of experts a question and go with the majority opinion? That's exactly what the `ProviderManager.ensemble_decide()` method does! 
+Ever wish you could ask a panel of experts a question and go with the majority opinion? That's exactly what the `ProviderManager.ensemble_decide()` method does!
 
 By running a single query across multiple AI providers simultaneously, this method returns the **majority-vote result**. This approach gives your application three large superpowers:
 - **Hallucination Resistance:** Catches when one AI model goes completely off the rails.
@@ -59,7 +59,7 @@ async def ensemble_decide(
 2. **Fault Tolerance:** If one provider crashes, it doesn't bring down the ship. Errors are caught and ignored.
 3. **Data Extraction:** The system normalizes responses, pulling out the core text whether the API returns a dictionary, an object, or a raw string.
 4. **Tallying the Votes:** A classic Python `collections.Counter` finds the most common response.
-5. **Declaring a Winner:** The majority response is returned. 
+5. **Declaring a Winner:** The majority response is returned.
 
 > [!WARNING]
 > If *all* providers fail to return a valid response, the method will raise a `RuntimeError`. Always ensure you have reliable fallback providers in your list!
@@ -98,7 +98,7 @@ return most_common
 
 ## 🗳️ Voting Strategy
 
-Right now, we use a straightforward **majority vote** (plurality) system. Whichever response text occurs most frequently across your selected providers is declared the winner. 
+Right now, we use a straightforward **majority vote** (plurality) system. Whichever response text occurs most frequently across your selected providers is declared the winner.
 
 Because AI ensemble decision-making is an emerging field, we've focused heavily on creating a reliable, reliable foundation:
 

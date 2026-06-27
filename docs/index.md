@@ -6,13 +6,13 @@ title: Siyarix Documentation - AI-Native Cybersecurity Orchestration Platform
 
 # 📚 Siyarix Documentation (v1.0.0)
 
-Welcome to the official documentation for **Siyarix**! 👋 
+Welcome to the official documentation for **Siyarix**! 👋
 
-Whether you are here to run your first automated scan, build an advanced incident response playbook, or contribute to our core AI engine, you are in the right place. 
+Whether you are here to run your first automated scan, build an advanced incident response playbook, or contribute to our core AI engine, you are in the right place.
 
 ## 🌟 What is Siyarix?
 
-At its core, Siyarix is an **AI-native cybersecurity orchestration platform**. 
+At its core, Siyarix is an **AI-native cybersecurity orchestration platform**.
 
 What does that mean? It means we bridge the gap between human intent and machine execution. Instead of memorizing obscure CLI flags or manually parsing text outputs, Siyarix allows you to state your security goals in plain English. It then uses advanced AI to plan the steps, orchestrates over **80+ security tools**, automatically parses their outputs, and generates beautiful, structured reports.
 
@@ -22,7 +22,7 @@ It lives right in your terminal, acting as your tireless, highly-intelligent sec
 
 ## 🚀 Quick Start
 
-Ready to dive right in? Here are a few quick commands to get you rolling. 
+Ready to dive right in? Here are a few quick commands to get you rolling.
 
 *(Note: On your very first run, a friendly Onboarding Wizard will help you set up your AI providers!)*
 
@@ -75,9 +75,9 @@ Siyarix is designed to empower a wide variety of security professionals:
 
 ## 🤝 Contributing
 
-Siyarix started as a personal passion project, but it is **now officially public** and growing fast! 
+Siyarix started as a personal passion project, but it is **now officially public** and growing fast!
 
-We **warmly welcome** contributors of all skill levels. Whether you want to fix a typo in the documentation, add a new AI provider, or write a parser for a security tool you love, your help is deeply appreciated. 
+We **warmly welcome** contributors of all skill levels. Whether you want to fix a typo in the documentation, add a new AI provider, or write a parser for a security tool you love, your help is deeply appreciated.
 
 > 👋 **Heads Up:** To better support our growing community of contributors, Siyarix will soon be moving to its very own dedicated GitHub organization (`siyarix/siyarix`). Don't worry, all links will seamlessly redirect!
 

@@ -3,7 +3,7 @@
 
 # 🪤 Deception Technology & Canary Tokens
 
-Catch attackers in the act! Deception technology flips the script, allowing you to lay traps for malicious actors inside your network. 
+Catch attackers in the act! Deception technology flips the script, allowing you to lay traps for malicious actors inside your network.
 
 > [!WARNING]
 > **Active Development Notice**: Siyarix's deception capabilities are currently under heavy construction! A `CanaryTokenManager` stub exists, and we are working hard on the full implementation, which will include honeypots, canary tokens, and trapdoor credentials.

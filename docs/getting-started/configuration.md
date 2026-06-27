@@ -1,6 +1,6 @@
 # 🎛️ Configuration Deep-Dive
 
-Welcome to the control room! 
+Welcome to the control room!
 
 Siyarix is built to be extremely flexible. Whether you are running it locally on your laptop, deploying it in a CI/CD pipeline, or running it headlessly on a remote server, our layered configuration system ensures you can customize it exactly how you need it.
 
@@ -21,7 +21,7 @@ To make Siyarix adaptable across development, production, and CI environments, w
 
 ## 🌐 Environment Variables Reference
 
-If you are automating Siyarix via scripts or CI pipelines, environment variables are your best friend. 
+If you are automating Siyarix via scripts or CI pipelines, environment variables are your best friend.
 
 | Environment Variable | What It Controls | Example |
 |----------|------------|-------------|
@@ -110,7 +110,7 @@ You don't *have* to open the `settings.toml` file manually. Siyarix provides han
 ```bash
 siyarix config list               # Show all settings beautifully formatted
 siyarix config get <key>          # Get a single value (e.g., `siyarix config get color_theme`)
-siyarix config set <key> <value>  # Set a value 
+siyarix config set <key> <value>  # Set a value
 siyarix config reset              # Reset everything back to factory defaults
 siyarix config edit               # Automatically open settings.toml in your default $EDITOR
 ```

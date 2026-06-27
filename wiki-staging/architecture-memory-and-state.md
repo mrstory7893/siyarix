@@ -113,7 +113,7 @@ Located at `siyarix/knowledge_graph.py`, the **KnowledgeGraph** is a dynamic, in
 
 ## 🧠 2. MemoryManager
 
-Located at `siyarix/memory.py`, the **MemoryManager** handles our semantic, long-term memory utilizing vector embeddings. 
+Located at `siyarix/memory.py`, the **MemoryManager** handles our semantic, long-term memory utilizing vector embeddings.
 
 > [!IMPORTANT]
 > Semantic memory empowers Siyarix to recall past learnings contextually, rather than relying on exact keyword matches.
@@ -334,7 +334,7 @@ class LearnedSkill:
 
 ## ♻️ State Lifecycle
 
-Ever wonder what happens from the moment Siyarix boots up until it safely shuts down? 
+Ever wonder what happens from the moment Siyarix boots up until it safely shuts down?
 
 ```text
 🚀 Session Start

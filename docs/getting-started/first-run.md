@@ -1,6 +1,6 @@
 # 🏃‍♂️ Your First Run
 
-You have installed Siyarix, and you are ready to take it for a spin. Awesome! 
+You have installed Siyarix, and you are ready to take it for a spin. Awesome!
 
 This guide will walk you through your very first session, from verifying the system health to executing a live command.
 
@@ -14,7 +14,7 @@ To get started, simply type the following into your terminal:
 siyarix
 ```
 
-If this is your very first time running the program, the **Onboarding Wizard** will automatically launch. It will warmly guide you through setting up your AI provider and configuring your initial preferences. 
+If this is your very first time running the program, the **Onboarding Wizard** will automatically launch. It will warmly guide you through setting up your AI provider and configuring your initial preferences.
 
 *(If you want to read more about what happens during this step, check out our [Onboarding Wizard](onboarding.md) guide.)*
 
@@ -84,7 +84,7 @@ In offline mode, Siyarix relies on a hardcoded heuristics registry to plan tasks
 
 ## 5️⃣ Enter the Interactive REPL
 
-Running single commands from the terminal is great, but Siyarix truly shines when you enter its interactive chat mode (the REPL). 
+Running single commands from the terminal is great, but Siyarix truly shines when you enter its interactive chat mode (the REPL).
 
 ```bash
 siyarix

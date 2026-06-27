@@ -3,7 +3,7 @@
 
 # 🌐 Threat Intelligence
 
-A security tool is only as good as the data it uses. Siyarix integrates directly with real-world threat intelligence feeds, allowing you to instantly perform IP reputation lookups and enrich your CVE data. 
+A security tool is only as good as the data it uses. Siyarix integrates directly with real-world threat intelligence feeds, allowing you to instantly perform IP reputation lookups and enrich your CVE data.
 
 > [!NOTE]
 > Currently, Siyarix supports AlienVault OTX and the National Vulnerability Database (NVD). We are actively building out our MITRE ATT&CK integration!

@@ -1,7 +1,7 @@
 # AI Provider Policy
 
-**Version:** 1.0.0  
-**Effective Date:** June 2026  
+**Version:** 1.0.0
+**Effective Date:** June 2026
 **Applies to:** All AI provider integrations in Siyarix v1.0.0
 
 This document defines the architecture, governance, security boundaries, and operational rules for AI provider integration in the Siyarix platform. It applies to all components that interact with AI models, whether cloud-hosted APIs or locally executed models.

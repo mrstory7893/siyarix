@@ -34,7 +34,7 @@ Think of it like a multi-layered cake:
 
 ## 1. 🛑 Danger Analysis
 
-Before a command runs, `permission_gate.py` checks it against some common dangerous patterns. 
+Before a command runs, `permission_gate.py` checks it against some common dangerous patterns.
 
 ```python
 PATTERNS = {

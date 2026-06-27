@@ -4,7 +4,7 @@
 > 👋 **Hey there!** Siyarix is a personal passion project built by a single developer that is growing and under active development. Some of the architectural components and features described on this page might currently be **Planned, Work in Progress, or basic implementations**. Stay tuned as it evolves! 🚀
 
 
-Welcome to the core of Siyarix's defense mechanism! When operating an autonomous or semi-autonomous AI system, safety and security are paramount. 
+Welcome to the core of Siyarix's defense mechanism! When operating an autonomous or semi-autonomous AI system, safety and security are paramount.
 
 > [!IMPORTANT]
 > Siyarix implements a robust, multi-layered safety architecture designed to protect your host system, secure operator data, and maintain the absolute integrity of your audit trails. Every single command passes through stages of validation, danger classification, secret redaction, and interactive review before it ever executes.
@@ -322,7 +322,7 @@ It handles strict formatting checks for elements like:
 
 ### 🤖 PlanStep Validation & Recovery
 
-Before the AI executes a plan, the validator checks every `PlanStep` (e.g., verifying it has a tool, arguments, and a valid timeout). 
+Before the AI executes a plan, the validator checks every `PlanStep` (e.g., verifying it has a tool, arguments, and a valid timeout).
 
 > [!TIP]
 > If a command fails, `plan_recovery()` steps in to suggest smart, automated fixes. For example, if `nmap` reports all filtered ports, the recovery planner might automatically suggest adding the `-Pn` flag to try again.

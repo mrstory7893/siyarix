@@ -50,7 +50,7 @@ mypy src/siyarix/   # Verify static type checking
 1. **Find or create an issue:** Let's chat about significant changes before you start work.
 2. **Branch out:** Create a fresh branch for your work: `git checkout -b feat/my-awesome-feature`.
 3. **Write code:** Make your changes, keeping the existing code conventions in mind.
-4. **Run Quality Checks:** 
+4. **Run Quality Checks:**
    ```bash
    pytest                          # Ensure tests pass
    ruff check src/ tests/          # Ensure code is lint-free

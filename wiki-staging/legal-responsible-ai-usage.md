@@ -9,7 +9,7 @@ Siyarix experiments with Artificial Intelligence to plan tasks and assist operat
 
 ## 👁️ Human Oversight is Mandatory
 
-AI is an assistant, not an autopilot. 
+AI is an assistant, not an autopilot.
 - **The Permission Gate:** Every command is checked before execution.
 - **User Confirmation:** If the AI suggests a dangerous command, execution halts, and you must explicitly approve it.
 
@@ -26,7 +26,7 @@ Current AI models can be flawed. Be aware that the AI may:
 
 ## 🛡️ Data Protection & Privacy
 
-When you use cloud-based AI providers (like OpenAI or Gemini), data leaves your machine. 
+When you use cloud-based AI providers (like OpenAI or Gemini), data leaves your machine.
 - Siyarix uses a lightweight DLP engine to try to mask basic credentials before they hit the internet.
 - For maximum privacy, Siyarix supports local, offline models (via Ollama or LM Studio) so your data never leaves your laptop.
 

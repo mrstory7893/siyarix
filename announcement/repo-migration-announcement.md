@@ -2,13 +2,13 @@
 
 **Date:** June 2026
 
-Hello everyone! 👋 
+Hello everyone! 👋
 
 I am thrilled to share a major milestone in our journey together. Siyarix is preparing to move to a brand-new home that will better serve our growing project and incredible community.
 
 ## What exactly is happening?
 
-Very soon, the Siyarix repository will be migrating from my personal GitHub account (`mufthakherul/siyarix`) to its very own dedicated GitHub organization: **`siyarix/siyarix`**. 
+Very soon, the Siyarix repository will be migrating from my personal GitHub account (`mufthakherul/siyarix`) to its very own dedicated GitHub organization: **`siyarix/siyarix`**.
 
 ## Why are we making this move?
 
@@ -70,7 +70,7 @@ While our address is changing, the heart of the project remains the same:
 
 When I first started writing the code for Siyarix, I was driven by a simple but powerful idea: *What if security tools could understand plain English? What if we could simply tell a computer what we want to accomplish, rather than painstakingly detailing how to do it step by step?*
 
-Today, that idea has grown beyond anything I could have ever imagined. This growth is entirely thanks to every single person who has used the tool, thoughtfully filed an issue, generously submitted a pull request, or simply shared the project with a colleague. 
+Today, that idea has grown beyond anything I could have ever imagined. This growth is entirely thanks to every single person who has used the tool, thoughtfully filed an issue, generously submitted a pull request, or simply shared the project with a colleague.
 
 This upcoming move isn't about leaving our humble beginnings behind; it is about pouring a stronger, sturdier foundation to support all the incredible things we will build next.
 
@@ -80,7 +80,7 @@ Siyarix truly belongs to all of us now. Let's continue building the future of se
 
 Warmly,
 
-— **MD Mufthakherul Islam Miraz**  
+— **MD Mufthakherul Islam Miraz**
 *Path Maker, Siyarix*
 
 ---

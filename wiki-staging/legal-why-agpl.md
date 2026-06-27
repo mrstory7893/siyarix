@@ -21,7 +21,7 @@ AGPL helps enforce accountability. If a modified version of Siyarix is utilized 
 
 Open-source security requires trust. You need to trust that the code does what it claims.
 
-**The AGPL keeps Siyarix open.** 
+**The AGPL keeps Siyarix open.**
 
 The project's code remains the community's work. As an operator, you deserve to know:
 - The code you audit today is exactly the code that runs tomorrow.
@@ -29,6 +29,6 @@ The project's code remains the community's work. As an operator, you deserve to 
 
 ## 💡 The Bottom Line
 
-I chose the AGPL because a cybersecurity tool without strong copyleft protection risks being closed and turned against the community that built it. 
+I chose the AGPL because a cybersecurity tool without strong copyleft protection risks being closed and turned against the community that built it.
 
 **Keep Siyarix open. Keep Siyarix safe.**

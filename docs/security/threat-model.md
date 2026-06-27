@@ -45,7 +45,7 @@ Here is what Siyarix tries to protect locally:
 ## ⚔️ Threats and Mitigations
 
 ### T1: API Key Exfiltration
-- **Defense:** The `CredentialStore` encrypts your keys locally. The DLP engine attempts to redact them from prompts. 
+- **Defense:** The `CredentialStore` encrypts your keys locally. The DLP engine attempts to redact them from prompts.
 
 ### T2: LLM Prompt Injection
 - **Defense:** The AI does not have direct access to your shell. Everything the AI suggests must pass through the `PermissionGate` and you must manually confirm hybrid commands.

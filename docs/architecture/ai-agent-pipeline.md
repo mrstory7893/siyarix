@@ -4,7 +4,7 @@
 > 👋 **Hey there!** Siyarix is a personal passion project built by a single developer that is growing and under active development. Some of the architectural components and features described on this page might currently be **Planned, Work in Progress, or basic implementations**. Stay tuned as it evolves! 🚀
 
 
-Welcome to the heart of Siyarix! The AI agent pipeline is the central nervous system that takes user inputs and transforms them into intelligent, goal-driven actions. 
+Welcome to the heart of Siyarix! The AI agent pipeline is the central nervous system that takes user inputs and transforms them into intelligent, goal-driven actions.
 
 Orchestrated by the `AgentCore`, this pipeline processes every request through a structured, highly secure lifecycle: **Plan → Execute → Observe-Reason-Act**. It supports four different operational modes and features an autonomous feedback loop, budget checking, and multi-wave execution to ensure your goals are met safely and efficiently.
 
@@ -19,15 +19,15 @@ flowchart TD
     User([User Input]) --> Router[IntentRouter]
     Router --> CM[Context Manager]
     CM --> PR[Planner Router]
-    
+
     PR -->|Heuristic| RP[Registry Planner]
     PR -->|Dynamic| AP[Autonomous Planner LLM]
-    
+
     RP --> Gate[PermissionGate + DLP Engine]
     AP --> Gate
-    
+
     Gate -->|Allow/Review| Exec[ExecutionEngine]
-    
+
     Exec --> ORA[Observe-Reason-Act Loop]
     ORA -->|Autonomous| ORA
 ```
@@ -74,7 +74,7 @@ Here's what goes into the context:
 Once the context is set, the system needs a plan of action. The **Planner Router** decides which planning strategy to use based on the current mode.
 
 ### 🛠️ RegistryPlanner (Heuristic & Deterministic)
-Used in `registry` or `offline` modes. 
+Used in `registry` or `offline` modes.
 - **How it works:** Maps intents directly to pre-defined plan templates using a keyword index.
 - **Why it's great:** With over 500 multi-word intent patterns, it's fast, deterministic, and requires no AI. It acts as a bulletproof fallback in air-gapped or offline environments.
 
@@ -98,7 +98,7 @@ Security is our top priority. Before any plan is executed, every single step mus
 - 🟡 **REVIEW:** The action is risky and requires manual user confirmation.
 - 🔴 **BLOCK:** The action violates core safety rules and is permanently denied and logged.
 
-> [!IMPORTANT]  
+> [!IMPORTANT]
 > If you are running in `strict` safety mode, many actions will default to `REVIEW` or `BLOCK` to ensure maximum safety.
 
 ---
@@ -124,7 +124,7 @@ We use two main executors:
 
 When running in `AUTONOMOUS` mode, the agent doesn't just run a script and stop. It thinks, adapts, and reacts using the **Observe-Reason-Act** loop.
 
-> [!NOTE]  
+> [!NOTE]
 > Unlike traditional architectures, reflection and learning are built natively into this loop rather than existing as a separate stage.
 
 1. 👁️ **Observe:** Collects environment state, tool outputs, scan results, and any errors.
@@ -158,14 +158,14 @@ To prevent runaway costs or endless loops, the pipeline enforces strict session-
 | Max tokens per session | 100,000 | `SIYARIX_MAX_TOKENS` |
 | Max cost per session | $2.00 | `SIYARIX_MAX_COST_USD` |
 
-> [!WARNING]  
+> [!WARNING]
 > If the limit is reached, the agent will throw a `BudgetExceededError` and immediately pause operations. You can adjust these limits via your environment variables.
 
 ---
 
 ## 📡 Streaming Event System
 
-As the pipeline runs, you're never left in the dark. All stages emit real-time events through the **EventBus**. 
+As the pipeline runs, you're never left in the dark. All stages emit real-time events through the **EventBus**.
 
 Some key events include:
 - `AGENT_START`: The agent has woken up.

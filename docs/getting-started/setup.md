@@ -1,6 +1,6 @@
 # ⚙️ Setup & Configuration
 
-Once you have installed Siyarix, the next step is connecting it to your preferred AI provider and tweaking the workspace to fit your style. 
+Once you have installed Siyarix, the next step is connecting it to your preferred AI provider and tweaking the workspace to fit your style.
 
 We have designed the setup process to be as straightforward and secure as possible.
 
@@ -8,7 +8,7 @@ We have designed the setup process to be as straightforward and secure as possib
 
 ## 🧙‍♂️ The First-Run Wizard (Recommended)
 
-The absolute easiest way to configure Siyarix is to just let the platform do it for you! 
+The absolute easiest way to configure Siyarix is to just let the platform do it for you!
 
 When you launch Siyarix for the very first time, an interactive, 11-step wizard will run automatically. It asks you a few simple questions, detects your environment, and configures everything.
 
@@ -57,16 +57,16 @@ Here is how you use the vault from the CLI:
 
 ```bash
 # Securely prompt for and store your OpenAI key (input is hidden!)
-siyarix auth set-key openai          
+siyarix auth set-key openai
 
 # List which providers you have configured
-siyarix auth show                    
+siyarix auth show
 
 # Store a custom credential for a specific security tool
-siyarix creds set <provider_or_tool> <key>   
+siyarix creds set <provider_or_tool> <key>
 
 # Rotate your master encryption key for maximum security
-siyarix creds rotate                 
+siyarix creds rotate
 ```
 
 **Why our Vault is Secure:**

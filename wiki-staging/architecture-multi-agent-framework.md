@@ -8,7 +8,7 @@ Welcome to the **Multi-Agent Framework** in Siyarix! 👋 This section provides 
 
 > [!WARNING]
 > **Status: EXPERIMENTAL — STUB IMPLEMENTATION**
-> 
+>
 > This framework is currently a placeholder infrastructure intended for future development. It is **not yet production-ready** and should not be relied upon for operational use. All agents currently return mock data and are not connected to real tool execution.
 
 ---
@@ -22,7 +22,7 @@ graph TD
     A[SwarmRouter] --> B[ReconAgent stub]
     A --> C[ExploitAgent stub]
     A --> D[ReportAgent stub]
-    
+
     B -.->|mock: open ports, services, OS detection| B
     C -.->|mock: vuln check, brute, exploit| C
     D -.->|mock: findings, summary, report| D
@@ -166,7 +166,7 @@ We have exciting plans to evolve this framework! Here’s what’s on the roadma
 
 ## 🔌 Integration with AgentCore
 
-The Swarm framework is designed to be highly modular and opt-in. 
+The Swarm framework is designed to be highly modular and opt-in.
 
 ```python
 class AgentCore:

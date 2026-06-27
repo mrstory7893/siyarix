@@ -1,6 +1,6 @@
 # 📌 The NOTICE File Explained
 
-At the root of the Siyarix project, you'll see a file called `NOTICE`. This file serves a specific legal function required by the AGPL-3.0 license. 
+At the root of the Siyarix project, you'll see a file called `NOTICE`. This file serves a specific legal function required by the AGPL-3.0 license.
 
 ## 🎯 What is the Purpose of the NOTICE?
 

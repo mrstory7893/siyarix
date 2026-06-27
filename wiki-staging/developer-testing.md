@@ -42,7 +42,7 @@ tests/
 ├── test_e2e.py                        # Basic end-to-end tests
 ├── test_providers_manager.py          # Provider tests
 ├── test_parsers/                      # Parser tests
-└── ... 
+└── ...
 ```
 
 ## ✍️ Writing Tests
@@ -64,8 +64,8 @@ Please use mock providers instead of hitting real APIs in unit tests:
 @pytest.mark.asyncio
 async def test_planner_with_mock_provider():
     planner = TaskPlanner()
-    planner.providers = [MockProvider()] 
-    
+    planner.providers = [MockProvider()]
+
     result = await planner.plan("scan test")
     assert result is not None
 ```

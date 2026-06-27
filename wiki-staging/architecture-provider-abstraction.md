@@ -6,9 +6,9 @@
 
 Welcome to the **Provider Abstraction Layer**! This component is the beating heart of our AI infrastructure. It smoothly decouples all AI-dependent components from specific model backends, making our system resilient, flexible, and fully provider-agnostic.
 
-Think of it as an intelligent traffic controller for your AI models. It effortlessly manages **26 different provider profiles** with features like automatic failover, circuit breaking, exponential backoff, and token usage tracking. Plus, it brings everything together under a single, unified `OpenAICompat` adapter. 
+Think of it as an intelligent traffic controller for your AI models. It effortlessly manages **26 different provider profiles** with features like automatic failover, circuit breaking, exponential backoff, and token usage tracking. Plus, it brings everything together under a single, unified `OpenAICompat` adapter.
 
-> [!NOTE]  
+> [!NOTE]
 > Provider states are intelligently persisted as JSON files. This ensures your AI configuration and cooldown statuses carry over seamlessly across different sessions!
 
 ---
@@ -98,7 +98,7 @@ fn_call_providers = pm.get_providers_by_capability("function_calling")
 
 ## 🌐 The 26 Provider Profiles
 
-Our system is ready out-of-the-box to connect with an impressive array of AI backends. 
+Our system is ready out-of-the-box to connect with an impressive array of AI backends.
 
 ### ☁️ Cloud Providers (API Key Required)
 
@@ -259,7 +259,7 @@ class ProviderState:
     total_cost: float
 ```
 
-> [!TIP]  
+> [!TIP]
 > Because this is saved to disk, if a provider hits a rate limit right before you close your app, it will *still* correctly skip that provider when you reboot!
 
 ---
@@ -321,7 +321,7 @@ Running models locally? `siyarix/providers/ollama_utils.py` makes it a breeze wi
 
 We take your data seriously. Before *any* information leaves your machine and hits a cloud provider, our `DLPEngine` (`siyarix/dlp.py`) scrubs it clean.
 
-> [!WARNING]  
+> [!WARNING]
 > Never disable the DLPEngine in a production cloud environment!
 
 | Data Type | Sent to Cloud Provider | Behavior for Local Models |

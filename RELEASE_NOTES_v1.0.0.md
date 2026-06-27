@@ -1,8 +1,8 @@
 # Siyarix v1.0.0 — The Dawn of Autonomous Cybersecurity Orchestration
 
-**Release Date:** June 17, 2026  
-**Version:** 1.0.0  
-**License:** AGPL-3.0-or-later  
+**Release Date:** June 17, 2026
+**Version:** 1.0.0
+**License:** AGPL-3.0-or-later
 **Author:** MD MUFTHAKHERUL ISLAM MIRAZ
 
 ---

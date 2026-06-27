@@ -1,13 +1,13 @@
 # ⚖️ Ethical Hacking Policy
 
-Siyarix is a cybersecurity orchestration tool. While it's a personal project, it's powerful, and I want to be clear about the boundaries for its ethical and legal use. 
+Siyarix is a cybersecurity orchestration tool. While it's a personal project, it's powerful, and I want to be clear about the boundaries for its ethical and legal use.
 
 > [!CAUTION]
 > **Please read this carefully.** By using Siyarix, you agree to adhere to these guidelines.
 
 ## ✅ Authorized Use
 
-Siyarix is built for defense, learning, and authorized testing. You may **only** use Siyarix against systems that you own or have explicit authorization to assess. 
+Siyarix is built for defense, learning, and authorized testing. You may **only** use Siyarix against systems that you own or have explicit authorization to assess.
 
 **Acceptable use cases include:**
 - **Your Own Infrastructure:** Systems and networks you own.

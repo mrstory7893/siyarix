@@ -104,9 +104,9 @@ PENDING → RUNNING → COMPLETED
 ```
 
 ### Dependency Resolution
-Siyarix executes steps in **topological order**. 
-- Steps with empty `depends_on` arrays run first. 
-- Independent steps run simultaneously! 
+Siyarix executes steps in **topological order**.
+- Steps with empty `depends_on` arrays run first.
+- Independent steps run simultaneously!
 - The engine uses an `asyncio.Semaphore(4)` to prevent overwhelming your system, bounding execution to 4 concurrent tasks by default.
 
 ### Retries & Persistence

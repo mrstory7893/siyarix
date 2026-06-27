@@ -1,6 +1,6 @@
 # 🚑 Troubleshooting
 
-Things don't always go according to plan, and that is okay! If you are running into issues with Siyarix, you have come to the right place. 
+Things don't always go according to plan, and that is okay! If you are running into issues with Siyarix, you have come to the right place.
 
 Below are the most common issues users face and the exact steps to fix them.
 
@@ -12,13 +12,13 @@ Below are the most common issues users face and the exact steps to fix them.
 Siyarix requires some modern Python features. Ensure you are running the correct version:
 ```bash
 # 1. Verify you are running Python 3.11 or newer
-python --version                      
+python --version
 
 # 2. Upgrade your pip (outdated pip is the #1 cause of install failures)
 pip install --upgrade pip
 
 # 3. Try installing again with verbose output to see exactly where it fails
-pip install siyarix -v                
+pip install siyarix -v
 ```
 
 ### I'm seeing weird "Import Errors" when running Siyarix.
@@ -31,7 +31,7 @@ pip install "siyarix[all]"
 Your operating system might not have Python's scripts folder added to your system `PATH`.
 ```bash
 # Workaround: You can always run Siyarix directly as a Python module!
-python -m siyarix --version           
+python -m siyarix --version
 ```
 
 ---
@@ -43,10 +43,10 @@ python -m siyarix --version
 **The Fix:**
 ```bash
 # Option A: Give it a cloud key
-export OPENAI_API_KEY="sk-..."       
+export OPENAI_API_KEY="sk-..."
 
 # Option B: Spin up a local, free AI engine
-ollama pull llama3.1 && ollama serve 
+ollama pull llama3.1 && ollama serve
 
 # Option C: Run in Offline mode (no AI needed!)
 siyarix --mode offline run "scan example.com"
@@ -57,7 +57,7 @@ siyarix --mode offline run "scan example.com"
 **The Fix:**
 ```bash
 # 1. Let Siyarix diagnose the connection for you
-siyarix health                        
+siyarix health
 
 # 2. Are you stuck behind a corporate proxy? Check your proxy settings
 siyarix config get proxy
@@ -75,16 +75,16 @@ siyarix config set proxy ""
 **The Fix:**
 ```bash
 # Debian/Ubuntu Linux
-sudo apt install nmap                
+sudo apt install nmap
 
 # macOS
-brew install nmap                     
+brew install nmap
 
 # Windows
-winget install nmap                   
+winget install nmap
 
 # Verify what Siyarix can see:
-siyarix scan --list-tools             
+siyarix scan --list-tools
 ```
 
 ---
@@ -99,10 +99,10 @@ If you run `siyarix health` and see red text, don't panic! The Health Checker br
 **The Fix:**
 ```bash
 # 1. Ensure the encryption dependency is fully installed
-pip install cryptography              
+pip install cryptography
 
 # 2. Force Siyarix to re-initialize a fresh, healthy vault
-siyarix init --force                  
+siyarix init --force
 ```
 
 ---
@@ -128,10 +128,10 @@ If your configuration is completely tangled and you just want to start fresh:
 
 ```bash
 # Option A: Just reset your settings back to factory defaults
-siyarix config reset                  
+siyarix config reset
 
 # Option B: The Nuclear Option (Deletes history, credentials, cache, and settings)
-rm -rf ~/.siyarix                     
+rm -rf ~/.siyarix
 ```
 
 ---

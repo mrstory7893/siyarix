@@ -4,7 +4,7 @@
 > 👋 **Hey there!** Siyarix is a personal passion project built by a single developer that is growing and under active development. Some of the architectural components and features described on this page might currently be **Planned, Work in Progress, or basic implementations**. Stay tuned as it evolves! 🚀
 
 
-Siyarix leverages a sophisticated, **multi-wave execution loop** to power its iterative, LLM-driven workflows. Instead of merely firing off a single batch of commands and hoping for the best, Siyarix operates in sequential "waves." 
+Siyarix leverages a sophisticated, **multi-wave execution loop** to power its iterative, LLM-driven workflows. Instead of merely firing off a single batch of commands and hoping for the best, Siyarix operates in sequential "waves."
 
 After each wave, the LLM analyzes the results to intelligently determine the next steps. This progressive approach unlocks truly autonomous, multi-step security operations! Plus, context is seamlessly carried over between waves, empowering the LLM to learn and build upon its previous findings as it works through complex tasks.
 
@@ -18,12 +18,12 @@ After each wave, the LLM analyzes the results to intelligently determine the nex
 Here is a simplified look at how the multi-wave loop operates from start to finish:
 
 ```text
-User Request 
-  ↳ LLM Analyzes & Plans 
-      ↳ Wave 1 Executes 
-          ↳ LLM Analyzes Results 
-              ↳ Wave 2 Executes (if needed) 
-                  ↳ ... 
+User Request
+  ↳ LLM Analyzes & Plans
+      ↳ Wave 1 Executes
+          ↳ LLM Analyzes Results
+              ↳ Wave 2 Executes (if needed)
+                  ↳ ...
                       ↳ Final Response Delivered (capped at a configurable max waves)
 ```
 
@@ -85,7 +85,7 @@ for wave in range(max_waves):
 
 ### 🧠 Memory & Context Carry-Over
 
-One of the most powerful features of the multi-wave loop is its memory. Each wave's output is collected and injected directly into the LLM's next analysis prompt. 
+One of the most powerful features of the multi-wave loop is its memory. Each wave's output is collected and injected directly into the LLM's next analysis prompt.
 
 This rich context package includes:
 
@@ -124,19 +124,19 @@ async def execute_multi_wave(self, goal: AgentGoal, max_waves: int = 5) -> Agent
             constraints={**goal.constraints, "context": wave_context},
         )
         wave_result = await self.execute_goal(wave_goal, plan)
-        
+
         all_findings.extend(wave_result.findings)
-        
+
         # Early termination check
         if not wave_result.findings:
             break
-            
+
         # Plan the next wave if supported
         if hasattr(self._planner, "plan_next_wave"):
             plan = self._planner.plan_next_wave(wave_result.findings, goal)
         else:
             plan = None
-            
+
     return AgentResult(goal=goal.description, findings=all_findings, success=True)
 ```
 
@@ -243,9 +243,9 @@ Executing AI-generated commands requires a reliable safety net. *Every single co
 
 ## ⚡ CLS Pre-Execution (Integrated Mode)
 
-In Integrated Mode, Siyarix features an intelligent optimization: **Continuous Learning System (CLS) Pre-Execution**. 
+In Integrated Mode, Siyarix features an intelligent optimization: **Continuous Learning System (CLS) Pre-Execution**.
 
-Before the LLM even begins its initial planning phase, the CLS may automatically execute cached, high-confidence skills (those with ≥ 80% confidence). By gathering this rich base context *before* Wave 1, Siyarix feeds a much more detailed picture to the LLM's first prompt. 
+Before the LLM even begins its initial planning phase, the CLS may automatically execute cached, high-confidence skills (those with ≥ 80% confidence). By gathering this rich base context *before* Wave 1, Siyarix feeds a much more detailed picture to the LLM's first prompt.
 
 > [!TIP]
 > CLS Pre-Execution dramatically reduces the total number of waves needed to complete a task, significantly speeding up complex operations!

@@ -1,8 +1,8 @@
 # 💬 Interactive Chat (REPL)
 
-Welcome to the beating heart of Siyarix! 
+Welcome to the beating heart of Siyarix!
 
-While you can certainly run Siyarix commands one-by-one from your standard terminal, the true power of the platform unlocks when you enter the **Interactive Chat Mode** (also known as the REPL - Read-Eval-Print Loop). 
+While you can certainly run Siyarix commands one-by-one from your standard terminal, the true power of the platform unlocks when you enter the **Interactive Chat Mode** (also known as the REPL - Read-Eval-Print Loop).
 
 Think of it as a dedicated, context-aware command center where you and your AI co-pilot work together to hunt down vulnerabilities.
 
@@ -47,7 +47,7 @@ We hate typing out long IP addresses and file paths just as much as you do. The 
 
 ## 🪟 Split-Pane Layout
 
-Want to keep an eye on the logs while you chat? Siyarix supports a gorgeous vertical split-pane view. 
+Want to keep an eye on the logs while you chat? Siyarix supports a gorgeous vertical split-pane view.
 
 Just type `/split` in the chat!
 
@@ -60,7 +60,7 @@ Just type `/split` in the chat!
 
 ## 🗃️ Session Management & Memory
 
-Siyarix doesn't suffer from amnesia. Your entire session is seamlessly persisted to a local SQLite database (`~/.siyarix/sessions.db`). 
+Siyarix doesn't suffer from amnesia. Your entire session is seamlessly persisted to a local SQLite database (`~/.siyarix/sessions.db`).
 
 This means Siyarix remembers:
 - The exact commands you ran and when you ran them.
@@ -133,6 +133,6 @@ If you want to bypass natural language and issue direct commands to the Siyarix 
 
 ## ⏭️ Next Steps
 
-You are now a master of the CLI and the REPL. 
+You are now a master of the CLI and the REPL.
 
 Ready to put it all together? Check out the **[Security Workflows](user-security-workflows)** guide to see how Siyarix handles real-world penetration testing and incident response scenarios!

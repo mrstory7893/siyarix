@@ -9,7 +9,7 @@ Siyarix is a free, open-source project distributed under the GNU Affero General 
 
 ## 📉 Limitation of Liability
 
-In no event shall the copyright holders or contributors be held liable for any claim, damages, or other liabilities arising from your use of Siyarix. 
+In no event shall the copyright holders or contributors be held liable for any claim, damages, or other liabilities arising from your use of Siyarix.
 
 ## 🛡️ No Security Guarantees
 

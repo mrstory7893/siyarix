@@ -1,6 +1,6 @@
 # 🔌 The Siyarix Plugin Exception
 
-Siyarix is licensed under the **AGPL-3.0-or-later** license to ensure the core project remains open. However, I also want to encourage developers to build useful third-party plugins. 
+Siyarix is licensed under the **AGPL-3.0-or-later** license to ensure the core project remains open. However, I also want to encourage developers to build useful third-party plugins.
 
 To make this possible, I've added a special **Plugin Exception** to the AGPL-3.0 terms.
 
@@ -21,7 +21,7 @@ A "Plugin" is strictly defined as any file, script, or module that:
 ### 2. The Conditions
 
 If you distribute a combined work (Siyarix + Your Plugin), you must adhere to these rules:
-- **The Core Stays Open:** Siyarix itself must remain under AGPL-3.0-or-later. 
+- **The Core Stays Open:** Siyarix itself must remain under AGPL-3.0-or-later.
 - **Your Plugin is Yours:** Your plugins may be licensed under *any* terms.
 - **No False Endorsement:** You must not misrepresent the origin of Siyarix or imply an official endorsement.
 - **Include This Notice:** You must include a copy of this exact exception notice.

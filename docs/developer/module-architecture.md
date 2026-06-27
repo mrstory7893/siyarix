@@ -44,7 +44,7 @@ The Execution Engine operates in three modes, dispatched by the Task Planner:
 ## 🗺️ Task Planners
 
 Siyarix uses a dual-planner architecture:
-- **Registry Planner:** A deterministic, template-based planner using keyword matching. 
+- **Registry Planner:** A deterministic, template-based planner using keyword matching.
 - **Autonomous Planner:** The LLM-driven planner that translates natural language into execution steps.
 
 ## 🚧 Permission Gate (`permission_gate.py`)

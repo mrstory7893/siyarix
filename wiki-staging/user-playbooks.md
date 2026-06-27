@@ -3,7 +3,7 @@
 
 # 📓 Playbook Engine
 
-Why do the same tasks manually over and over? The Playbook Engine allows you to create reusable, multi-step workflows for incident response, vulnerability assessments, and routine security checks. 
+Why do the same tasks manually over and over? The Playbook Engine allows you to create reusable, multi-step workflows for incident response, vulnerability assessments, and routine security checks.
 
 Using simple YAML files, you can define steps, variables, and dependencies, and Siyarix's DAG (Directed Acyclic Graph) engine will execute them flawlessly.
 
@@ -118,7 +118,7 @@ siyarix playbook validate my-playbook.yml
 
 ## 🛡️ Error Handling
 
-Security tools fail. Networks drop. Siyarix handles this gracefully. 
+Security tools fail. Networks drop. Siyarix handles this gracefully.
 
 You can configure automatic retries and timeouts for every step:
 

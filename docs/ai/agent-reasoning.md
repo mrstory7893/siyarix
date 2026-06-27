@@ -4,7 +4,7 @@
 > 👋 **Hey there!** Siyarix is a personal passion project built by a single developer that is growing and under active development. Some of the architectural components and features described on this page might currently be **Planned, Work in Progress, or basic implementations**. Stay tuned as it evolves! 🚀
 
 
-Welcome to the **Agent Reasoning Pipeline**! This is the "brain" of Siyarix, responsible for taking a user's objective and turning it into real, executed actions. 
+Welcome to the **Agent Reasoning Pipeline**! This is the "brain" of Siyarix, responsible for taking a user's objective and turning it into real, executed actions.
 
 Think of it as a smart traffic cop: the **Planner Router** directs requests to either an AI-driven planner (using a Large Language Model or LLM) or a rule-based heuristic planner. This depends on the mode you are running. In autonomous mode, the system follows a dynamic **Observe–Reason–Act–Reflect** loop. In registry or offline mode, it relies on reliable, deterministic templates.
 
@@ -50,7 +50,7 @@ This is our pure, AI-driven planner. It relies entirely on the LLM to figure thi
 ### ⚙️ RegistryPlanner
 *(Found in `src/siyarix/planner_registry.py`)*
 
-This is our reliable, deterministic planner. It operates entirely without an LLM! 
+This is our reliable, deterministic planner. It operates entirely without an LLM!
 
 **Key Features:**
 - **🔍 Keyword Matching**: It uses an inverted keyword index to map plain English words to specific security tools.
@@ -114,9 +114,9 @@ Now it's time to execute the plan! The commands are run in "waves." Before anyth
 > Security is our top priority. The agent will never run highly destructive commands without explicit review, and sensitive data is aggressively redacted!
 
 ### 4️⃣ Reflect
-Finally, the LLM reviews the output of the commands. Did we get what we needed? 
+Finally, the LLM reviews the output of the commands. Did we get what we needed?
 - If yes, it sets `needs_tools=false` and provides a final answer.
-- If no, it sets `needs_tools=true` and creates a new plan for the next wave. 
+- If no, it sets `needs_tools=true` and creates a new plan for the next wave.
 
 > [!IMPORTANT]
 > The agent can loop up to **12 waves** per instruction by default. If it hits that limit, it will stop and ask you for further guidance.
@@ -166,7 +166,7 @@ Review command [edit/run/step/cancel] (run):
 
 ## 🛟 Heuristic Fallback (Registry Mode)
 
-When your LLM is down, offline, or just unreachable, the `RegistryPlanner` steps in to save the day using deterministic logic. 
+When your LLM is down, offline, or just unreachable, the `RegistryPlanner` steps in to save the day using deterministic logic.
 
 Here is how it thinks:
 1. You say: *"scan 10.0.0.1"*
