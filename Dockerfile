@@ -14,13 +14,13 @@ ARG BASE=python
 # =============================================================================
 # Stage 1 -- Builder: Build the siyarix wheel
 # =============================================================================
-FROM python:3.11.15-slim-bookworm@sha256:7ad180fdf785219c4a23124e53745fbd683bd6e23d0885e3554aff59eddbc377 AS builder
+FROM python:${PYTHON_VERSION}-slim AS builder
 
 WORKDIR /build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc=4:12.2.0-3 \
-    libffi-dev=3.4.4-1 \
+    gcc \
+    libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml README.md LICENSE ./
@@ -33,7 +33,7 @@ RUN pip install --no-cache-dir build==1.5.0 && \
 # =============================================================================
 # Stage 2 -- Python base (default, lightweight pentest tools)
 # =============================================================================
-FROM python:3.11.15-slim-bookworm@sha256:7ad180fdf785219c4a23124e53745fbd683bd6e23d0885e3554aff59eddbc377 AS python
+FROM python:${PYTHON_VERSION}-slim AS python
 
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later" \
       org.opencontainers.image.source="https://github.com/mufthakherul/siyarix" \
@@ -55,23 +55,23 @@ WORKDIR /app
 
 # Install system packages and common pentest tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates=20230311 \
-    curl=7.88.1-10+deb12u8 \
-    wget=1.21.3-1+b1 \
-    git=1:2.39.5-0.1 \
-    jq=1.6-2.1 \
-    unzip=6.0-28 \
-    xz-utils=5.4.1-0.2 \
-    nmap=7.93+dfsg1-1+b1 \
-    netcat-openbsd=1.217-3 \
-    dnsutils=1:9.18.33-1~deb12u1 \
-    whois=5.5.22 \
-    masscan=1.3.2+git20230821+ds1-1+b1 \
-    hydra=9.6-1 \
-    john=1.9.0-jumbo-1+git20230821+dfsg-2 \
-    hashcat=6.2.6+ds1-1+b2 \
-    sslscan=2.1.5-1 \
-    nbtscan=1.7.2-1+b1 \
+    ca-certificates \
+    curl \
+    wget \
+    git \
+    jq \
+    unzip \
+    xz-utils \
+    nmap \
+    netcat-openbsd \
+    dnsutils \
+    whois \
+    masscan \
+    hydra \
+    john \
+    hashcat \
+    sslscan \
+    nbtscan \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
 
