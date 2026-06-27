@@ -186,13 +186,13 @@ try:
     from rich import box
 except ImportError:
     logger.warning("Rich library not installed; TUI features will be degraded")
-    Console = None  # type: ignore[assignment]
-    rich_escape = None  # type: ignore[assignment]
-    Panel = None  # type: ignore[assignment]
-    Prompt = None  # type: ignore[assignment]
-    Confirm = None  # type: ignore[assignment]
-    Table = None  # type: ignore[assignment]
-    box = None  # type: ignore[assignment]
+    Console = None  # type: ignore
+    rich_escape = None  # type: ignore
+    Panel = None  # type: ignore
+    Prompt = None  # type: ignore
+    Confirm = None  # type: ignore
+    Table = None  # type: ignore
+    box = None  # type: ignore
 
 
 # ── OnboardingWizard ────────────────────────────────────────────────────────
@@ -2659,7 +2659,7 @@ sudo rm -rf /usr/local/lib/ollama /usr/lib/ollama /lib/ollama 2>/dev/null
                 data = json.loads(manifest.read_text(encoding="utf-8"))
                 for layer in data.get("layers", []):
                     if layer.get("mediaType") == "application/vnd.ollama.image.model":
-                        digest = layer["digest"].replace("sha256:", "sha256-")
+                        digest = str(layer["digest"]).replace("sha256:", "sha256-")
                         blob = Path.home() / ".ollama" / "models" / "blobs" / digest
                         if blob.is_file():
                             return blob
