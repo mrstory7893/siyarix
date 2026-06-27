@@ -55,8 +55,9 @@ from siyarix.tool_installer import ToolInstaller
 
 logger = logging.getLogger(__name__)
 
-# ── Cybersecurity model tiers for recommended setup ────────────────────
+# ── Cybersecurity model tiers for recommended setup ──────────────────────
 # Ordered by free RAM tiers. All models are security-focused.
+# Verified against live Ollama/HuggingFace pages — last updated 2026-06-27.
 SECURITY_MODEL_TIERS: list[dict[str, Any]] = [
     {
         "tier": "light",
@@ -65,27 +66,22 @@ SECURITY_MODEL_TIERS: list[dict[str, Any]] = [
         "max_ram": 4,
         "models": [
             (
+                "IHA089/drana-infinity-1.5b",
+                "1.0 GB",
+                "Ultra-light cybersecurity specialist — bug bounty, API testing, quick vuln queries, fully offline",
+            ),
+            (
                 "IHA089/drana-infinity-3b",
-                "1.8 GB",
-                "Cybersecurity research, bug bounty, vulnerability analysis — fast 3B model",
-            ),
-            (
-                "qwen3.5:4b",
-                "3.4 GB",
-                "Tool-calling champion (97.5% FC pass rate), general intelligence, coding — fits any system",
-            ),
-            (
-                "luisppb16/gemma4-e4b-secops",
-                "2.5 GB",
-                "Gemma 4-based SecOps (native function calling), offensive/defensive security, code review",
+                "1.9 GB",
+                "Bug bounty, API testing, multi-step vulnerability chains — fast 3B cybersecurity specialist",
             ),
             (
                 "xploiter/pentester",
                 "1.6 GB",
-                "Pentesting methodology, OWASP, tool guidance — lightest option",
+                "Pentesting methodology, OWASP, tool usage guidance, report writing — phi-2 based, lightest option",
             ),
         ],
-        "default_idx": 0,
+        "default_idx": 1,
         "fallback": "IHA089/drana-infinity-3b",
     },
     {
@@ -96,23 +92,23 @@ SECURITY_MODEL_TIERS: list[dict[str, Any]] = [
         "models": [
             (
                 "IHA089/drana-infinity-7b",
-                "4.5 GB",
-                "Elite cybersecurity research, exploit logic, multi-step attack chains — 7B",
+                "4.7 GB",
+                "Elite cybersecurity research, exploit logic, multi-step attack chains — 7B specialist, 32K context",
             ),
             (
-                "luisppb16/qwen3.5-9b-red-team",
-                "5.5 GB",
-                "Red team operations (Qwen3.5 base = elite function calling)",
+                "ALIENTELLIGENCE/whiterabbitv2",
+                "4.7 GB",
+                "AI hacking assistant (Llama 3.1 8B) — 128K context, red/blue team, uncensored",
             ),
             (
-                "supergoatscriptguy/mythos-sec:8b",
-                "5 GB",
-                "CTF, bug bounty, pentest — Gemma-4 based, native function calling, no disclaimers",
+                "loading_ctf/ctf-player_elona",
+                "4.4 GB",
+                "CTF specialist — binary exploitation, network security, crypto, 32K context",
             ),
             (
-                "luisppb16/gemma4-e4b-secops",
-                "2.5 GB",
-                "Gemma 4-based SecOps (native function calling) — fast 4B",
+                "luisppb16/gemma4-e4b-SecOps",
+                "5.3 GB",
+                "Gemma 4-based SecOps (LoRA fine-tune, OWASP/NIST/CVSS), 128K context — no safety guardrails",
             ),
         ],
         "default_idx": 0,
@@ -125,28 +121,28 @@ SECURITY_MODEL_TIERS: list[dict[str, Any]] = [
         "max_ram": 16,
         "models": [
             (
-                "supergoatscriptguy/mythos-sec:8b",
-                "5 GB",
-                "CTF, bug bounty, pentest — Gemma-4 based, native function calling, no disclaimers",
-            ),
-            (
-                "qwen3:14b",
-                "9.3 GB",
-                "Best accuracy-to-size ratio, 88-92% function calling, strong reasoning & tool orchestration",
+                "xploiter/the-xploiter",
+                "9.2 GB",
+                "Powerful offensive security: red team, bug bounty, AD attack paths, OWASP, cloud exploitation — 13B ArchLlama, 8K context",
             ),
             (
                 "luisppb16/qwen3.5-9b-red-team",
                 "5.5 GB",
-                "Red team operations, adversary simulation — Qwen3.5 fine-tune",
+                "Qwen 3.5 red team fine-tune — adversary simulation, attack planning, uncensored",
             ),
             (
-                "IHA089/drana-infinity-7b",
-                "4.5 GB",
-                "Elite cybersecurity research, exploit logic — solid 7B specialist",
+                "supergoatscriptguy/mythos-sec:8b",
+                "6.6 GB",
+                "CTF, bug bounty, pentest — fully abliterated Gemma-4 base, 256K context, no disclaimers",
+            ),
+            (
+                "CyberCrew/notmythos-8b",
+                "6.0 GB",
+                "Defensive + offensive security, tool-calling, detection engineering, incident response",
             ),
         ],
         "default_idx": 0,
-        "fallback": "IHA089/drana-infinity-7b",
+        "fallback": "xploiter/the-xploiter",
     },
     {
         "tier": "high-end",
@@ -157,28 +153,29 @@ SECURITY_MODEL_TIERS: list[dict[str, Any]] = [
             (
                 "supergoatscriptguy/mythos-sec:24b",
                 "14 GB",
-                "Flagship security: 30B-class quality at 8B-class speed (MoE), tool-calling ready",
+                "Flagship: Liquid AI LFM2 24B-A2B MoE, 32K context, tool-calling, no disclaimers — :latest tag",
             ),
             (
-                "gemma4:26b",
-                "18 GB",
-                "Native function calling (92% FC), MoE with 4B active params — best FC among local models",
+                "xploiter/the-xploiter",
+                "9.2 GB",
+                "Most powerful offensive security model — 13B ArchLlama, red team, bug bounty, AD, cloud exploitation",
             ),
             (
                 "luisppb16/qwen3.5-9b-red-team",
                 "5.5 GB",
-                "Red team specialist, adversary simulation — highly rated, Qwen3.5 FC",
+                "Qwen 3.5 red team specialist — adversary simulation, attack planning, elite function calling",
             ),
             (
-                "IHA089/drana-infinity-7b",
-                "4.5 GB",
-                "Elite cybersecurity research — always a solid choice",
+                "ALIENTELLIGENCE/whiterabbitv2",
+                "4.7 GB",
+                "WhiteRabbitNeo AI hacking assistant (Llama 3.1 8B) — 128K context, red/blue team",
             ),
         ],
         "default_idx": 0,
-        "fallback": "luisppb16/qwen3.5-9b-red-team",
+        "fallback": "supergoatscriptguy/mythos-sec:24b",
     },
 ]
+
 
 Console: Any = None
 Panel: Any = None
