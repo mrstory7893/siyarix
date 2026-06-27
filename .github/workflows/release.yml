@@ -282,6 +282,7 @@ jobs:
           cp install.sh dist-installers/
           cp install-termux.sh dist-installers/
           cp install.ps1 dist-installers/siyarix-install.ps1
+          cp packages/harmonyos/install-harmonyos.sh dist-installers/
           cp packages/homebrew/siyarix.rb dist-installers/ 2>/dev/null || true
           cp packages/chocolatey/tools/chocolateyinstall.ps1 dist-installers/
           cp packages/winget/Mufthakherul.Siyarix.yaml dist-installers/
