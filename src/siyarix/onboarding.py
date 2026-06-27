@@ -177,12 +177,6 @@ SECURITY_MODEL_TIERS: list[dict[str, Any]] = [
 ]
 
 
-Console: Any = None
-Panel: Any = None
-Prompt: Any = None
-Confirm: Any = None
-Table: Any = None
-box: Any = None
 try:
     from rich.console import Console
     from rich.markup import escape as rich_escape
@@ -192,6 +186,13 @@ try:
     from rich import box
 except ImportError:
     logger.warning("Rich library not installed; TUI features will be degraded")
+    Console = None  # type: ignore[assignment]
+    rich_escape = None  # type: ignore[assignment]
+    Panel = None  # type: ignore[assignment]
+    Prompt = None  # type: ignore[assignment]
+    Confirm = None  # type: ignore[assignment]
+    Table = None  # type: ignore[assignment]
+    box = None  # type: ignore[assignment]
 
 
 # ── OnboardingWizard ────────────────────────────────────────────────────────
@@ -1508,7 +1509,7 @@ class OnboardingWizard:
             ptable.add_column("Persona", style="cyan")
             ptable.add_column("Focus")
             for i, p in enumerate(personas, 1):
-                info = get_persona(p) if not isinstance(p, dict) else p
+                info = get_persona(p) if isinstance(p, str) else p
                 label = (info.get("label") or info.get("name", p)) if isinstance(info, dict) else p
                 desc = info.get("description", "") if isinstance(info, dict) else ""
                 short = textwrap.shorten(desc, width=50, placeholder="...") if desc else ""
@@ -2518,35 +2519,35 @@ class OnboardingWizard:
 $ollama = Get-WmiObject -Class Win32_Product | Where-Object { $_.Name -eq "Ollama" }
 if ($ollama) { $ollama.Uninstall() | Out-Null }
 """
-                r = subprocess.run(
+                r_win = subprocess.run(
                     ["powershell", "-Command", script],
                     capture_output=True,
                     text=True,
                     timeout=120,
                     check=False,
                 )
-                if not r.returncode and "Error" not in r.stderr:
+                if not r_win.returncode and "Error" not in r_win.stderr:
                     return True
                 uninstaller = "C:\\Program Files\\Ollama\\uninstall.exe"
                 if os.path.isfile(uninstaller):
-                    r = subprocess.run(
+                    r_win_uninstall = subprocess.run(
                         [uninstaller, "/S"],
                         capture_output=True,
                         text=True,
                         timeout=120,
                         check=False,
                     )
-                    return not r.returncode
+                    return not r_win_uninstall.returncode
                 return False
             elif sys.platform == "darwin":
                 bin_path = shutil.which("ollama") or "/usr/local/bin/ollama"
-                r = subprocess.run(
+                r_mac = subprocess.run(
                     ["sudo", "rm", "-f", bin_path],
                     stdin=sys.stdin,
                     timeout=30,
                     check=False,
                 )
-                return not r.returncode
+                return not r_mac.returncode
             else:
                 # Official Linux uninstall: service → binary → libs
                 script = """
@@ -2558,23 +2559,23 @@ OLLAMA_BIN=$(command -v ollama 2>/dev/null)
 if [ -n "$OLLAMA_BIN" ]; then sudo rm -f "$OLLAMA_BIN"; fi
 sudo rm -rf /usr/local/lib/ollama /usr/lib/ollama /lib/ollama 2>/dev/null
 """
-                r = subprocess.run(
+                r_linux = subprocess.run(
                     ["sh", "-c", script],
                     stdin=sys.stdin,
                     timeout=60,
                     check=False,
                 )
-                if not r.returncode:
+                if not r_linux.returncode:
                     return True
                 # Fallback: remove the binary directly
                 bin_path = shutil.which("ollama") or "/usr/local/bin/ollama"
-                r = subprocess.run(
+                r_fallback = subprocess.run(
                     ["sudo", "rm", "-f", bin_path],
                     stdin=sys.stdin,
                     timeout=30,
                     check=False,
                 )
-                return not r.returncode
+                return not r_fallback.returncode
         except Exception:
             return False
 
@@ -2584,7 +2585,7 @@ sudo rm -rf /usr/local/lib/ollama /usr/lib/ollama /lib/ollama 2>/dev/null
             import httpx
 
             r = httpx.get(f"{url}/api/tags", timeout=5)
-            return r.status_code < 500
+            return bool(r.status_code < 500)
         except Exception:
             return False
 
@@ -2821,7 +2822,7 @@ sudo rm -rf /usr/local/lib/ollama /usr/lib/ollama /lib/ollama 2>/dev/null
             import httpx
 
             r = httpx.get(f"{url}/health", timeout=5)
-            return r.status_code < 500
+            return bool(r.status_code < 500)
         except Exception:
             return False
 
