@@ -924,15 +924,15 @@ class LLMEngineMixin:
                             parts = [f"Original request: {instruction_with_target}\n\n"]
                             parts.append("[Existing session data from prior investigation]\n")
                             if session_outputs:
-                                parts.append("Previous tool outputs (last 5):\n")
-                                for line in session_outputs[-5:]:
-                                    parts.append(f"  {line[:200]}\n")
+                                parts.append("Previous tool outputs (last 10):\n")
+                                for line in session_outputs[-10:]:
+                                    parts.append(f"  {line[:300]}\n")
                             if session_findings:
                                 parts.append(
                                     f"\nPreviously discovered findings: "
                                     f"{len(session_findings)} total\n"
                                 )
-                                for f in session_findings[:15]:
+                                for f in session_findings[:25]:
                                     sev = f.get("severity", "info").upper()
                                     title = f.get(
                                         "title",
@@ -945,8 +945,14 @@ class LLMEngineMixin:
                                 "require additional tool execution, or can you synthesise a "
                                 "comprehensive report from the existing data?\n"
                                 "- If the user is asking for a report/summary/synthesis → "
-                                "set needs_tools=false and provide the full report using "
-                                "existing findings.\n"
+                                "set needs_tools=false and provide the FULL report including "
+                                "ALL of these sections:\n"
+                                "  1. Executive Summary\n"
+                                "  2. Detailed Findings \n"
+                                "  3. Step-by-Step Exploitation Guide (exact commands for each vuln)\n"
+                                "  4. Remediation Guidance (prioritised)\n"
+                                "  5. Attack Chain Analysis\n"
+                                "  6. Appendix\n"
                                 "- If the user is asking for NEW investigation not covered "
                                 "by existing data → set needs_tools=true and plan only "
                                 "the missing steps.\n"
@@ -1129,17 +1135,25 @@ class LLMEngineMixin:
                     f"Original request: {instruction_with_target}\n\n"
                     f"Completed execution wave {wave + 1}. Results so far:\n\n"
                     f"{''.join(all_outputs)}\n\n"
-                    "Analyse these results. Decide: is the original request now fully satisfied?\n"
-                    "- If YES → set needs_tools=false and provide a detailed final report "
-                    "addressing all aspects of the original request (findings, exploitation "
-                    "paths, remediation).\n"
-                    "- If NO → set needs_tools=true. Plan the next wave (1-3 targeted commands) "
-                    "to continue investigating. Prioritise commands that yield the most useful "
-                    "information for the user's original goal.\n"
-                    "Do NOT stop early when the user has explicitly asked for a full report, "
-                    "exploitation analysis, or deep assessment. Only set needs_tools=false if "
-                    "the target is completely unreachable, all plausible investigation paths "
-                    "have been exhausted, or the user confirms they are satisfied."
+                    "Analyse these results.\n"
+                    "Assess whether the original request is fully satisfied:\n"
+                    "- If this is a full scan / bug hunt / vulnerability assessment and you "
+                    "have only done surface recon (whois, DNS, HTTP headers, whatweb), you "
+                    "MUST continue with deeper phases: directory brute-force, nuclei template "
+                    "scanning, subdomain enumeration, parameter discovery, and exploitation "
+                    "validation.\n"
+                        "- If YES (all plausible investigation paths are exhausted, target is "
+                        "unreachable, or user confirms satisfaction) → set needs_tools=false and "
+                        "provide a comprehensive final report with findings, exploitation paths, "
+                        "and remediation.\n"
+                        "- If NO → set needs_tools=true. Plan the next wave (2-4 targeted commands) "
+                        "to go deeper. Prioritise commands that discover vulnerabilities, not just "
+                        "passive information.\n"
+                        "Do NOT stop early when the user asked for a full report, exploitation "
+                        "analysis, or deep assessment. Only set needs_tools=false if the target is "
+                        "completely unreachable, all plausible investigation paths have been "
+                        "exhausted, or the user explicitly confirms they are satisfied."
+                    "-If"
                 )
                 with console.status(
                     "[bold cyan]LLM analysing wave results...[/bold cyan]",
@@ -1383,7 +1397,7 @@ class LLMEngineMixin:
                             model=model,
                             system=system_param,
                             messages=msgs,  # type: ignore[arg-type]
-                            max_tokens=2000,
+                            max_tokens=4096,
                             temperature=0.3,
                             extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
                         ) as stream_ctx:
@@ -1397,7 +1411,7 @@ class LLMEngineMixin:
                     model=model,
                     system=system_param,
                     messages=msgs,  # type: ignore[arg-type]
-                    max_tokens=2000,
+                    max_tokens=4096,
                     temperature=0.3,
                     extra_headers={"anthropic-beta": "prompt-caching-2024-07-31"},
                 )
