@@ -133,6 +133,7 @@ Siyarix adapts to your comfort level and operational needs through four distinct
 | **REGISTRY** | Precise, manual control | Tool-driven mode. You run direct commands (e.g., `siyarix run nmap -sV example.com`), but our AI acts as your assistant, offering syntax help and planning advice on demand. |
 | **AUTONOMOUS** | Broad objectives | Goal-driven mode. You set a high-level objective (*"Find vulnerabilities on this server"*), and the agent takes over. It uses an Observe-Reason-Act loop to independently plan, execute, and adapt until the goal is met. |
 | **HYBRID** | Safe, supervised operations | The perfect middle ground! The AI proposes a detailed step-by-step plan, but it pauses and waits for your explicit human approval before running any potentially sensitive commands. |
+| **INTERACTIVE** | Learning & sensitive audits | Step-by-step interactive mode. Every proposed action is presented for manual review before execution — ideal for sensitive environments or when learning new workflows. |
 
 ---
 
@@ -153,10 +154,10 @@ Siyarix adapts to your comfort level and operational needs through four distinct
 ### 🛡️ Safety & Ethical Operations
 
 We know that combining AI with security tools can be daunting. We take safety seriously:
-- **The Permission Gate:** Siyarix never run commands blindly. Siyarix features a two-stage danger analysis before execution. If it looks dangerous, it halts and asks for your permission.
+- **The Permission Gate:** Siyarix never runs commands blindly. It features a two-stage danger analysis before execution. If it looks dangerous, it halts and asks for your permission.
 - **Encrypted Credential Vault:** Never hardcode API keys or passwords. Store your sensitive credentials securely using our AES-256-GCM encrypted vault.
 - **Stealth Manager:** OPSEC manager handles request jitter, pacing, and User-Agent rotation to keep your operations quiet.
-- **Tamper-Evident Logs:** Every single action, AI prompt, and tool execution is recorded in a cryptographically chained (SHA-256) audit log for total accountability. But for security and privacy bydefault, saving session logs is deactivated. You can enable it in the config if you want to keep a record of your operations.
+- **Tamper-Evident Logs:** Every single action, AI prompt, and tool execution is recorded in a cryptographically chained (SHA-256) audit log for total accountability. By default, saving session logs is deactivated for security and privacy. You can enable it in the config if you want to keep a record of your operations.
 
 ### 💻 A Clean CLI Overview
 
@@ -263,7 +264,7 @@ Want to dive much deeper into what makes Siyarix tick? We have written extensive
 
 ## ⚖️ A Note on Safety & Ethical Use
 
-Siyarix is an tool built **strictly for authorized security testing, legitimate research, and defensive operations**. 
+Siyarix is a tool built **strictly for authorized security testing, legitimate research, and defensive operations**.
 
 > **🛑 CRITICAL REMINDER:** You must NEVER use Siyarix to scan, test, or interact with systems, applications, or networks without explicit, documented permission from their respective owners. 
 
