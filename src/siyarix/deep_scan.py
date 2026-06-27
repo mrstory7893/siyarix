@@ -78,6 +78,74 @@ _DEEP_SCAN_PASSES: list[DeepScanProfile] = [
         timeout=300,
         parallel=True,
     ),
+    DeepScanProfile(
+        name="memory_forensics",
+        description="Memory dump analysis for artifacts, processes, and network connections",
+        tools=[
+            {"tool": "volatility", "args": {"flags": "-f"}, "timeout": 300},
+            {"tool": "strings", "args": {}, "timeout": 60},
+            {"tool": "yara", "args": {}, "timeout": 120},
+        ],
+        timeout=600,
+        parallel=False,
+    ),
+    DeepScanProfile(
+        name="disk_forensics",
+        description="Disk image analysis for deleted files, metadata, and hidden artifacts",
+        tools=[
+            {"tool": "sleuthkit", "args": {"flags": "fls"}, "timeout": 300},
+            {"tool": "foremost", "args": {}, "timeout": 300},
+            {"tool": "binwalk", "args": {}, "timeout": 120},
+            {"tool": "exiftool", "args": {}, "timeout": 60},
+        ],
+        timeout=600,
+        parallel=True,
+    ),
+    DeepScanProfile(
+        name="code_review",
+        description="Static code security analysis, secrets detection, and dependency auditing",
+        tools=[
+            {"tool": "semgrep", "args": {"flags": "--config=auto"}, "timeout": 300},
+            {"tool": "bandit", "args": {"flags": "-r"}, "timeout": 120},
+            {"tool": "gitleaks", "args": {"flags": "detect --no-git"}, "timeout": 120},
+            {"tool": "trufflehog", "args": {}, "timeout": 120},
+        ],
+        timeout=600,
+        parallel=True,
+    ),
+    DeepScanProfile(
+        name="cloud_audit",
+        description="Cloud infrastructure security auditing and compliance checking",
+        tools=[
+            {"tool": "checkov", "args": {"flags": "-d ."}, "timeout": 300},
+            {"tool": "trivy", "args": {"flags": "filesystem --severity HIGH,CRITICAL"}, "timeout": 300},
+            {"tool": "prowler", "args": {}, "timeout": 600},
+        ],
+        timeout=600,
+        parallel=False,
+    ),
+    DeepScanProfile(
+        name="container_security",
+        description="Container image vulnerability scanning and SBOM generation",
+        tools=[
+            {"tool": "trivy", "args": {"flags": "image"}, "timeout": 300},
+            {"tool": "grype", "args": {}, "timeout": 300},
+            {"tool": "syft", "args": {}, "timeout": 120},
+        ],
+        timeout=600,
+        parallel=True,
+    ),
+    DeepScanProfile(
+        name="osint",
+        description="Passive reconnaissance and open-source intelligence gathering",
+        tools=[
+            {"tool": "whois", "args": {}, "timeout": 30},
+            {"tool": "dig", "args": {"flags": "ANY"}, "timeout": 30},
+            {"tool": "shodan", "args": {}, "timeout": 60},
+        ],
+        timeout=300,
+        parallel=True,
+    ),
 ]
 
 

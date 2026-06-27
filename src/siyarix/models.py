@@ -45,6 +45,14 @@ class StepType(StrEnum):
     REPORT = "report"
     NETWORK = "network"
     WEB = "web"
+    FILE_ANALYSIS = "file_analysis"
+    CODE_REVIEW = "code_review"
+    MEMORY_ANALYSIS = "memory_analysis"
+    LOG_ANALYSIS = "log_analysis"
+    CLOUD_OPERATION = "cloud_operation"
+    FORENSICS = "forensics"
+    OSINT = "osint"
+    COMPLIANCE = "compliance"
 
 
 @dataclass
