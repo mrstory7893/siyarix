@@ -8,7 +8,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to submit a feature request! 
+        Thanks for taking the time to submit a feature request!
         Our AI-native architecture is highly extensible, so we welcome bold ideas.
   - type: textarea
     id: problem
