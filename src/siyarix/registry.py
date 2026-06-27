@@ -52,6 +52,11 @@ from .tool_handlers import (
     make_curl_handler,
     make_dns_handler,
     make_whois_handler,
+    make_forensics_handler,
+    make_sast_handler,
+    make_cloud_handler,
+    make_container_handler,
+    make_re_handler,
     make_generic_handler,
 )
 
@@ -90,6 +95,55 @@ _HANDLER_MAP: dict[str, Any] = {
     "whois": make_whois_handler,
     "graph_analyzer": make_graph_analyzer_handler,
     "threat_intel": make_threat_intel_handler,
+    # Forensics tools
+    "volatility": make_forensics_handler,
+    "yara": make_forensics_handler,
+    "exiftool": make_forensics_handler,
+    "pypykatz": make_forensics_handler,
+    "mimikatz": make_forensics_handler,
+    "sleuthkit": make_forensics_handler,
+    "foremost": make_forensics_handler,
+    "binwalk": make_forensics_handler,
+    "strings": make_forensics_handler,
+    "bulk_extractor": make_forensics_handler,
+    # SAST / code analysis
+    "semgrep": make_sast_handler,
+    "bandit": make_sast_handler,
+    "gitleaks": make_sast_handler,
+    "trufflehog": make_sast_handler,
+    "checkov": make_cloud_handler,
+    # Container / vulnerability scanning
+    "trivy": make_container_handler,
+    "grype": make_container_handler,
+    "syft": make_container_handler,
+    # Cloud security
+    "prowler": make_cloud_handler,
+    "scoutsuite": make_cloud_handler,
+    "kubectl": make_cloud_handler,
+    "kube-hunter": make_cloud_handler,
+    # Reverse engineering
+    "radare2": make_re_handler,
+    "apktool": make_re_handler,
+    # Network / AD
+    "responder": make_generic_handler,
+    "crackmapexec": make_generic_handler,
+    "impacket": make_generic_handler,
+    "smbmap": make_generic_handler,
+    "enum4linux": make_generic_handler,
+    # Web
+    "wapiti": make_web_handler,
+    "arachni": make_web_handler,
+    "dirb": make_generic_handler,
+    "dirsearch": make_generic_handler,
+    "feroxbuster": make_web_handler,
+    "commix": make_web_handler,
+    "xsstrike": make_web_handler,
+    "dalfox": make_web_handler,
+    "wafw00f": make_web_handler,
+    "httpx": make_web_handler,
+    # DNS
+    "dnsrecon": make_recon_handler,
+    "dnsenum": make_recon_handler,
 }
 
 _CURATED_TOOL_NAMES: tuple[str, ...] = (
@@ -144,6 +198,55 @@ _CURATED_TOOL_NAMES: tuple[str, ...] = (
     "env",
     "id",
     "hostname",
+    # Forensics tools
+    "volatility",
+    "yara",
+    "exiftool",
+    "pypykatz",
+    "mimikatz",
+    "sleuthkit",
+    "foremost",
+    "binwalk",
+    "strings",
+    "bulk_extractor",
+    # SAST / code analysis
+    "semgrep",
+    "bandit",
+    "gitleaks",
+    "trufflehog",
+    "checkov",
+    # Container / vulnerability scanning
+    "trivy",
+    "grype",
+    "syft",
+    # Cloud security
+    "prowler",
+    "scoutsuite",
+    "kubectl",
+    "kube-hunter",
+    # Reverse engineering
+    "radare2",
+    "apktool",
+    # Network / AD
+    "responder",
+    "crackmapexec",
+    "impacket",
+    "smbmap",
+    "enum4linux",
+    # Web
+    "wapiti",
+    "arachni",
+    "dirb",
+    "dirsearch",
+    "feroxbuster",
+    "commix",
+    "xsstrike",
+    "dalfox",
+    "wafw00f",
+    "httpx",
+    # DNS
+    "dnsrecon",
+    "dnsenum",
 )
 
 _INTERPRETER_NAMES: tuple[str, ...] = (
