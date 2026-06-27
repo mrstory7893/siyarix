@@ -26,9 +26,7 @@
   <a href="https://securityscorecards.dev/viewer/?uri=github.com/mufthakherul/siyarix">
     <img src="https://img.shields.io/ossf-scorecard/github.com/mufthakherul/siyarix?label=openssf%20scorecard&style=for-the-badge&logo=openssf&logoColor=white" alt="OpenSSF Scorecard"/>
   </a>
-</p>
 
-<p align="center">
   <!-- Package & Ecosystem -->
   <a href="https://pypi.org/project/siyarix/">
     <img src="https://img.shields.io/pypi/v/siyarix?style=for-the-badge&logo=pypi&logoColor=white&color=blue" alt="PyPI Package Version"/>
@@ -45,9 +43,7 @@
   <a href="https://github.com/mufthakherul/siyarix/pkgs/container/siyarix">
     <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker Ready"/>
   </a>
-</p>
-
-<p align="center">
+  
   <!-- Code Standards & Compliance -->
   <a href="https://github.com/mufthakherul/siyarix/blob/main/LICENSE">
     <img src="https://img.shields.io/github/license/mufthakherul/siyarix?style=for-the-badge&logo=gnu&logoColor=white&color=blue" alt="License"/>
@@ -64,9 +60,7 @@
   <a href="https://github.com/mufthakherul/siyarix/blob/main/SECURITY.md">
     <img src="https://img.shields.io/badge/Security-Policy%20Enabled-success?style=for-the-badge&logo=githubsecurity" alt="Security Policy"/>
   </a>
-</p>
 
-<p align="center">
   <!-- Repository Stats & Engagement -->
   <a href="https://github.com/mufthakherul/siyarix/stargazers">
     <img src="https://img.shields.io/github/stars/mufthakherul/siyarix?style=for-the-badge&logo=github&color=yellow" alt="GitHub Stars"/>
