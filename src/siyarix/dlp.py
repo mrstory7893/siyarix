@@ -36,6 +36,8 @@ class DLPEngine:
 
     def redact(self, text: str) -> str:
         """Redact sensitive information from a string."""
+        if not isinstance(text, str):
+            return text
         if not text:
             return text
 

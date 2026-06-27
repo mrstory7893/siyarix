@@ -151,7 +151,7 @@ def risk_for_tool(name: str) -> RiskLevel:
             pass
     high_risk = {"metasploit", "sqlmap", "hashcat", "hydra", "ettercap", "bettercap", "mimikatz", "crackmapexec", "impacket"}
     medium_risk = {"nmap", "nuclei", "nikto", "gobuster", "ffuf", "wpscan", "masscan", "responder", "smbmap", "enum4linux"}
-    low_risk = {"semgrep", "bandit", "gitleaks", "trufflehog", "checkov", "trivy", "grype", "syft", "volatility", "yara", "exiftool", "prowler", "scoutsuite"}
+    low_risk = {"curl", "wget", "semgrep", "bandit", "gitleaks", "trufflehog", "checkov", "trivy", "grype", "syft", "volatility", "yara", "exiftool", "prowler", "scoutsuite"}
     if name in high_risk:
         return RiskLevel.HIGH
     if name in medium_risk:
