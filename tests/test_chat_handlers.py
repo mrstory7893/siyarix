@@ -290,7 +290,7 @@ def test_cmd_key_rotate(mock_ask, chat, mock_console):
 def test_cmd_undo(chat, mock_console):
     # Setup session directory mock
     chat._SESSIONS_DIR = MagicMock()
-    
+
     # Test empty undo
     chat._cmd_undo("")
     mock_console.print.assert_any_call("[yellow]No messages to undo.[/yellow]")
