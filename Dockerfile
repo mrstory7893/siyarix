@@ -14,26 +14,26 @@ ARG BASE=python
 # =============================================================================
 # Stage 1 -- Builder: Build the siyarix wheel
 # =============================================================================
-FROM python:${PYTHON_VERSION}-slim AS builder
+FROM python:3.11.15-slim-bookworm@sha256:7ad180fdf785219c4a23124e53745fbd683bd6e23d0885e3554aff59eddbc377 AS builder
 
 WORKDIR /build
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc \
-    libffi-dev \
+    gcc=4:12.2.0-3 \
+    libffi-dev=3.4.4-1 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml README.md LICENSE ./
 COPY src/ src/
 
-RUN pip install --no-cache-dir build && \
+RUN pip install --no-cache-dir build==1.5.0 && \
     python -m build --wheel && \
     ls -la dist/
 
 # =============================================================================
 # Stage 2 -- Python base (default, lightweight pentest tools)
 # =============================================================================
-FROM python:${PYTHON_VERSION}-slim AS python
+FROM python:3.11.15-slim-bookworm@sha256:7ad180fdf785219c4a23124e53745fbd683bd6e23d0885e3554aff59eddbc377 AS python
 
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later" \
       org.opencontainers.image.source="https://github.com/mufthakherul/siyarix" \
@@ -55,23 +55,23 @@ WORKDIR /app
 
 # Install system packages and common pentest tools
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    curl \
-    wget \
-    git \
-    jq \
-    unzip \
-    xz-utils \
-    nmap \
-    netcat-openbsd \
-    dnsutils \
-    whois \
-    masscan \
-    hydra \
-    john \
-    hashcat \
-    sslscan \
-    nbtscan \
+    ca-certificates=20230311 \
+    curl=7.88.1-10+deb12u8 \
+    wget=1.21.3-1+b1 \
+    git=1:2.39.5-0.1 \
+    jq=1.6-2.1 \
+    unzip=6.0-28 \
+    xz-utils=5.4.1-0.2 \
+    nmap=7.93+dfsg1-1+b1 \
+    netcat-openbsd=1.217-3 \
+    dnsutils=1:9.18.33-1~deb12u1 \
+    whois=5.5.22 \
+    masscan=1.3.2+git20230821+ds1-1+b1 \
+    hydra=9.6-1 \
+    john=1.9.0-jumbo-1+git20230821+dfsg-2 \
+    hashcat=6.2.6+ds1-1+b2 \
+    sslscan=2.1.5-1 \
+    nbtscan=1.7.2-1+b1 \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
 
@@ -118,10 +118,10 @@ RUN set -eux; \
 
 # Install Python-based security tools
 RUN pip install --no-cache-dir \
-    sqlmap \
-    wfuzz \
-    semgrep \
-    bandit
+    sqlmap==1.8.14 \
+    wfuzz==3.1.0 \
+    semgrep==1.104.0 \
+    bandit==1.8.3
 
 # Clone exploit databases
 RUN git clone --depth 1 https://gitlab.com/exploit-database/exploitdb.git /opt/exploitdb && \
@@ -158,7 +158,7 @@ CMD []
 # =============================================================================
 # Stage 3 -- Kali Linux base (full pentesting suite)
 # =============================================================================
-FROM kalilinux/kali-rolling AS kali
+FROM kalilinux/kali-rolling@sha256:6d0b00c60739f2cb4999392f10f9a14121364a6990dd0059d18017b93c86cdca AS kali
 
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later" \
       org.opencontainers.image.source="https://github.com/mufthakherul/siyarix" \
@@ -213,7 +213,7 @@ CMD []
 # =============================================================================
 # Stage 4 -- ParrotOS base (security tools)
 # =============================================================================
-FROM parrotsec/parrot-core AS parrot
+FROM parrotsec/parrot-core@sha256:71ddc8f086fe0906de50391436ff569a4733bbd0e71f7338f34f51629ffb9731 AS parrot
 
 LABEL org.opencontainers.image.licenses="AGPL-3.0-or-later" \
       org.opencontainers.image.source="https://github.com/mufthakherul/siyarix" \

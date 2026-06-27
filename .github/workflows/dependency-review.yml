@@ -32,7 +32,7 @@ jobs:
       - name: Analyze dependencies
         id: analyze
         run: |
-          pip install pipreqs pip-api
+          pip install pipreqs==0.4.13 pip-api==0.0.34
 
           # Get list of imports
           pipreqs src/ --force --use-pipfile 2>/dev/null || true
@@ -46,7 +46,7 @@ jobs:
 
       - name: Check for vulnerable packages
         run: |
-          pip install safety wheel
+          pip install safety==3.7.0 wheel==0.45.1
           safety check --json > safety_output.json 2>&1 || true
           python - <<'PY'
           import json
@@ -122,7 +122,7 @@ jobs:
 
       - name: Check licenses
         run: |
-          pip install pip-licenses
+          pip install pip-licenses==5.0.0
           pip-licenses --output-format=csv --ignore-packages-file=.license-ignore.txt || true
 
       - name: Verify allowed licenses

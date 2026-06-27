@@ -19,7 +19,7 @@ jobs:
           cache: "pip"
       - name: Build Python packages
         run: |
-          pip install build
+          pip install build==1.5.0
           python -m build
       - name: Attest Build Provenance
         uses: actions/attest-build-provenance@ef244123eb79f2f7a7e75d99086184180e6d0018 # v1

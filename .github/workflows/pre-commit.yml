@@ -27,7 +27,7 @@ jobs:
           cache: 'pip'
 
       - name: Install pre-commit
-        run: pip install pre-commit
+        run: pip install pre-commit==4.6.0
 
       - name: Cache pre-commit hooks
         uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
@@ -73,7 +73,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install pre-commit-hooks
-        run: pip install pre-commit pyyaml
+        run: pip install pre-commit==4.6.0 pyyaml==6.0.3
 
       - name: Validate .pre-commit-config.yaml
         run: |
@@ -106,7 +106,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install pre-commit
-        run: pip install pre-commit
+        run: pip install pre-commit==4.6.0
 
       - name: Auto-fix fixable issues
         run: |

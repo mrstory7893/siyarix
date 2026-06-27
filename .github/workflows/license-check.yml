@@ -15,7 +15,7 @@ jobs:
           cache: "pip"
       - name: Install dependencies
         run: |
-          pip install pip-licenses
+          pip install pip-licenses==5.0.0
           pip install -e .
       - name: Check Licenses
         run: |
