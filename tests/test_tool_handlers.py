@@ -75,7 +75,7 @@ class TestRun:
         mock_validator = MagicMock()
         mock_validator.check_args_injection.return_value = (True, "shell_meta")
         MockValidator.return_value = mock_validator
-        result = _run("nmap", ["nmap", "target; rm -rf /"])
+        result = await _run("nmap", ["nmap", "target; rm -rf /"])
         assert result.exit_code == 1
         assert "Security error" in result.stderr
         assert "shell_meta" in result.stderr

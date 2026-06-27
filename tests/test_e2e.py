@@ -800,7 +800,10 @@ class TestOpenAICompatIntegration:
         )
         roles = [m["role"] for m in msgs]
         assert roles.count("system") == 1
-        assert roles.count("user") == 2
+        # Consecutive user messages are merged to satisfy API alternation constraints
+        assert roles.count("user") == 1
+        assert "hi" in msgs[-1]["content"]
+        assert "user query" in msgs[-1]["content"]
 
 
 # ═══════════════════════════════════════════════════════════════════

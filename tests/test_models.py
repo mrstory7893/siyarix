@@ -65,7 +65,7 @@ class TestStepType:
         assert StepType.WEB == "web"
 
     def test_members(self):
-        assert len(StepType) == 6
+        assert len(StepType) == 14
 
 
 class TestExecutionStep:
