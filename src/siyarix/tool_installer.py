@@ -31,7 +31,7 @@ def tty_confirm(prompt: str, default: bool = True) -> bool:
     from rich.console import Console
 
     suffix = " [Y/n]" if default else " [y/N]"
-    Console(stderr=True).print(prompt + suffix, end=" ", flush=True)
+    Console(stderr=True).print(prompt + suffix, end=" ")
     try:
         with open("/dev/tty") as _tty:
             answer = _tty.readline().strip().lower()
@@ -192,20 +192,20 @@ class ToolInstaller:
     def _refresh_windows_path(self) -> None:
         """Refresh os.environ['PATH'] from the Windows Registry."""
         try:
-            with winreg.OpenKey(
-                winreg.HKEY_LOCAL_MACHINE,
+            with winreg.OpenKey(  # type: ignore[attr-defined]
+                winreg.HKEY_LOCAL_MACHINE,  # type: ignore[attr-defined]
                 r"SYSTEM\CurrentControlSet\Control\Session Manager\Environment",
                 0,
-                winreg.KEY_READ,
+                winreg.KEY_READ,  # type: ignore[attr-defined]
             ) as key:
-                sys_path, _ = winreg.QueryValueEx(key, "PATH")
-            with winreg.OpenKey(
-                winreg.HKEY_CURRENT_USER,
+                sys_path, _ = winreg.QueryValueEx(key, "PATH")  # type: ignore[attr-defined]
+            with winreg.OpenKey(  # type: ignore[attr-defined]
+                winreg.HKEY_CURRENT_USER,  # type: ignore[attr-defined]
                 r"Environment",
                 0,
-                winreg.KEY_READ,
+                winreg.KEY_READ,  # type: ignore[attr-defined]
             ) as key:
-                user_path, _ = winreg.QueryValueEx(key, "PATH")
+                user_path, _ = winreg.QueryValueEx(key, "PATH")  # type: ignore[attr-defined]
             os.environ["PATH"] = sys_path + ";" + user_path + ";" + os.environ.get("PATH", "")
         except Exception as exc:
             logger.debug("Failed to refresh Windows PATH: %s", exc)
