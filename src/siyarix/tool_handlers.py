@@ -18,11 +18,7 @@ def _empty_target_result(tool: str) -> dict:
 
 
 async def _run(
-    tool_name: str, 
-    cmd: list[str], 
-    timeout: int = 120,
-    on_stdout: Any = None,
-    on_stderr: Any = None
+    tool_name: str, cmd: list[str], timeout: int = 120, on_stdout: Any = None, on_stderr: Any = None
 ) -> Any:
     """Lazy import and run a command asynchronously, with sanitization."""
     try:
@@ -44,9 +40,13 @@ async def _run(
 
     if on_stdout or on_stderr:
         from .subprocess_utils import safe_run_async_stream as _run_async_stream
-        return await _run_async_stream(cmd, timeout=timeout, on_stdout=on_stdout, on_stderr=on_stderr)
+
+        return await _run_async_stream(
+            cmd, timeout=timeout, on_stdout=on_stdout, on_stderr=on_stderr
+        )
     else:
         from .subprocess_utils import safe_run_async as _run_async
+
         return await _run_async(cmd, timeout=timeout)
 
 
@@ -67,7 +67,13 @@ def make_nmap_handler(tool_name: str) -> ToolHandler:
             return _empty_target_result(tool_name)
         flags = kwargs.get("flags", "-sT -T4 --top-ports 100")
         cmd = [tool_name] + flags.split() + [target]
-        result = await _run(tool_name, cmd, kwargs.get("timeout", 120), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            kwargs.get("timeout", 120),
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -124,7 +130,13 @@ def make_web_handler(tool_name: str) -> ToolHandler:
                 cmd.append(target)
         # Nuclei: use dedicated longer timeout (default 600s) for template download on first run
         default_timeout = 600 if tool_name == "nuclei" else 300
-        result = await _run(tool_name, cmd, kwargs.get("timeout", default_timeout), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            kwargs.get("timeout", default_timeout),
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -137,7 +149,13 @@ def make_portscan_handler(tool_name: str) -> ToolHandler:
             return _empty_target_result(tool_name)
         flags = kwargs.get("flags", "-T4 --top-ports 100")
         cmd = [tool_name] + flags.split() + [target]
-        result = await _run(tool_name, cmd, kwargs.get("timeout", 120), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            kwargs.get("timeout", 120),
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -158,7 +176,13 @@ def make_recon_handler(tool_name: str) -> ToolHandler:
             )
         else:
             cmd = [tool_name, "--help"]
-        result = await _run(tool_name, cmd, kwargs.get("timeout", 30), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            kwargs.get("timeout", 30),
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -173,7 +197,13 @@ def make_brute_handler(tool_name: str) -> ToolHandler:
         username = kwargs.get("username", "root")
         wordlist = kwargs.get("wordlist", "/usr/share/wordlists/rockyou.txt")
         cmd = [tool_name, "-l", username, "-P", wordlist, service + "://" + target]
-        result = await _run(tool_name, cmd, kwargs.get("timeout", 120), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            kwargs.get("timeout", 120),
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -198,7 +228,13 @@ def make_network_handler(tool_name: str) -> ToolHandler:
                 cmd = [tool_name, "--help"]
         else:
             cmd = [tool_name, "--help"]
-        result = await _run(tool_name, cmd, kwargs.get("timeout", 60), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            kwargs.get("timeout", 60),
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -216,7 +252,13 @@ def make_crypto_handler(tool_name: str) -> ToolHandler:
             cmd = [tool_name, target]
         else:
             cmd = [tool_name, "--help"]
-        result = await _run(tool_name, cmd, kwargs.get("timeout", 120), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            kwargs.get("timeout", 120),
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -229,7 +271,13 @@ def make_curl_handler(tool_name: str) -> ToolHandler:
             return _empty_target_result(tool_name)
         flags = kwargs.get("flags", "-sI")
         cmd = [tool_name] + flags.split() + [target]
-        result = await _run(tool_name, cmd, kwargs.get("timeout", 30), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            kwargs.get("timeout", 30),
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -246,7 +294,13 @@ def make_dns_handler(tool_name: str) -> ToolHandler:
             cmd.append(target)
         if not flags and not target:
             return _empty_target_result(tool_name)
-        result = await _run(tool_name, cmd, kwargs.get("timeout", 30), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            kwargs.get("timeout", 30),
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -258,7 +312,13 @@ def make_whois_handler(tool_name: str) -> ToolHandler:
         if not target:
             return _empty_target_result(tool_name)
         cmd = [tool_name, target]
-        result = await _run(tool_name, cmd, kwargs.get("timeout", 30), on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            kwargs.get("timeout", 30),
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -302,6 +362,7 @@ _RE_FLAGS: dict[str, str] = {
 
 def make_forensics_handler(tool_name: str) -> ToolHandler:
     """Specialised handler for forensic analysis tools (Volatility, YARA, SleuthKit, etc.)."""
+
     async def handler(**kwargs: Any) -> dict[str, Any]:
         filepath = kwargs.get("target", kwargs.get("file", kwargs.get("path", "")))
         if not filepath:
@@ -395,7 +456,13 @@ def make_forensics_handler(tool_name: str) -> ToolHandler:
                 cmd += extra_args
 
         timeout = kwargs.get("timeout", 300)
-        result = await _run(tool_name, cmd, timeout, on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            timeout,
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -403,6 +470,7 @@ def make_forensics_handler(tool_name: str) -> ToolHandler:
 
 def make_sast_handler(tool_name: str) -> ToolHandler:
     """Specialised handler for static analysis / SAST tools (Semgrep, Bandit, Gitleaks, etc.)."""
+
     async def handler(**kwargs: Any) -> dict[str, Any]:
         path = kwargs.get("target", kwargs.get("path", kwargs.get("dir", "")))
         extra_args = kwargs.get("args", [])
@@ -455,7 +523,13 @@ def make_sast_handler(tool_name: str) -> ToolHandler:
                 cmd += extra_args
 
         timeout = kwargs.get("timeout", 180)
-        result = await _run(tool_name, cmd, timeout, on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            timeout,
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -463,6 +537,7 @@ def make_sast_handler(tool_name: str) -> ToolHandler:
 
 def make_cloud_handler(tool_name: str) -> ToolHandler:
     """Specialised handler for cloud security auditing tools (Prowler, ScoutSuite, Checkov, etc.)."""
+
     async def handler(**kwargs: Any) -> dict[str, Any]:
         target = kwargs.get("target", kwargs.get("dir", kwargs.get("region", "")))
         extra_args = kwargs.get("args", [])
@@ -529,7 +604,13 @@ def make_cloud_handler(tool_name: str) -> ToolHandler:
                 cmd += extra_args
 
         timeout = kwargs.get("timeout", 180)
-        result = await _run(tool_name, cmd, timeout, on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            timeout,
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -537,6 +618,7 @@ def make_cloud_handler(tool_name: str) -> ToolHandler:
 
 def make_container_handler(tool_name: str) -> ToolHandler:
     """Specialised handler for container security tools (Trivy, Grype, Syft)."""
+
     async def handler(**kwargs: Any) -> dict[str, Any]:
         target = kwargs.get("target", kwargs.get("image", kwargs.get("path", "")))
         extra_args = kwargs.get("args", [])
@@ -587,7 +669,13 @@ def make_container_handler(tool_name: str) -> ToolHandler:
                 cmd += extra_args
 
         timeout = kwargs.get("timeout", 180)
-        result = await _run(tool_name, cmd, timeout, on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            timeout,
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -595,6 +683,7 @@ def make_container_handler(tool_name: str) -> ToolHandler:
 
 def make_re_handler(tool_name: str) -> ToolHandler:
     """Specialised handler for reverse engineering tools (Radare2, Apktool)."""
+
     async def handler(**kwargs: Any) -> dict[str, Any]:
         binary = kwargs.get("target", kwargs.get("file", kwargs.get("apk", "")))
         if not binary:
@@ -655,7 +744,13 @@ def make_re_handler(tool_name: str) -> ToolHandler:
                 cmd += extra_args
 
         timeout = kwargs.get("timeout", 300)
-        result = await _run(tool_name, cmd, timeout, on_stdout=kwargs.get("on_stdout"), on_stderr=kwargs.get("on_stderr"))
+        result = await _run(
+            tool_name,
+            cmd,
+            timeout,
+            on_stdout=kwargs.get("on_stdout"),
+            on_stderr=kwargs.get("on_stderr"),
+        )
         return _make_result(tool_name, result)
 
     return handler
@@ -683,7 +778,10 @@ def make_generic_handler(tool_name: str) -> ToolHandler:
         try:
             if on_stdout or on_stderr:
                 from .subprocess_utils import safe_run_async_stream
-                result = await safe_run_async_stream(cmd, timeout=timeout, on_stdout=on_stdout, on_stderr=on_stderr)
+
+                result = await safe_run_async_stream(
+                    cmd, timeout=timeout, on_stdout=on_stdout, on_stderr=on_stderr
+                )
             else:
                 result = await safe_run_async(cmd, timeout=timeout)
             return _make_result(tool_name, result)
