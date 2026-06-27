@@ -1,4 +1,4 @@
-# Siyarix v1.0.0 — The Dawn of Autonomous Cybersecurity Orchestration
+# Siyarix v1.0.0 — Autonomous Cybersecurity Orchestration
 
 **Release Date:** June 17, 2026
 **Version:** 1.0.0
@@ -134,13 +134,12 @@ Unlike simpler orchestrators that run a plan once and report results, Siyarix im
 | Tool parsers | 80+ |
 | CLI commands | 50+ |
 | REPL slash commands | 40+ |
-| Test files | 112 |
-| Total tests | 900+ passing |
+| Test files | 110+ |
+| Total tests | 850+ passing |
 | Code coverage | 70%+ |
 | CI/CD workflows | 57 |
-| Documentation pages | 70+ (docs) + 40+ (wiki) |
-| Package formats | 6+ |
-| Git commits | 1,600+ |
+| Documentation pages | 70+ (docs) |
+| Git commits | 1,000+ |
 
 ---
 
