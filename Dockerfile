@@ -118,10 +118,10 @@ RUN set -eux; \
 
 # Install Python-based security tools
 RUN pip install --no-cache-dir \
-    sqlmap==1.8.14 \
+    sqlmap==1.10.6 \
     wfuzz==3.1.0 \
-    semgrep==1.104.0 \
-    bandit==1.8.3
+    semgrep==1.168.0 \
+    bandit==1.9.4
 
 # Clone exploit databases
 RUN git clone --depth 1 https://gitlab.com/exploit-database/exploitdb.git /opt/exploitdb && \
