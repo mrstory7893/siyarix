@@ -25,11 +25,11 @@ _DISK_RE = re.compile(
 )
 
 _RECURSIVE_FILE_RE = re.compile(
-    r"\s*[`|]\s*(?P<path>\.(?:\\[^\\]+)+)\s*$",
+    r"\s*[`|]\s*(?P<path>\.\\[^\\]+(?:\\[^\\]+)*)\s*$",
 )
 
 _RECURSIVE_DIR_RE = re.compile(
-    r"\s*[`|]\s*(?P<path>\.(?:\\[^\\]+)+[/\\])\s*$",
+    r"\s*[`|]\s*(?P<path>\.\\[^\\]+(?:\\[^\\]+)*[/\\])\s*$",
 )
 
 _HOST_RE = re.compile(

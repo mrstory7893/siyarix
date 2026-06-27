@@ -236,7 +236,7 @@ class HealthChecker:
                 )
             except Exception as exc:
                 display_name = name_map.get(provider_name, provider_name.capitalize())
-                logger.exception("Model provider check failed")
+                logger.error("Model provider check failed: %s", exc)
                 return ComponentHealth(
                     name=f"ModelProvider/{display_name}",
                     state=HealthState.UNHEALTHY,
