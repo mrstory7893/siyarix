@@ -185,7 +185,7 @@ class LLMEngineMixin:
                     instruction,
                     _voting_strategy=VotingStrategy.WEIGHTED,
                 )
-                if ensemble_result.selection_reason and registered_count > 1:
+                if ensemble_result.selection_reason:
                     console.print(
                         Panel(
                             f"[bold]Ensemble:[/bold] {ensemble_result.selection_reason}\n"

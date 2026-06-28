@@ -1983,7 +1983,7 @@ class OnboardingWizard:
         import uuid
         import re
 
-        entries = re.findall(r"(?:^|\n)\s*\d+[.):]\s*(.+?)(?=\n\s*\d+[.):)|$)", raw_text, re.DOTALL)
+        entries = re.findall(r"(?:^|\n)\s*\d+[.):]\s*(.+?)(?=\n\s*\d+[.):]|$)", raw_text, re.DOTALL)
         if not entries:
             entries = [raw_text]
 
