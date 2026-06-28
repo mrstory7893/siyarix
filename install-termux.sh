@@ -21,6 +21,8 @@ PYTHON=""
 
 PACKAGES=(
   python
+  python-psutil
+  python-cryptography
   rust
   clang
   make
