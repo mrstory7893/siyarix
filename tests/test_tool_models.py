@@ -174,7 +174,8 @@ class TestToolCapability:
 
     def test_eq_self(self) -> None:
         t = ToolCapability(name="nmap")
-        assert t == t
+        t2 = t
+        assert t == t2
 
 
 # ---------------------------------------------------------------------------

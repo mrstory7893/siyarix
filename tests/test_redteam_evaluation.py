@@ -1357,7 +1357,6 @@ def normalize_tool_names(tools: list[str]) -> list[str]:
         "hashcat": "hashcat",
         "sqlmap": "sqlmap",
         "searchsploit": "searchsploit",
-        "nmap": "nmap",
         "masscan": "masscan",
         "responder": "responder",
         "ssllabs-scan": "ssllabs-scan",
@@ -1378,7 +1377,6 @@ def normalize_tool_names(tools: list[str]) -> list[str]:
         "interactsh": "interactsh",
         "rustscan": "rustscan",
         "naabu": "naabu",
-        "wpscan": "wpscan",
     }
     for t in tools:
         t_lower = t.lower()

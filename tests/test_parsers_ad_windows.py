@@ -2248,11 +2248,11 @@ class TestPypykatzParser_extra_b8:
             {
                 "LogonSession": {"Username": "u", "DomainName": "d"},
                 "Credentials": {
-                    "WDIGEST": {"subtype1": [{"Password": "pwd", "NTHash": ""}]},
                     "WDIGEST": {
+                        "subtype1": [{"Password": "pwd", "NTHash": ""}],
                         "subtype2": [
                             {"Password": "pwd2", "NTHash": "ccccccccccccccccccccccccccccccc3"}
-                        ]
+                        ],
                     },
                 },
             }
