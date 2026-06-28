@@ -43,7 +43,7 @@ jobs:
         run: |
           python -c "
           import json
-          with open('data/cyber_tools.json') as f:
+          with open('src/siyarix/data/cyber_tools.json') as f:
               data = json.load(f)
           print(f'cyber_tools.json: {len(data)} tools loaded successfully')
 
@@ -89,8 +89,14 @@ jobs:
         run: |
           python -c "
           import json, sys
-          from siyarix.report.sarif import SarifRenderer
-          print(f'SARIF Renderer available: {SarifRenderer}')
+          from siyarix.report import ReportEngine, ReportFormat, Report
+          from siyarix.report.models import ReportConfig
+          engine = ReportEngine()
+          config = ReportConfig()
+          report = Report(config=config, findings=[])
+          rendered = engine.render(report, ReportFormat.SARIF)
+          data = json.loads(rendered)
+          assert data['version'] == '2.1.0'
           print('SARIF schema check: PASSED')
           "
 

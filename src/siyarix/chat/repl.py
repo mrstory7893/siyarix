@@ -962,7 +962,7 @@ class SiyarixChat(CommandHandlersMixin, LLMEngineMixin):
                 status[prov_name] = ("✓", "configured")
             else:
                 # Local provider — perform live health check
-                base_url = self._settings.get(f"{prov_name}_url") or ""
+                base_url = self._settings.get(f"{prov_name}_url", default="") or ""
                 try:
                     if check_provider_health(prov_name, base_url, timeout=1.0):
                         try:
