@@ -654,7 +654,7 @@ class TestToolInstallerWindows:
             "custom-tool": None,
         }.get(x)
         installer = ToolInstaller()
-        result = installer.install("custom-tool", pkg="custom-pkg")
+        unused_result = installer.install("custom-tool", pkg="custom-pkg")
         # Should try winget with the pkg name
         call_args = mock_run.call_args_list
         if call_args:

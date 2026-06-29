@@ -517,10 +517,11 @@ def main_callback(
         _show_version()
         raise typer.Exit()
 
-    # Resolve default mode from settings if not explicitly specified by user
-    if mode is None:
+    mode_val: Any = mode
+    if mode_val is None:
         try:
             from siyarix.config import SettingsStore
+
             mode = SettingsStore().get("default_mode") or "integrated"
         except Exception:
             mode = "integrated"
@@ -873,7 +874,6 @@ def list_providers() -> None:
 # ---------------------------------------------------------------------------
 # State
 # ---------------------------------------------------------------------------
-_active_profile: str | None = None
 _active_theme: str = config.get("color_theme") or "default"
 
 
@@ -914,8 +914,10 @@ def scan(
     if not no_banner and not _CI_MODE:
         print_banner(console, _active_theme)
 
-    if mode is None:
-        mode = str(ctx.parent.params.get("mode", "integrated"))
+    mode_val: Any = mode
+    if mode_val is None:
+        parent_params = ctx.parent.params if ctx.parent else {}
+        mode = str(parent_params.get("mode", "integrated"))
 
     _execute_scan_core(
         targets,
@@ -1230,8 +1232,10 @@ def run(
     if not no_banner and not _CI_MODE:
         print_banner(console, _active_theme)
 
-    if mode is None:
-        mode = str(ctx.parent.params.get("mode", "integrated"))
+    mode_val: Any = mode
+    if mode_val is None:
+        parent_params = ctx.parent.params if ctx.parent else {}
+        mode = str(parent_params.get("mode", "integrated"))
 
     # Handle --resume
     if resume_plan:
