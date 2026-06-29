@@ -1100,7 +1100,7 @@ _cat_map: dict[CommandCategory, str] = {
     CommandCategory.ADVANCED: "Advanced Operations",
 }
 
-for cat in CommandCategory:
+for cat in list(CommandCategory):
     cmds_in_cat = CommandRegistry.by_category(cat)
     if cmds_in_cat:
         entries: dict[str, str] = {}

@@ -784,5 +784,6 @@ def make_openai_adapter(
 
                 provider_manager.record_failure(provider, classified.reason)
                 raise
+        raise RuntimeError("Max retries exceeded")
 
     return adapter

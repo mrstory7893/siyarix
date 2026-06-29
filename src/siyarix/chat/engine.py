@@ -281,7 +281,6 @@ class LLMEngineMixin:
                 progress_callback=_offline_progress,
             )
         except Exception as exc:
-            elapsed = time.monotonic() - t0
             logger.error("Execution failed: %s", exc, exc_info=True)
             error_msg = str(exc)
             if self._mode in ("registry", "offline"):
@@ -1584,15 +1583,15 @@ class LLMEngineMixin:
                 else:
                     logger.warning("No valid GGUF model found in %s", models_dir)
 
-        binary_path = shutil.which(binary)
-        if not binary_path:
+        _unused_binary_path = shutil.which(binary)
+        if not _unused_binary_path:
             # Check ~/.siyarix/bin as fallback (onboarding installs there)
             siyarix_bin = Path.home() / ".siyarix" / "bin"
             siyarix_binary = siyarix_bin / binary
             if os.name == "nt":
                 siyarix_binary = siyarix_bin / f"{binary}.exe"
             if siyarix_binary.exists():
-                binary_path = str(siyarix_binary)
+                _unused_binary_path = str(siyarix_binary)
                 # One-time promotion of shared libs from stale subdirectories
                 for d in siyarix_bin.iterdir():
                     if d.is_dir() and d.name.startswith("llama-"):

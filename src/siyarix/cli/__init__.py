@@ -1496,26 +1496,26 @@ def ci_gate(
     ),
 ) -> None:
     """CI gate — verify system health and critical findings before deployment."""
+    store = None
     try:
         from ..offline_store import OfflineStore
+
+        store = OfflineStore()
     except ModuleNotFoundError:
         console.print("[yellow]Offline store not available — skipping finding check[/yellow]")
-        health = run_async(get_health().check_all())
-    else:
-        store = OfflineStore()
-        health = run_async(get_health().check_all())
+
+    health = run_async(get_health().check_all())
+
+    if health.state.value == "unhealthy":
+        console.print("[red]Health check failed: UNHEALTHY[/red]")
+        raise typer.Exit(2)
+
+    if health.state.value == "degraded" and not allow_degraded:
+        console.print("[yellow]Health check is DEGRADED (use --allow-degraded to pass).[/yellow]")
+        raise typer.Exit(2)
+
+    if store:
         critical = store.search_findings(severity="critical", limit=1)
-
-        if health.state.value == "unhealthy":
-            console.print("[red]Health check failed: UNHEALTHY[/red]")
-            raise typer.Exit(2)
-
-        if health.state.value == "degraded" and not allow_degraded:
-            console.print(
-                "[yellow]Health check is DEGRADED (use --allow-degraded to pass).[/yellow]"
-            )
-            raise typer.Exit(2)
-
         if critical:
             console.print("[red]Critical findings detected. Failing gate.[/red]")
             raise typer.Exit(3)

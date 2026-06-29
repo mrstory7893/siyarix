@@ -390,21 +390,19 @@ class AutonomousExecutor(BaseExecutor):
 
         if cmd_states:
             focus_idx = 0
-            done_set = False
             wave_start = _time.time()
 
             with Live(refresh_per_second=10, screen=False) as live:
-                while not done_set:
+                while True:
                     await asyncio.sleep(0.1)
                     if exec_task.done():
-                        done_set = True
                         break
                     if cmd_states[focus_idx].done:
                         unfinished = [i for i, st in enumerate(cmd_states) if not st.done]
                         if unfinished:
                             focus_idx = unfinished[0]
                         else:
-                            done_set = True
+                            break
 
                     st = cmd_states[focus_idx]
                     elapsed = _time.time() - wave_start

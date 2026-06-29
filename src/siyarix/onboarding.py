@@ -1028,7 +1028,6 @@ class OnboardingWizard:
                     await asyncio.sleep(2)
 
             self._settings.set("llamacpp_url", llamacpp_url)
-            pull_cmd = None
             self._console.print(f"[green]\u2713 {provider_label} ready[/green]")
         else:
             ollama_found = shutil.which("ollama") is not None
@@ -1101,9 +1100,6 @@ class OnboardingWizard:
         self._console.print(f"[bold]== Downloading {model_name} ==[/bold]\n")
 
         if not is_llamacpp:
-            if pull_cmd is None:
-                self._console.print("[red]Ollama pull command not available.[/red]")
-                return
             self._console.print(f"Pulling [cyan]{model_name}[/cyan] with Ollama...")
             self._console.print("[dim]This may take several minutes depending on model size.[/dim]")
             if Confirm.ask("Pull this model now?", default=True):
