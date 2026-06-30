@@ -1,8 +1,8 @@
 # Siyarix Project Governance
 
 **Effective Date:** June 2026
-**Version:** 1.0.0
-**Applies to:** Siyarix v1.0.0 and all future versions
+**Version:** 1.0.1
+**Applies to:** Siyarix v1.0.1 and all future versions
 
 ---
 
