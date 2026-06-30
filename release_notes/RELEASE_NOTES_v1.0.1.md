@@ -15,11 +15,18 @@ Siyarix v1.0.1 is a maintenance and security hardening release focused on resolv
 
 ## What's New in v1.0.1
 
-### 🛠️ CLI & REPL Enhancements
+### 🛠️ CLI, REPL & Installer Enhancements
 
 - **Real-Time Provider Statuses:** The LLM Status panel in the interactive REPL now displays each provider's status on its own line for cleaner rendering and instant diagnostics.
 - **Live Health Diagnostics:** Added support for live local provider checks in status gathering.
 - **Configurable Diagnostics:** The health check timeout is now fully configurable via settings (via `provider_utils` updates).
+- **Installer Restructuring:** Relocated all main installer scripts (`install.sh`, `install.ps1`, `install-termux.sh`) into a dedicated `installer/` directory. Added automated Python bootstrapping, robust virtual environment setups, and cleaned environment PATH resolution.
+- **Simplified Setup:** Removed post-installation diagnostic blocks and checks from all installers to ensure a clean, distraction-free installation experience.
+
+### 📦 Automated Package Manager Releases
+
+- **Chocolatey Support:** Added a `publish-chocolatey` release job that packages the application (`nuget pack`) and pushes the `.nupkg` directly to Chocolatey.
+- **Homebrew Automation:** Configured automatic custom Homebrew tap formula updates. The release workflow now clones the tap repository, updates the `siyarix.rb` formula, and commits/pushes it directly.
 
 ### 🐛 Bug Fixes & System Stability
 

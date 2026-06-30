@@ -41,6 +41,9 @@
 - *(provider_utils)* Make health check timeout configurable
 - *(repl)* Perform live health checks for local providers in status gathering
 - *(ui)* Render each provider's real-time status on its own line in the LLM Status panel
+- *(release)* Add automated Chocolatey NuGet and Homebrew tap release syncing
+- *(installer)* Relocate install.sh, install.ps1, install-termux.sh into installer/ directory
+- *(installer)* Remove diagnostics and post-install check blocks
 
 ### Security
 
