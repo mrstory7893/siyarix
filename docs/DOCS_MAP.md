@@ -94,7 +94,8 @@ docs/
 │   ├── threat-model.md       # System threat model and our mitigations
 │   ├── operational-security.md# TOR routing, stealth modes, and OPSEC controls
 │   ├── ethical-policy.md     # Mandatory rules of engagement for all users
-│   └── abuse-prevention.md   # How we prevent misuse of the AI engine
+│   ├── abuse-prevention.md   # How we prevent misuse of the AI engine
+│   └── scorecard.md          # OpenSSF Scorecard integration details
 │
 └── ⚖️ legal/                 # Licensing and governance
     ├── agpl-guide.md         # A plain-English overview of the AGPL-3.0-or-later license
