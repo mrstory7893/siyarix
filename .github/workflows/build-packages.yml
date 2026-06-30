@@ -7,8 +7,9 @@ on:
       - 'src/**'
       - 'pyproject.toml'
       - 'packages/**'
-      - 'install.sh'
-      - 'install.ps1'
+      - 'installer/install.sh'
+      - 'installer/install.ps1'
+      - 'installer/install-termux.sh'
   pull_request:
     branches: [main]
     paths:
@@ -112,11 +113,11 @@ jobs:
       - name: Shellcheck install.sh
         run: |
           sudo apt-get install -y -qq shellcheck
-          find . -maxdepth 1 -name '*.sh' -not -path './.venv/*' -exec shellcheck --severity=error {} + || true
+          find installer -name '*.sh' -exec shellcheck --severity=error {} + || true
       - name: Validate install.ps1
         run: |
           if command -v pwsh &>/dev/null; then
-            pwsh -NoProfile -Command "Get-Content install.ps1 | Invoke-Expression 2>&1" || true
+            pwsh -NoProfile -Command "Get-Content installer/install.ps1 | Invoke-Expression 2>&1" || true
           else
             echo "PowerShell not available, skipping"
           fi

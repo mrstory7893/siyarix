@@ -43,8 +43,9 @@ docker:
 
 installer:
   - changed-files:
-      - any-glob-to-match: 'install.sh'
-      - any-glob-to-match: 'install.ps1'
+      - any-glob-to-match: 'installer/install.sh'
+      - any-glob-to-match: 'installer/install.ps1'
+      - any-glob-to-match: 'installer/install-termux.sh'
 
 dependencies:
   - changed-files:
