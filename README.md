@@ -93,7 +93,7 @@
 
 ---
 
-> ✋ **Knock KNock.... We are moving!**
+> ✋ **We are moving!**
 > To better support our growing community, Siyarix will soon be migrating from my personal repository (`mufthakherul/siyarix`) to its very own dedicated GitHub organization: **`siyarix/siyarix`**.
 > Please read our [Migration Announcement](announcement/repo-migration-announcement.md) for all the details.
 
