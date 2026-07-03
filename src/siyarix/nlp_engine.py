@@ -937,7 +937,7 @@ class NaturalLanguageParser:
             for neg in ["not ", "no ", "without ", "skip ", "exclude ", "don't ", "dont ", "avoid "]
         )
 
-        port_match = re.search(r"\bport(?:s)?\s*([0-9,\-]+)\b", text_lower)
+        port_match = re.search(r"(?:\bports?|-p)\s*([0-9,\-]+)\b", text_lower)
         if port_match:
             params["ports"] = port_match.group(1)
         elif "all ports" in text_lower or "full ports" in text_lower:
@@ -1083,6 +1083,30 @@ class NaturalLanguageParser:
             unit_map = {"hour": "h", "day": "d", "week": "w", "month": "m"}
             params["time_range"] = f"{n}{unit_map.get(unit, unit[0])}"
 
+        # Threads / Concurrency
+        threads_match = re.search(r"\b(?:threads|--threads|-t)\s*(\d+)\b", text_lower)
+        if threads_match:
+            params["threads"] = threads_match.group(1)
+
+        # User-Agent string
+        ua_match = re.search(r"\b(?:user-agent|ua)\s+['\"]([^'\"]+)['\"]", text_lower)
+        if not ua_match:
+            ua_match = re.search(r"\b(?:user-agent|ua)\s+([a-zA-Z0-9_.\-\/:()]+)\b", text_lower)
+        if ua_match:
+            params["user_agent"] = ua_match.group(1)
+
+        # Cookie header
+        cookie_match = re.search(r"\b(?:cookie|cookies)\s+['\"]([^'\"]+)['\"]", text_lower)
+        if not cookie_match:
+            cookie_match = re.search(r"\b(?:cookie|cookies)\s+([a-zA-Z0-9_.\-=\/;]+)\b", text_lower)
+        if cookie_match:
+            params["cookie"] = cookie_match.group(1)
+
+        # Verbosity level
+        verbosity_match = re.search(r"\b(?:verbose|verbosity|level)\s+(low|medium|high|debug|\d)\b", text_lower)
+        if verbosity_match:
+            params["verbosity"] = verbosity_match.group(1)
+
         return params
 
     def get_idf(self, token: str) -> float:
@@ -1196,16 +1220,30 @@ class NaturalLanguageParser:
 
         return best_match, highest_score
 
+    def normalize_target(self, target: str, target_type: str) -> str:
+        """Sanitize and normalize extracted target entities."""
+        if not target:
+            return ""
+        target = target.strip()
+        if target_type == "url":
+            target = target.rstrip("/")
+        elif target_type == "domain":
+            target = target.lower().strip(".")
+        elif target_type in ("ipv4", "ipv6"):
+            target = target.strip("[]")
+        return target
+
     def parse(self, text: str) -> ParsedIntent:
         """Parse natural language into a structured intent representation."""
         intent = ParsedIntent(raw_text=text)
 
         # 1. Target Extraction
-        intent.target, intent.target_type = self.extract_entities(text)
+        raw_target, intent.target_type = self.extract_entities(text)
+        intent.target = self.normalize_target(raw_target, intent.target_type)
         intent.all_entities = self.extract_all_entities(text)
 
         # Strip the target from text to prevent it from confusing intent matching
-        clean_text = text.replace(intent.target, "") if intent.target else text
+        clean_text = text.replace(raw_target, "") if raw_target else text
 
         # 2. Tokenization
         intent.tokens = self.tokenize(clean_text)
