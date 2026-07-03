@@ -2541,6 +2541,122 @@ class RegistryPlanner:
             "sentinel": ("sentinel", "Azure Sentinel SIEM query", ""),
             "qradar": ("curl", "QRadar SIEM query", ""),
             "misp": ("curl", "MISP threat intelligence platform", ""),
+            "crackmapexec": ("crackmapexec", "SMB host reachability and authentication check", "smb"),
+            "netexec": ("netexec", "SMB host reachability and network authentication check", "smb"),
+            # ── Windows Privilege Escalation ──────────────────────────────────────────
+            "winpeas": ("winpeas", "Windows privilege escalation enumeration", "quiet"),
+            "powerup": ("powerup", "PowerShell privilege escalation checks", "Invoke-AllChecks"),
+            "seatbelt": ("seatbelt", "Windows security recon with Seatbelt", "-group=all"),
+            "incognito": ("incognito", "Token impersonation and privilege enumeration", "list_tokens -u"),
+            "juicypotato": ("JuicyPotatoNG", "JuicyPotato privilege escalation", ""),
+            "printspoofer": ("PrintSpoofer", "PrintSpoofer privilege escalation", "-i -c cmd"),
+            "godpotato": ("GodPotato", "GodPotato privilege escalation", ""),
+            # ── Linux Privilege Escalation ────────────────────────────────────────────
+            "linpeas": ("linpeas", "Linux privilege escalation enumeration", ""),
+            "pspy": ("pspy", "Linux process monitoring for privesc", ""),
+            "linenum": ("linenum", "Linux enumeration for privilege escalation", ""),
+            # ── Lateral Movement ──────────────────────────────────────────────────────
+            "chisel": ("chisel", "TCP/UDP tunneling and SOCKS proxy", "client"),
+            "ligolo": ("ligolo-ng", "Advanced tunneling for pivoting", ""),
+            "ligolo-ng": ("ligolo-ng", "Advanced tunneling for pivoting", ""),
+            "wmiexec": ("wmiexec", "WMI-based remote command execution", ""),
+            "smbexec": ("smbexec", "SMB-based remote command execution", ""),
+            "xfreerdp": ("xfreerdp", "Free RDP client for lateral movement", "/v:"),
+            "rdesktop": ("rdesktop", "RDP client", ""),
+            # ── Persistence ───────────────────────────────────────────────────────────
+            "weevely": ("weevely", "PHP web shell generation and management", ""),
+            "autoruns": ("autoruns", "Windows autoruns persistence enumeration", ""),
+            # ── Defense Evasion ───────────────────────────────────────────────────────
+            "veil": ("veil", "AV evasion payload framework", ""),
+            "donut": ("donut", "Shellcode generation from .NET/PE", ""),
+            "shellter": ("shellter", "Dynamic shellcode injector", ""),
+            "msfvenom": ("msfvenom", "Payload generation with msfvenom", "-p windows/x64/meterpreter/reverse_tcp"),
+            # ── Post-Exploitation / C2 ────────────────────────────────────────────────
+            "msfconsole": ("msfconsole", "Metasploit Framework console", "-q"),
+            "empire": ("empire", "PowerShell Empire C2 framework", ""),
+            "sliver": ("sliver", "Sliver C2 framework", ""),
+            "havoc": ("havoc", "Havoc C2 framework", ""),
+            "villain": ("villain", "Villain C2 framework", ""),
+            # ── Active Directory ──────────────────────────────────────────────────────
+            "rubeus": ("rubeus", "Kerberos attack toolkit", ""),
+            "mimikatz": ("mimikatz", "Credential extraction and Kerberos attacks", "sekurlsa::logonpasswords"),
+            "pypykatz": ("pypykatz", "Python Mimikatz implementation", "lsa minidump"),
+            "nanodump": ("nanodump", "LSASS memory dump", "--write /tmp/lsass.dmp"),
+            "lsassy": ("lsassy", "Remote LSASS dumping", ""),
+            "certipy": ("certipy", "Active Directory Certificate Services attacks", ""),
+            "certify": ("certify", "AD CS vulnerability finder", "find /vulnerable"),
+            # ── Social Engineering ────────────────────────────────────────────────────
+            "gophish": ("gophish", "Phishing campaign framework", ""),
+            "evilginx2": ("evilginx2", "Reverse proxy credential harvesting", ""),
+            "modlishka": ("modlishka", "Reverse proxy phishing tool", ""),
+            "swaks": ("swaks", "SMTP testing and email spoofing", "--to"),
+            # ── Mobile Security ───────────────────────────────────────────────────────
+            "mobsf": ("mobsf", "Mobile Security Framework", ""),
+            "apkleaks": ("apkleaks", "APK secrets and credential scanner", ""),
+            "jadx": ("jadx", "Android DEX to Java decompiler", ""),
+            "dex2jar": ("dex2jar", "DEX to JAR conversion", ""),
+            "apkid": ("apkid", "Android APK identifier", ""),
+            "adb": ("adb", "Android Debug Bridge", "devices"),
+            "frida": ("frida", "Dynamic instrumentation toolkit", "-U"),
+            "objection": ("objection", "Runtime mobile security toolkit", "explore"),
+            # ── IoT / Firmware ────────────────────────────────────────────────────────
+            "openocd": ("openocd", "Open On-Chip Debugger for JTAG", ""),
+            "flashrom": ("flashrom", "Flash chip programmer and reader", ""),
+            "minicom": ("minicom", "Serial terminal for UART access", ""),
+            "firmwalker": ("firmwalker", "Firmware security analysis", ""),
+            # ── OT / ICS / SCADA ──────────────────────────────────────────────────────
+            "mbtget": ("mbtget", "Modbus TCP device enumeration", ""),
+            "plcscan": ("plcscan", "PLC device scanner", ""),
+            # ── Cloud Attack ──────────────────────────────────────────────────────────
+            "aadinternals": ("aadinternals", "Azure AD enumeration and attack toolkit", ""),
+            "roadtools": ("roadtools", "Azure AD enumeration via ROADtools", "auth"),
+            "powerzure": ("powerzure", "Azure privilege escalation toolkit", ""),
+            "azurehound": ("azurehound", "Azure BloodHound data collection", "list"),
+            "stormspotter": ("stormspotter", "Azure attack path visualization", ""),
+            "gcloud": ("gcloud", "Google Cloud CLI enumeration", "projects list"),
+            # ── Kubernetes / Container ────────────────────────────────────────────────
+            "cdk": ("cdk", "Container and Kubernetes exploit toolkit", "auto-escape"),
+            "kube-hunter": ("kube-hunter", "Kubernetes attack surface mapper", "--remote"),
+            "kube-bench": ("kube-bench", "Kubernetes CIS benchmark auditor", ""),
+            "kubesec": ("kubesec", "Kubernetes manifest security scanner", "scan"),
+            "etcdctl": ("etcdctl", "Etcd datastore CLI access", "get / --prefix"),
+            # ── Cryptography / Hash ───────────────────────────────────────────────────
+            "hashid": ("hashid", "Hash type identification", ""),
+            "rsactftool": ("rsactftool", "RSA CTF attack tool", ""),
+            "padbuster": ("padbuster", "Padding oracle attack tool", ""),
+            "john": ("john", "John the Ripper password cracker", "--wordlist=/usr/share/wordlists/rockyou.txt"),
+            # ── CTF / Binary Exploitation ─────────────────────────────────────────────
+            "checksec": ("checksec", "Binary security feature checker", "--file"),
+            "ropgadget": ("ROPgadget", "ROP gadget finder", "--binary"),
+            "pwndbg": ("pwndbg", "GDB with pwndbg plugin for exploitation", ""),
+            "ROPgadget": ("ROPgadget", "ROP gadget finder and chain builder", "--binary"),
+            # ── CTF Steganography ─────────────────────────────────────────────────────
+            "steghide": ("steghide", "Steganography embed/extract tool", "extract -sf"),
+            "stegcracker": ("stegcracker", "Steganography brute force cracker", ""),
+            "zsteg": ("zsteg", "Steganography detection in PNG/BMP", ""),
+            # ── Purple Team ───────────────────────────────────────────────────────────
+            "caldera": ("caldera", "MITRE ATT&CK adversary emulation", ""),
+            "vectr": ("vectr", "Purple team exercise tracking", ""),
+            "invoke-atomicredteam": ("invoke-atomicredteam", "Atomic Red Team test execution", "Invoke-AtomicTest"),
+            # ── Network / MITM ────────────────────────────────────────────────────────
+            "bettercap": ("bettercap", "Network attack and monitoring framework", ""),
+            "ettercap": ("ettercap", "MITM attack toolkit", "-T -q"),
+            "arpspoof": ("arpspoof", "ARP poisoning for MITM", ""),
+            # ── Wireless ──────────────────────────────────────────────────────────────
+            "wifite": ("wifite", "Automated wireless auditing", "--all"),
+            "hcxtools": ("hcxtools", "WiFi PMKID/handshake capture tools", ""),
+            "kismet": ("kismet", "Wireless network detector and sniffer", ""),
+            # ── Exfiltration ──────────────────────────────────────────────────────────
+            "iodine": ("iodine", "DNS tunnel for data exfiltration", ""),
+            "ptunnel-ng": ("ptunnel-ng", "ICMP tunnel for data exfiltration", ""),
+            "dnscat2": ("dnscat2", "DNS C2 channel", ""),
+            # ── Supply Chain ──────────────────────────────────────────────────────────
+            "pip-audit": ("pip-audit", "Python dependency vulnerability audit", ""),
+            "confused": ("confused", "Dependency confusion attack checker", ""),
+            "dalfox": ("dalfox", "XSS parameter scanner", "pipe"),
+            "kxss": ("kxss", "Reflected XSS parameter scanner", ""),
+            "cewl": ("cewl", "Custom wordlist generator from website", "-d 3 -m 5"),
+            "crunch": ("crunch", "Wordlist generator", "8 8"),
         }
         # ── Step 0.5: Direct tool keyword match ─────────────────────────
         # Matches explicit tool names in the goal. Early-position keywords
@@ -2642,6 +2758,89 @@ class RegistryPlanner:
         # ── Step 1: Match against named workflow templates ──────────────
         kw_map = [
             # Place more specific templates first to prevent over-matching
+            # ── Post-Exploitation ────────────────────────────────────────────────────
+            (("windows privesc", "winpeas", "token impersonation", "juicy potato",
+              "print spoofer", "god potato", "seimpersonate", "unquoted service",
+              "powerup", "seatbelt", "windows privilege escalation"), "windows_privesc"),
+            (("linux privesc", "linpeas", "suid exploit", "sudo abuse",
+              "capabilities exploit", "nfs root squash", "cron abuse",
+              "linux privilege escalation", "gtfobins"), "linux_privesc_full"),
+            (("lateral movement", "pass the hash", "pass-the-hash", "pth attack",
+              "wmiexec", "psexec lateral", "rdp lateral", "pivoting",
+              "port forward", "socks proxy", "chisel", "ligolo"), "lateral_movement"),
+            (("persistence", "backdoor", "webshell", "scheduled task",
+              "registry run", "cron persistence", "startup persistence",
+              "autoruns", "service persistence"), "persistence"),
+            (("c2 setup", "command and control", "c2 infrastructure",
+              "msfvenom", "reverse shell", "listener setup", "meterpreter",
+              "payload generation"), "c2_setup"),
+            # ── Social Engineering ───────────────────────────────────────────────────
+            (("phishing", "spear phishing", "phishing campaign",
+              "gophish", "clone site", "credential harvest",
+              "email spoofing", "vishing", "smishing", "pretexting",
+              "social engineering"), "phishing_campaign"),
+            # ── IoT / Embedded ───────────────────────────────────────────────────────
+            (("firmware", "firmware analysis", "iot device", "iot security",
+              "uart", "jtag", "bootloader", "embedded device",
+              "flash dump"), "iot_firmware"),
+            # ── OT / ICS ─────────────────────────────────────────────────────────────
+            (("ics", "scada", "modbus", "dnp3", "plc", "s7",
+              "industrial network", "ot network", "hmi",
+              "ics recon", "scada enum"), "ics_recon"),
+            # ── Mobile ───────────────────────────────────────────────────────────────
+            (("android analysis", "apk analysis", "android security",
+              "adb", "apkleaks", "frida android", "objection android",
+              "mobsf android", "jadx", "dex2jar"), "mobile_android"),
+            (("ios analysis", "ios security", "ipa analysis",
+              "jailbreak", "objection ios", "frida ios",
+              "ssl pinning bypass", "cycript", "clutch"), "mobile_ios"),
+            # ── Cloud Attack ─────────────────────────────────────────────────────────
+            (("azure", "azure ad", "azure ad enum", "aadinternals",
+              "powerzure", "roadtools", "azurehound", "microsoft 365",
+              "entra id", "office 365", "o365"), "cloud_azure"),
+            (("gcp", "google cloud", "gcp enum", "gcloud",
+              "gcpbucketbrute"), "cloud_gcp"),
+            # ── Kubernetes / Container ───────────────────────────────────────────────
+            (("kubernetes attack", "k8s attack", "container escape",
+              "etcd access", "rbac audit", "pod attack",
+              "kube-hunter", "kube-bench", "k8s exploit"), "k8s_attack"),
+            # ── Cryptography ─────────────────────────────────────────────────────────
+            (("hash crack", "hash cracking", "rainbow table",
+              "hash identify", "padding oracle",
+              "crypto attack", "rsactftool"), "crypto_attack"),
+            # ── CTF ──────────────────────────────────────────────────────────────────
+            (("ctf forensics", "capture the flag forensics",
+              "steganography", "ctf stego", "stegsolve", "steg challenge"), "ctf_forensics"),
+            (("pwn", "pwnable", "buffer overflow", "rop chain",
+              "heap exploit", "format string exploit", "bof",
+              "ctf pwn", "binary exploit"), "ctf_pwn"),
+            (("ctf crypto", "crypto challenge", "rsa challenge",
+              "xor cipher", "classical cipher", "vigenere",
+              "caesar cipher"), "ctf_crypto"),
+            # ── Blue Team ────────────────────────────────────────────────────────────
+            (("threat hunt", "threat hunting", "sigma hunt",
+              "yara hunt", "osquery hunt", "ioc hunt",
+              "hunting for", "hunt for"), "threat_hunting"),
+            (("incident response", "ir triage", "evidence collection",
+              "forensic triage", "ir workflow", "incident handling"), "incident_response_full"),
+            # ── Purple Team ──────────────────────────────────────────────────────────
+            (("purple team", "atomic red team", "attack simulation",
+              "caldera", "vectr", "detection validation",
+              "mitre att&ck simulation"), "purple_team"),
+            # ── Defense Evasion ──────────────────────────────────────────────────────
+            (("edr bypass", "av bypass", "amsi bypass",
+              "defense evasion", "obfuscation", "lolbas",
+              "etw bypass", "uac bypass", "payload obfuscation"), "edr_bypass"),
+            # ── Exfiltration ─────────────────────────────────────────────────────────
+            (("data exfil", "exfiltration", "dns exfil",
+              "dns tunnel", "icmp tunnel", "covert channel",
+              "data theft"), "data_exfiltration"),
+            # ── Bug Bounty ───────────────────────────────────────────────────────────
+            (("bug bounty", "vdp", "responsible disclosure",
+              "hackerone", "bugcrowd", "bug hunting"), "bug_bounty_web"),
+            # ── Supply Chain ─────────────────────────────────────────────────────────
+            (("supply chain", "dependency confusion", "typosquatting",
+              "sbom", "bill of materials", "sca scan"), "supply_chain"),
             (("ssl", "tls", "cipher suite"), "ssl_audit"),
             (("http header", "response header", "security header"), "headers_check"),
             (("cors", "cross-origin", "cross origin", "preflight"), "cors_check"),
@@ -2961,6 +3160,7 @@ class RegistryPlanner:
                 ),
                 "full_audit",
             ),
+
         ]
         for keywords, template_name in kw_map:
             if any(kw in goal_lower for kw in keywords):
