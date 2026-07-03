@@ -1989,6 +1989,142 @@ class RegistryPlanner:
                     "args": {"flags": "detect"},
                 },
             ],
+            "appsec_sast": [
+                {
+                    "description": "Static application security testing with Semgrep",
+                    "tool": "semgrep",
+                    "args": {"flags": "--config=auto"},
+                },
+                {
+                    "description": "Python static analysis with Bandit",
+                    "tool": "bandit",
+                    "args": {"flags": "-r"},
+                },
+                {
+                    "description": "File system vulnerability scanning with Trivy",
+                    "tool": "trivy",
+                    "args": {"flags": "fs"},
+                },
+            ],
+            "appsec_dast": [
+                {
+                    "description": "DAST baseline scan via ZAP CLI",
+                    "tool": "zap-cli",
+                    "args": {"flags": "quick-scan"},
+                },
+                {
+                    "description": "Web server vulnerability scan with Nikto",
+                    "tool": "nikto",
+                    "args": {},
+                },
+                {
+                    "description": "HTTP security headers check with curl",
+                    "tool": "curl",
+                    "args": {"flags": "-sI"},
+                },
+            ],
+            "dfir_memory": [
+                {
+                    "description": "Volatility memory analysis profile and image identification",
+                    "tool": "volatility",
+                    "args": {"flags": "imageinfo"},
+                },
+                {
+                    "description": "Extract printable strings from memory dump",
+                    "tool": "strings",
+                    "args": {},
+                },
+                {
+                    "description": "YARA malware signature scan on memory dump",
+                    "tool": "yara",
+                    "args": {"flags": "-s rules.yar"},
+                },
+            ],
+            "dfir_disk": [
+                {
+                    "description": "List directory entries in disk partition via fls",
+                    "tool": "fls",
+                    "args": {"flags": "-r -p"},
+                },
+                {
+                    "description": "Extract file content by inode via icat",
+                    "tool": "icat",
+                    "args": {},
+                },
+                {
+                    "description": "File carving and data recovery with Foremost",
+                    "tool": "foremost",
+                    "args": {},
+                },
+                {
+                    "description": "Firmware extraction and analysis with Binwalk",
+                    "tool": "binwalk",
+                    "args": {"flags": "-e"},
+                },
+            ],
+            "threat_hunting_endpoint": [
+                {
+                    "description": "Endpoint state query via osquery",
+                    "tool": "osquery",
+                    "args": {"flags": "--query 'select * from processes;'"},
+                },
+                {
+                    "description": "Velociraptor endpoint triage query",
+                    "tool": "velociraptor",
+                    "args": {"flags": "query 'select * from info()'"},
+                },
+            ],
+            "threat_hunting_network": [
+                {
+                    "description": "Suricata network IDS pcap processing",
+                    "tool": "suricata",
+                    "args": {"flags": "-r"},
+                },
+                {
+                    "description": "Zeek network connection log generation from pcap",
+                    "tool": "zeek",
+                    "args": {"flags": "-r"},
+                },
+                {
+                    "description": "tshark packet capture parsing and filtration",
+                    "tool": "tshark",
+                    "args": {"flags": "-r"},
+                },
+            ],
+            "compliance_audit_cis": [
+                {
+                    "description": "CIS Kubernetes Benchmark compliance check",
+                    "tool": "kube-bench",
+                    "args": {"flags": "run --targets master,node"},
+                },
+                {
+                    "description": "OpenSCAP security compliance policy evaluation",
+                    "tool": "openscap",
+                    "args": {"flags": "xccdf eval"},
+                },
+                {
+                    "description": "Export Windows security configuration database",
+                    "tool": "secedit",
+                    "args": {"flags": "/export /cfg sec.inf"},
+                },
+            ],
+            "exploit_research": [
+                {
+                    "description": "GDB interactive binary debugger execution",
+                    "tool": "gdb",
+                    "args": {"flags": "-q -ex run --args"},
+                },
+                {
+                    "description": "Verify binary protection features with checksec",
+                    "tool": "checksec",
+                    "args": {"flags": "--file="},
+                },
+                {
+                    "description": "Construct ROP exploit chain with ROPgadget",
+                    "tool": "ROPgadget",
+                    "args": {"flags": "--binary"},
+                },
+            ],
         }
 
     # ── Index builder ─────────────────────────────────────────────────────
