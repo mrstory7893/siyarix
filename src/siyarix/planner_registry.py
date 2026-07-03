@@ -76,6 +76,13 @@ TOOL_ALTERNATIVES: dict[str, list[str]] = {
     "bettercap": ["ettercap"],
     "ettercap": ["bettercap"],
     "wifite": ["hcxtools", "aircrack-ng"],
+    "semgrep": ["bandit", "trivy"],
+    "bandit": ["semgrep"],
+    "zap-cli": ["nikto"],
+    "osquery": ["velociraptor"],
+    "velociraptor": ["osquery"],
+    "suricata": ["snort"],
+    "tshark": ["tcpdump"],
 }
 
 
@@ -2657,6 +2664,17 @@ class RegistryPlanner:
             "kxss": ("kxss", "Reflected XSS parameter scanner", ""),
             "cewl": ("cewl", "Custom wordlist generator from website", "-d 3 -m 5"),
             "crunch": ("crunch", "Wordlist generator", "8 8"),
+            # ── AppSec / DAST / SAST ──────────────────────────────────────────────────
+            "semgrep": ("semgrep", "Static analysis tool for code scan", "--config=auto"),
+            "bandit": ("bandit", "Python security linter", "-r"),
+            "zap-cli": ("zap-cli", "OWASP ZAP daemon scanner CLI", "quick-scan"),
+            # ── DFIR / Forensic tools ─────────────────────────────────────────────────
+            "velociraptor": ("velociraptor", "Endpoint responder & triage tool", "query"),
+            "fls": ("fls", "List directory entries in partition", "-r -p"),
+            "icat": ("icat", "Output file contents by inode", ""),
+            "foremost": ("foremost", "Forensic file carver", ""),
+            # ── Binary Exploitation / Debugging ───────────────────────────────────────
+            "gdb": ("gdb", "GNU Debugger", "-q -ex run --args"),
         }
         # ── Step 0.5: Direct tool keyword match ─────────────────────────
         # Matches explicit tool names in the goal. Early-position keywords
@@ -2755,9 +2773,20 @@ class RegistryPlanner:
                 ],
             )
 
-        # ── Step 1: Match against named workflow templates ──────────────
         kw_map = [
-            # Place more specific templates first to prevent over-matching
+            # ── Application Security ──────────────────────────────────────────────────
+            (("appsec sast", "static analysis", "semgrep", "bandit", "code review", "secure code audit"), "appsec_sast"),
+            (("appsec dast", "dynamic scan", "zap scan", "nikto web scan", "web app vulnerability"), "appsec_dast"),
+            # ── Digital Forensics & Incident Response ─────────────────────────────────
+            (("dfir memory", "memory analysis", "volatility forensics", "dump parse", "yara memory"), "dfir_memory"),
+            (("dfir disk", "disk analysis", "fls directory", "icat file", "foremost carve", "binwalk firmware"), "dfir_disk"),
+            # ── Threat Hunting ────────────────────────────────────────────────────────
+            (("threat hunt endpoint", "endpoint hunt", "osquery processes", "velociraptor info"), "threat_hunting_endpoint"),
+            (("threat hunt network", "network hunt", "suricata pcap", "zeek logs", "tshark parse"), "threat_hunting_network"),
+            # ── Compliance & GRC ──────────────────────────────────────────────────────
+            (("compliance audit", "cis benchmark", "kube-bench", "openscap eval", "secedit export"), "compliance_audit_cis"),
+            # ── Exploit Research ──────────────────────────────────────────────────────
+            (("exploit research", "binary debug", "gdb run", "checksec file", "rop chain build", "ropexploit"), "exploit_research"),
             # ── Post-Exploitation ────────────────────────────────────────────────────
             (("windows privesc", "winpeas", "token impersonation", "juicy potato",
               "print spoofer", "god potato", "seimpersonate", "unquoted service",
