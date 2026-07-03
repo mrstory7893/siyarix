@@ -10,6 +10,7 @@ from __future__ import annotations
 import re
 import math
 import difflib
+import functools
 from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Any
@@ -25,6 +26,10 @@ class ParsedIntent:
     confidence: float = 0.0
     tokens: list[str] = field(default_factory=list)
     raw_text: str = ""
+    all_entities: dict[str, list[str]] = field(default_factory=dict)
+    negated: bool = False
+    conjunctive_goal: bool = False
+    normalized_confidence: float = 0.0
 
 
 class NaturalLanguageParser:
@@ -123,8 +128,94 @@ class NaturalLanguageParser:
         "gcp_bucket": r"\b(?:[a-z0-9\-_]{3,63}\.storage\.googleapis\.com)\b",
     }
 
-    # Suffixes for lightweight stemming
-    SUFFIXES = ["ing", "ed", "s", "es", "ly", "tion", "ity", "ment", "ness", "able", "ible"]
+    # Suffixes for lightweight stemming - ordered longest to shortest to prevent over-stemming
+    SUFFIXES = ["ation", "tion", "ness", "ment", "able", "ible", "ity", "ing", "ly", "ed", "es", "s"]
+
+    # PHRASE_SYNONYMS applied before tokenization
+    PHRASE_SYNONYMS: dict[str, str] = {
+        "pass the hash": "pth",
+        "pass the ticket": "ptt",
+        "pass-the-hash": "pth",
+        "pass-the-ticket": "ptt",
+        "living off the land": "lolbas",
+        "living-off-the-land": "lolbas",
+        "golden ticket": "golden_ticket",
+        "silver ticket": "silver_ticket",
+        "diamond ticket": "diamond_ticket",
+        "lateral movement": "pivoting",
+        "privilege escalation": "privesc",
+        "command and control": "c2",
+        "out of band": "oob",
+        "out-of-band": "oob",
+        "man in the middle": "mitm",
+        "man-in-the-middle": "mitm",
+        "denial of service": "dos",
+        "sql injection": "sqli",
+        "cross site scripting": "xss",
+        "cross-site scripting": "xss",
+        "remote code execution": "rce",
+        "local file inclusion": "lfi",
+        "remote file inclusion": "rfi",
+        "server side request forgery": "ssrf",
+        "server-side request forgery": "ssrf",
+        "insecure direct object reference": "idor",
+        "security misconfiguration": "misconfig",
+        "broken access control": "bac",
+        "open redirect": "redirect",
+        "evil twin": "evil_twin",
+        "rogue ap": "evil_twin",
+        "rogue access point": "evil_twin",
+        "spear phishing": "spearphish",
+        "supply chain": "supplychain",
+        "dependency confusion": "depconfusion",
+        "token impersonation": "token_impersonation",
+        "process injection": "injection",
+        "code injection": "injection",
+        "heap spray": "heapspray",
+        "rop chain": "ropchain",
+        "format string": "formatstring",
+        "use after free": "uaf",
+        "buffer overflow": "bof",
+        "stack overflow": "bof",
+        "integer overflow": "intoverflow",
+        "type confusion": "typeconfusion",
+        "race condition": "racecondition",
+        "time of check": "toctou",
+        "atomic red team": "art",
+        "attack simulation": "purpleteam",
+        "threat hunting": "threathunting",
+        "incident response": "ir",
+        "azure active directory": "azuread",
+        "azure ad": "azuread",
+        "active directory": "activedirectory",
+        "domain controller": "dc",
+        "service principal": "sp",
+        "managed identity": "managedidentity",
+        "kubernetes attack": "k8s_attack",
+        "container escape": "containerescape",
+        "firmware analysis": "firmware",
+        "iot device": "iot",
+        "ics network": "ics",
+        "scada system": "scada",
+        "ssl pinning": "sslpinning",
+        "certificate pinning": "sslpinning",
+        "root detection": "rootdetection",
+        "jailbreak detection": "jailbreakdetection",
+        "amsi bypass": "amsibypass",
+        "etw bypass": "etwbypass",
+        "av bypass": "avbypass",
+        "edr bypass": "edrbypass",
+        "defense evasion": "evasion",
+        "dns exfiltration": "dnsexfil",
+        "icmp tunnel": "icmptunnel",
+        "covert channel": "covertchannel",
+        "bug bounty": "bugbounty",
+        "responsible disclosure": "bugbounty",
+        "capture the flag": "ctf",
+        "padding oracle": "paddingoracle",
+        "hash cracking": "hashcrack",
+        "rainbow table": "rainbowtable",
+    }
 
     # Extended Ontology mapping synonyms to canonical forms (including MITRE tactics)
     DEFAULT_SYNONYMS = {
@@ -458,6 +549,8 @@ class NaturalLanguageParser:
         if custom_synonyms:
             self.synonyms.update(custom_synonyms)
 
+        self._tokenize_cache: dict[str, list[str]] = {}
+
     def _recalculate_idf(self) -> None:
         """Calculate document frequencies for IDF weighting."""
         self._doc_frequencies.clear()
@@ -527,45 +620,96 @@ class NaturalLanguageParser:
 
     def tokenize(self, text: str) -> list[str]:
         """Convert raw text into normalized semantic tokens including N-Grams."""
-        text = text.lower()
-        # Remove punctuation except hyphens
-        text = re.sub(r"[^\w\s-]", " ", text)
-        words = text.split()
+        cached = self._tokenize_cache.get(text)
+        if cached is not None:
+            return cached
+        result = self._do_tokenize(text)
+        if len(self._tokenize_cache) < 512:
+            self._tokenize_cache[text] = result
+        return result
 
-        tokens = []
-        clean_words = []
+    def _do_tokenize(self, text: str) -> list[str]:
+        """Internal tokenization logic (uncached)."""
+        text_lower = text.lower()
+        # Apply phrase synonyms before single-word processing
+        for phrase, canonical in self.PHRASE_SYNONYMS.items():
+            text_lower = text_lower.replace(phrase, canonical)
+        # Remove punctuation except hyphens
+        text_normalized = re.sub(r"[^\w\s-]", " ", text_lower)
+        words = text_normalized.split()
+        tokens: list[str] = []
+        clean_words: list[str] = []
         for w in words:
             if w and w not in self.STOPWORDS and len(w) > 1:
-                # Apply stemming first
                 stemmed = self.stem_word(w)
-                # Apply synonym mapping
                 mapped = self.synonyms.get(stemmed, stemmed)
                 clean_words.append(mapped)
                 tokens.append(mapped)
-
         # Generate Bigrams
         for i in range(len(clean_words) - 1):
             tokens.append(f"{clean_words[i]}_{clean_words[i + 1]}")
-
+        # Generate Trigrams
         for i in range(len(clean_words) - 2):
             tokens.append(f"{clean_words[i]}_{clean_words[i + 1]}_{clean_words[i + 2]}")
-
         return tokens
 
     def extract_entities(self, text: str) -> tuple[str, str]:
-        """Extract the primary target (URL, IP, Domain, Email, MAC)."""
+        """Extract the primary target entity, using a strict priority ordering.
+
+        Collects ALL matched entity types and returns the single highest-priority
+        one. Priority (high -> low):
+        url > cidr > ipv4 > ipv6 > mac > cve > sha256 > sha1 > md5 > ntlm > asn
+        > aws_s3 > azure_blob > gcp_bucket > github_repo > windows_path
+        > linux_path > email > domain
+        """
+        found = self.extract_all_entities(text)
+        # Priority ordering
+        for etype in (
+            "url",
+            "cidr",
+            "ipv4",
+            "ipv6",
+            "mac",
+            "cve",
+            "sha256",
+            "sha1",
+            "md5",
+            "ntlm",
+            "asn",
+            "aws_s3",
+            "azure_blob",
+            "gcp_bucket",
+            "github_repo",
+            "windows_path",
+            "linux_path",
+            "email",
+            "domain",
+        ):
+            if etype in found:
+                return found[etype][0], etype
+        return "", ""
+
+    def extract_all_entities(self, text: str) -> dict[str, list[str]]:
+        """Extract ALL entity types found in the text, returned as a dict."""
+        found: dict[str, list[str]] = {}
         for entity_type, pattern in self.PATTERNS.items():
             matches = re.findall(pattern, text)
             if matches:
-                # For domains, filter out false positives like "e.g." or "v.1"
                 if entity_type == "domain":
-                    valid_matches = [m for m in matches if len(m) > 4 and not m.startswith("e.g")]
-                    if valid_matches:
-                        return valid_matches[0], entity_type
+                    valid = [
+                        m
+                        for m in matches
+                        if len(m) > 4
+                        and not m.startswith("e.g")
+                        and not re.match(r"^[v\d]+[\d.]+$", m)
+                        and m.count(".") >= 1
+                        and not re.match(r"^\d+\.\d+\.\d+\.\d+$", m)
+                    ]
+                    if valid:
+                        found[entity_type] = valid
                 else:
-                    return matches[0], entity_type
-
-        return "", ""
+                    found[entity_type] = list(matches)
+        return found
 
     def extract_parameters(self, text: str) -> dict[str, str]:
         """Extract modifier arguments with Negation Context Handling."""
@@ -781,6 +925,7 @@ class NaturalLanguageParser:
 
         # 1. Target Extraction
         intent.target, intent.target_type = self.extract_entities(text)
+        intent.all_entities = self.extract_all_entities(text)
 
         # Strip the target from text to prevent it from confusing intent matching
         clean_text = text.replace(intent.target, "") if intent.target else text
