@@ -1167,9 +1167,12 @@ class NaturalLanguageParser:
             for t in doc_tokens:
                 doc_tf[t] += 1
 
-            for token in tokens:
+            for token_idx, token in enumerate(tokens):
                 idf = self.get_idf(token)
                 term_freq = 0
+
+                # Positional boost: first 3 query tokens carry more intent signal
+                positional_multiplier = 1.25 if token_idx < 3 else 1.0
 
                 if "_" in token:
                     # N-grams
@@ -1185,7 +1188,7 @@ class NaturalLanguageParser:
                     # Okapi BM25 scoring formula
                     numerator = term_freq * (k1 + 1)
                     denominator = term_freq + k1 * (1 - b + b * (doc_len / max(1.0, avgdl)))
-                    score += idf * (numerator / denominator)
+                    score += idf * (numerator / denominator) * positional_multiplier
 
             if score > highest_score:
                 highest_score = score
@@ -1210,6 +1213,12 @@ class NaturalLanguageParser:
         # 3. Parameter Extraction
         intent.parameters = self.extract_parameters(clean_text)
 
+        # Detect negation
+        intent.negated = any(
+            neg in text.lower()
+            for neg in ["not ", "no ", "without ", "skip ", "don't ", "dont ", "avoid "]
+        )
+
         # 4. Intent Scoring
         if intent.tokens:
             tpl_match, tpl_score = self.score_intent(intent.tokens, self._template_corpus)
@@ -1223,6 +1232,11 @@ class NaturalLanguageParser:
                 intent.tool_name = tool_match
                 intent.confidence = tool_score
 
+        # Normalized confidence: sigmoid-like mapping to 0-1 scale
+        if intent.confidence > 0:
+            k = 5.0
+            intent.normalized_confidence = intent.confidence / (intent.confidence + k)
+
         # Minimum confidence threshold — garbled/unrecognised input drops to None
         if intent.confidence < 0.15:
             intent.tool_name = None
@@ -1233,13 +1247,40 @@ class NaturalLanguageParser:
 
     def parse_multi(self, text: str) -> list[ParsedIntent]:
         """Parse natural language into multiple structured intents if conjunctions exist."""
-        # Split text by unambiguous multi-step conjunctions
-        split_pattern = r"\b(?:and then|followed by|&&|,\s*then|then)\b"
+        # Split text by unambiguous multi-step conjunctions and separators
+        split_pattern = (
+            r"\b(?:"
+            r"and\s+then"
+            r"|followed\s+by"
+            r"|&&"
+            r"|,\s*then"
+            r"|then"
+            r"|after\s+that"
+            r"|next"
+            r"|subsequently"
+            r"|finally"
+            r"|lastly"
+            r"|also\s+run"
+            r"|also\s+do"
+            r")\b"
+            r"|;\s*"
+        )
         parts = re.split(split_pattern, text, flags=re.IGNORECASE)
 
         intents = []
-        for part in parts:
-            part = part.strip()
+        first_target = ""
+        first_target_type = ""
+        for i, part in enumerate(parts):
+            part = part.strip() if part else ""
             if len(part) >= 2:
-                intents.append(self.parse(part))
+                parsed = self.parse(part)
+                # Propagate target from first intent to subsequent targetless intents
+                if i == 0:
+                    first_target = parsed.target
+                    first_target_type = parsed.target_type
+                elif not parsed.target and first_target:
+                    parsed.target = first_target
+                    parsed.target_type = first_target_type
+                parsed.conjunctive_goal = len(parts) > 1
+                intents.append(parsed)
         return intents
