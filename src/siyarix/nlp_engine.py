@@ -933,7 +933,8 @@ class NaturalLanguageParser:
         text_lower = text.lower()
 
         is_negated = any(
-            neg in text_lower for neg in ["not ", "no ", "without ", "skip ", "exclude "]
+            neg in text_lower
+            for neg in ["not ", "no ", "without ", "skip ", "exclude ", "don't ", "dont ", "avoid "]
         )
 
         port_match = re.search(r"\bport(?:s)?\s*([0-9,\-]+)\b", text_lower)
@@ -1024,6 +1025,63 @@ class NaturalLanguageParser:
         module_match = re.search(r"\b(?:module|plugin|script)\s+([a-zA-Z0-9_.\-]+)\b", text_lower)
         if module_match:
             params["module"] = module_match.group(1)
+
+        # Rate Limiting / Rate parameter extraction
+        rate_match = re.search(r"\b(?:rate|--rate)\s*(\d+)\b", text_lower)
+        if rate_match:
+            params["rate"] = rate_match.group(1)
+
+        # Output file
+        output_match = re.search(
+            r"\b(?:save\s+to|output\s+to|write\s+to|out(?:put)?\s+file)\s+([a-zA-Z0-9_.\-/\\]+)\b",
+            text_lower,
+        )
+        if output_match:
+            params["output"] = output_match.group(1)
+
+        # Recursion depth
+        depth_match = re.search(r"\b(?:depth|level|recursion)\s*(\d+)\b", text_lower)
+        if depth_match:
+            params["depth"] = depth_match.group(1)
+
+        # Proxy
+        proxy_match = re.search(
+            r"\b(?:via|through|using)?\s*proxy\s+([a-zA-Z0-9:./\-]+)\b", text_lower
+        )
+        if proxy_match:
+            params["proxy"] = proxy_match.group(1)
+
+        # Auth token / API key
+        token_match = re.search(
+            r"\b(?:with\s+token|api[_\s]?key|bearer|authorization\s+token)\s+([a-zA-Z0-9_.\-]+)\b",
+            text_lower,
+        )
+        if token_match:
+            params["token"] = token_match.group(1)
+
+        # Target list from file
+        targetlist_match = re.search(
+            r"\b(?:from\s+file|targets?\s+(?:from|in)|input\s+file|target\s+list)\s+([a-zA-Z0-9_.\-/\\]+)\b",
+            text_lower,
+        )
+        if targetlist_match:
+            params["target_list"] = targetlist_match.group(1)
+
+        # Exclude
+        exclude_match = re.search(
+            r"\b(?:exclude|ignore|blacklist)\s+([a-zA-Z0-9_.\-/,]+)\b", text_lower
+        )
+        if exclude_match:
+            params["exclude"] = exclude_match.group(1)
+
+        # Time range
+        time_range_match = re.search(
+            r"\blast\s+(\d+)\s*(day|hour|week|month)s?\b", text_lower
+        )
+        if time_range_match:
+            n, unit = time_range_match.group(1), time_range_match.group(2)
+            unit_map = {"hour": "h", "day": "d", "week": "w", "month": "m"}
+            params["time_range"] = f"{n}{unit_map.get(unit, unit[0])}"
 
         return params
 
